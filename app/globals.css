@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --radius: 14px;
+}
+
+html,
+body {
+  @apply bg-gray-50 text-gray-900;
+}
+.container {
+  @apply mx-auto px-4 sm:px-6 lg:px-8;
+}
+.card {
+  @apply bg-white rounded-2xl shadow-smooth;
+}
+.badge {
+  @apply inline-flex items-center rounded-full px-3 py-1 text-xs font-medium bg-gray-100;
+}
+.hidden-scroll::-webkit-scrollbar {
+  display: none;
+}
+.hidden-scroll {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.section-title {
+  @apply text-xl font-semibold;
+}
+
+/* Filter field styling */
+.filter-select,
+.filter-input {
+  @apply w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary;
+}

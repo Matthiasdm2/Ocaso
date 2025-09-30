@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 
 import { supabaseServer } from "@/lib/supabaseServer";
 
+export const dynamic = 'force-dynamic';
+
 function uniq<T>(arr: T[]): T[] {
   return Array.from(new Set(arr));
 }

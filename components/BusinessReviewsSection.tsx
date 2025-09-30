@@ -1,6 +1,9 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 
+import { createClient } from "@/lib/supabaseClient";
+
+import LoginPrompt from "./LoginPrompt";
 import RatingStars from "./RatingStars";
 import ReviewModal from "./ReviewModal";
 
@@ -21,6 +24,7 @@ export default function BusinessReviewsSection({ businessId, reviews: initialRev
   const [sort, setSort] = useState<"relevant"|"newest"|"oldest"|"highest"|"lowest">("relevant");
   const [avg, setAvg] = useState<number>(rating);
   const [count, setCount] = useState<number>(reviewCount);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
   // Sync when parent provides new data (e.g. after fetch in profile tab)
   useEffect(() => {
@@ -126,7 +130,21 @@ export default function BusinessReviewsSection({ businessId, reviews: initialRev
           {!hideCreate && (
             <button
               className="inline-flex items-center gap-2 rounded-full bg-primary text-black px-5 py-2 text-sm font-semibold border border-primary/30 shadow hover:bg-primary/80 transition"
-              onClick={() => setShowModal(true)}
+              onClick={async () => {
+                try {
+                  const supabase = createClient();
+                  const { data: { session } } = await supabase.auth.getSession();
+                  if (!session?.user) {
+                    setShowModal(false);
+                    // show login prompt instead
+                    setShowLoginPrompt(true);
+                    return;
+                  }
+                  setShowModal(true);
+                } catch {
+                  setShowLoginPrompt(true);
+                }
+              }}
             >
               <span>Review plaatsen</span>
             </button>
@@ -187,6 +205,7 @@ export default function BusinessReviewsSection({ businessId, reviews: initialRev
           onReview={(review: unknown) => handleAddReview(review as Review & { ratingAvg?: number; reviewCount?: number })}
         />
       )}
+      {showLoginPrompt && <LoginPrompt onClose={() => setShowLoginPrompt(false)} />}
     </div>
     {selected && (
       <div className="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-modal="true" aria-label="Review details">

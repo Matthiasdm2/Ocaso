@@ -77,6 +77,7 @@ export async function GET(req: Request) {
     const q = searchParams.get("q") ?? "";
     const mode = searchParams.get("mode") ?? "business";
     const cat = searchParams.get("cat") ?? "";
+    const subcat = searchParams.get("subcat") ?? "";
     const city = searchParams.get("city") ?? "";
   const minRating = Number(searchParams.get("minRating") ?? 0);
   const sort = searchParams.get("sort") || "relevance"; // rating_desc | reviews_desc | name_asc
@@ -126,7 +127,8 @@ export async function GET(req: Request) {
         const { data: listHits, error: listErr } = await supabase
           .from("listings")
           .select("seller_id")
-          .ilike("title", like({ q }));
+          .ilike("title", like({ q }))
+          .eq("status", "actief");
           // .neq("status","draft")  // ❌ laat weg als kolom mogelijk niet bestaat
 
         if (listErr) {
@@ -186,6 +188,11 @@ export async function GET(req: Request) {
     if (cat) {
       resultProfiles = resultProfiles.filter((p) =>
         Array.isArray(p.categories) ? p.categories.includes(cat) : false,
+      );
+    }
+    if (subcat) {
+      resultProfiles = resultProfiles.filter((p) =>
+        Array.isArray(p.categories) ? p.categories.includes(subcat) : false,
       );
     }
     if (city) {
@@ -282,6 +289,7 @@ export async function GET(req: Request) {
           .from("listings")
           .select("id,title,price,thumb,status")
           .eq("seller_id", biz.id)
+          .eq("status", "actief")
           .limit(5);
         return { ...biz, listings: listings ?? [] };
       })

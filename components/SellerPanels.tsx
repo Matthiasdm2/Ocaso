@@ -16,6 +16,7 @@ type Seller = {
   rating?: number | null;
   salesCount?: number | null;
   isBusiness?: boolean | null;
+  isVerified?: boolean | null;
   joinedISO?: string | null;
   responseMins?: number | null;
   lastSeenISO?: string | null;
@@ -27,6 +28,7 @@ type Seller = {
   seller_rating?: number | null;
   seller_sales_count?: number | null;
   seller_is_business?: boolean | null;
+  seller_is_verified?: boolean | null;
   seller_review_count?: number | null;
 };
 
@@ -73,6 +75,7 @@ export default function SellerPanels({
   const reviewCount = seller.seller_review_count ?? null;
   const sales = seller.salesCount ?? seller.seller_sales_count ?? null;
   const isBusiness = !!(seller.isBusiness ?? seller.seller_is_business);
+  const isVerified = !!(seller.isVerified ?? seller.seller_is_verified);
   const [responseMins, setResponseMins] = useState<number | null | undefined>(seller.responseMins ?? null);
   const [loadingResp, setLoadingResp] = useState(false);
   const [respNote, setRespNote] = useState<string | null>(null);
@@ -211,6 +214,11 @@ export default function SellerPanels({
               {isBusiness && (
                 <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium shadow-sm">
                   Bedrijf
+                </span>
+              )}
+              {isVerified && (
+                <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-medium shadow-sm">
+                  Vertrouwd
                 </span>
               )}
             </div>

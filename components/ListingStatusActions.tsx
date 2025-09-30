@@ -5,10 +5,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { useToast } from "@/components/Toast";
-// ✅ BELANGRIJK: gebruik de geïnstantieerde client
-import { supabase } from "@/lib/supabaseClient";
 
-type Status = "actief" | "gepauzeerd" | "verkocht" | string;
+type Status = "active" | "paused" | "sold" | string;
 
 export default function ListingStatusActions({
   listingId,
@@ -22,10 +20,21 @@ export default function ListingStatusActions({
   const [loading, setLoading] = useState<null | "pause" | "resume" | "sold">(null);
 
   const setStatus = async (status: Status, label: string) => {
-    setLoading(status === "gepauzeerd" ? "pause" : status === "actief" ? "resume" : "sold");
+    setLoading(status === "paused" ? "pause" : status === "active" ? "resume" : "sold");
     try {
-      const { error } = await supabase.from("listings").update({ status }).eq("id", listingId);
-      if (error) throw error;
+      const response = await fetch(`/api/listings/${listingId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Status updaten mislukt");
+      }
+
       push(`Zoekertje is nu ${label}.`);
       router.refresh();
     } catch (e: unknown) {
@@ -36,8 +45,8 @@ export default function ListingStatusActions({
     }
   };
 
-  const isPaused = currentStatus === "gepauzeerd";
-  const isSold = currentStatus === "verkocht";
+  const isPaused = currentStatus === "paused";
+  const isSold = currentStatus === "sold";
 
   return (
     <div className="flex items-center gap-2">
@@ -45,7 +54,7 @@ export default function ListingStatusActions({
       <button
         type="button"
         disabled={isSold || loading !== null}
-        onClick={() => setStatus(isPaused ? "actief" : "gepauzeerd", isPaused ? "actief" : "gepauzeerd")}
+        onClick={() => setStatus(isPaused ? "active" : "paused", isPaused ? "actief" : "gepauzeerd")}
         className={`text-xs px-3 py-1 rounded-full border transition ${
           isPaused
             ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:opacity-90"
@@ -60,7 +69,7 @@ export default function ListingStatusActions({
       <button
         type="button"
         disabled={isSold || loading !== null}
-        onClick={() => setStatus("verkocht", "verkocht")}
+        onClick={() => setStatus("sold", "verkocht")}
         className="text-xs px-3 py-1 rounded-full border bg-rose-50 text-rose-700 border-rose-200 hover:opacity-90 disabled:opacity-50"
         aria-label="Markeer als verkocht"
       >

@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import XLSX from 'xlsx';
+import { book_append_sheet, book_new, utils, writeFile } from 'xlsx';
 
 const headers = [
   'title',
@@ -23,9 +23,9 @@ const rows = [
 ];
 
 const ws_data = [headers, ...rows];
-const ws = XLSX.utils.aoa_to_sheet(ws_data);
-const wb = XLSX.utils.book_new();
-XLSX.utils.book_append_sheet(wb, ws, 'template');
+const ws = utils.aoa_to_sheet(ws_data);
+const wb = book_new();
+book_append_sheet(wb, ws, 'template');
 
 // Try to read categories from lib/categories.ts and write them to a separate sheet
 const categoriesFile = path.join(__dirname, '..', 'lib', 'categories.ts');
@@ -44,12 +44,12 @@ if (fs.existsSync(categoriesFile)) {
 }
 
 if (catNames.length) {
-  const catSheet = XLSX.utils.aoa_to_sheet([['categories'], ...catNames.map((c) => [c])]);
-  XLSX.utils.book_append_sheet(wb, catSheet, 'Categories');
+  const catSheet = utils.aoa_to_sheet([['categories'], ...catNames.map((c) => [c])]);
+  book_append_sheet(wb, catSheet, 'Categories');
 }
 
 const outDir = path.join(__dirname, '..', 'public', 'templates');
 if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
 const outPath = path.join(outDir, 'bulk-listings-template.xlsx');
-XLSX.writeFile(wb, outPath);
+writeFile(wb, outPath);
 console.log('Wrote', outPath);

@@ -42,7 +42,8 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   const { data: listings, error: listingsErr } = await supabase
     .from("listings")
     .select("*,bids(count),views(count)")
-    .or(`seller_id.eq.${id},organization_id.eq.${id}`);
+    .or(`seller_id.eq.${id},organization_id.eq.${id}`)
+    .eq("status", "actief");
   if (listingsErr) {
     console.error(`[API /business/[id]] Listings error:`, listingsErr);
   }

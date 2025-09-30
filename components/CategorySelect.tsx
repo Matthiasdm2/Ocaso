@@ -206,6 +206,23 @@ export default function CategorySelect({
     setOpenSub(false);
   }
 
+  // Auto-select exact matches
+  function autoSelectCategory() {
+    if (!catQuery.trim()) return;
+    const exactMatch = cats.find(c => c.name.toLowerCase() === catQuery.trim().toLowerCase());
+    if (exactMatch) {
+      pickCategory(exactMatch);
+    }
+  }
+
+  function autoSelectSubcategory() {
+    if (!subQuery.trim()) return;
+    const exactMatch = subs.find(s => s.name.toLowerCase() === subQuery.trim().toLowerCase());
+    if (exactMatch) {
+      pickSubcategory(exactMatch);
+    }
+  }
+
   // Keyboard handlers (over ALLE items)
   function onCatKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (!openCat && (e.key === "ArrowDown" || e.key === "Enter")) {
@@ -221,7 +238,11 @@ export default function CategorySelect({
       setCatActive((i) => Math.max(i - 1, 0));
     } else if (e.key === "Enter") {
       e.preventDefault();
-      pickCategory(cats[catActive]);
+      if (openCat && cats[catActive]) {
+        pickCategory(cats[catActive]);
+      } else {
+        autoSelectCategory();
+      }
     } else if (e.key === "Escape") {
       setOpenCat(false);
     }
@@ -240,7 +261,11 @@ export default function CategorySelect({
       setSubActive((i) => Math.max(i - 1, 0));
     } else if (e.key === "Enter") {
       e.preventDefault();
-      pickSubcategory(subs[subActive]);
+      if (openSub && subs[subActive]) {
+        pickSubcategory(subs[subActive]);
+      } else {
+        autoSelectSubcategory();
+      }
     } else if (e.key === "Escape") {
       setOpenSub(false);
     }
@@ -380,11 +405,32 @@ export default function CategorySelect({
               if (cats.length) setCatActive(firstCatMatchIndex);
             }}
             onFocus={() => setOpenCat(true)}
+            onBlur={() => {
+              setTimeout(() => autoSelectCategory(), 100); // Delay to allow click events
+            }}
             onKeyDown={onCatKeyDown}
             placeholder={loadingCats ? "Laden…" : "Typ om te zoeken… (lijst blijft volledig)"}
             disabled={disabled}
-            className="w-full rounded-2xl border border-gray-200 bg-white px-3 py-2.5 text-sm shadow-sm outline-none transition focus:border-gray-300 focus:ring-2 focus:ring-emerald-100 disabled:opacity-60"
+            className="w-full rounded-2xl border border-gray-200 bg-white px-3 py-2.5 pr-8 text-sm shadow-sm outline-none transition focus:border-gray-300 focus:ring-2 focus:ring-emerald-100 disabled:opacity-60"
           />
+          {valueCategory && !disabled && (
+            <button
+              type="button"
+              onClick={() => {
+                onChangeCategory("");
+                onChangeSubcategory("");
+                setCatQuery("");
+                setSubQuery("");
+                setOpenCat(false);
+                setOpenSub(false);
+              }}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
         </div>
       </div>
 
@@ -443,6 +489,9 @@ export default function CategorySelect({
               if (subs.length) setSubActive(firstSubMatchIndex);
             }}
             onFocus={() => setOpenSub(true)}
+            onBlur={() => {
+              setTimeout(() => autoSelectSubcategory(), 100); // Delay to allow click events
+            }}
             onKeyDown={onSubKeyDown}
             placeholder={
               !valueCategory
@@ -454,8 +503,23 @@ export default function CategorySelect({
                 : "Geen marktplaats-subcategorieën voor deze marktplaats-categorie"
             }
             disabled={disabled || !valueCategory || loadingSubs || subs.length === 0}
-            className="w-full rounded-2xl border border-gray-200 bg-white px-3 py-2.5 text-sm shadow-sm outline-none transition focus:border-gray-300 focus:ring-2 focus:ring-emerald-100 disabled:opacity-60"
+            className="w-full rounded-2xl border border-gray-200 bg-white px-3 py-2.5 pr-8 text-sm shadow-sm outline-none transition focus:border-gray-300 focus:ring-2 focus:ring-emerald-100 disabled:opacity-60"
           />
+          {valueSubcategory && !disabled && valueCategory && (
+            <button
+              type="button"
+              onClick={() => {
+                onChangeSubcategory("");
+                setSubQuery("");
+                setOpenSub(false);
+              }}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
         </div>
       </div>
 

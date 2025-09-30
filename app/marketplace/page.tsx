@@ -77,19 +77,43 @@ export default async function MarketplacePage({ searchParams }: { searchParams?:
 
   // Indien slug: lookup in DB (Supabase server client reused)
   if (!categoryFilter && categoryRaw && !isNumeric(categoryRaw)) {
-    const { data: catBySlug } = await supabase
+    // Eerst proberen op slug
+    let { data: catBySlug } = await supabase
       .from("categories")
       .select("id")
       .eq("slug", categoryRaw)
       .maybeSingle();
+    
+    // Als geen slug gevonden, proberen op naam (voor backward compatibility)
+    if (!catBySlug?.id) {
+      const { data: catByName } = await supabase
+        .from("categories")
+        .select("id")
+        .ilike("name", categoryRaw)
+        .maybeSingle();
+      catBySlug = catByName;
+    }
+    
     if (catBySlug?.id) categoryFilter = catBySlug.id;
   }
   if (!subcategoryFilter && subcategoryRaw && !isNumeric(subcategoryRaw)) {
-    const { data: subBySlug } = await supabase
+    // Eerst proberen op slug
+    let { data: subBySlug } = await supabase
       .from("subcategories")
       .select("id, category_id")
       .eq("slug", subcategoryRaw)
       .maybeSingle();
+    
+    // Als geen slug gevonden, proberen op naam
+    if (!subBySlug?.id) {
+      const { data: subByName } = await supabase
+        .from("subcategories")
+        .select("id, category_id")
+        .ilike("name", subcategoryRaw)
+        .maybeSingle();
+      subBySlug = subByName;
+    }
+    
     if (subBySlug?.id) {
       subcategoryFilter = subBySlug.id;
       if (!categoryFilter && subBySlug.category_id) categoryFilter = subBySlug.category_id as number;
@@ -123,7 +147,7 @@ export default async function MarketplacePage({ searchParams }: { searchParams?:
   let count: number | null = null;
 
   // Basis query (na normalisatie volstaat kolom filtering)
-  let query = supabase.from("listings").select("*", { count: "exact" });
+  let query = supabase.from("listings").select("*", { count: "exact" }).eq("status", "actief");
   // Basis query. Later: kan beperkt veldselect worden voor performance.
 
     if (subcategoryFilter) {
@@ -202,13 +226,13 @@ export default async function MarketplacePage({ searchParams }: { searchParams?:
   // Seller rating aggregatie (lightweight)
   const sellerIds = Array.from(new Set(listings.map(l => l.seller_id).filter(Boolean))) as string[];
   let sellerRatings: Record<string, { rating: number; count: number }> = {};
-  const sellerProfiles: Record<string, { name: string; avatar_url: string | null; is_business?: boolean | null }> = {};
+  const sellerProfiles: Record<string, { name: string; avatar_url: string | null; is_business?: boolean | null; is_verified?: boolean | null }> = {};
   if (sellerIds.length) {
     // Profiel basis info ophalen (display_name/full_name en avatar)
-    interface ProfileRow { id: string; display_name?: string | null; full_name?: string | null; avatar_url?: string | null; is_business?: boolean | null; }
+    interface ProfileRow { id: string; display_name?: string | null; full_name?: string | null; avatar_url?: string | null; is_business?: boolean | null; stripe_account_id?: string | null; }
     const { data: profileRows } = await supabase
       .from('profiles')
-      .select('id,display_name,full_name,avatar_url,is_business')
+      .select('id,display_name,full_name,avatar_url,is_business,stripe_account_id')
       .in('id', sellerIds)
       .limit(300);
     if (profileRows) {
@@ -217,8 +241,36 @@ export default async function MarketplacePage({ searchParams }: { searchParams?:
           name: p.display_name || p.full_name || 'Verkoper',
           avatar_url: p.avatar_url || null,
           is_business: p.is_business ?? null,
+          is_verified: false, // wordt later ingevuld
         };
       });
+      
+      // Verificatie controleren voor sellers met stripe_account_id
+      const sellersWithStripe = (profileRows as ProfileRow[]).filter(p => p.stripe_account_id);
+      if (sellersWithStripe.length > 0) {
+        try {
+          const stripeSecret = process.env.STRIPE_SECRET_KEY;
+          if (stripeSecret) {
+            const { default: Stripe } = await import('stripe');
+            const stripe = new Stripe(stripeSecret, { apiVersion: '2025-08-27.basil' });
+            
+            for (const seller of sellersWithStripe) {
+              if (seller.stripe_account_id) {
+                try {
+                  const account = await stripe.accounts.retrieve(seller.stripe_account_id);
+                  if (account.details_submitted) {
+                    sellerProfiles[seller.id].is_verified = true;
+                  }
+                } catch (e) {
+                  // Ignore errors for individual accounts
+                }
+              }
+            }
+          }
+        } catch (e) {
+          // Ignore Stripe errors
+        }
+      }
     }
     const { data: sellerListingsAll } = await supabase
       .from('listings')
@@ -507,90 +559,109 @@ export default async function MarketplacePage({ searchParams }: { searchParams?:
                             link={`/listings/${item.id}`}
                           />
                         </div>
-                        <div className="flex-1 min-w-0 flex flex-col gap-2">
-                          <div className="flex flex-wrap items-start justify-between gap-3">
-                            <a href={`/listings/${item.id}`} className="font-semibold text-lg md:text-xl truncate text-primary hover:underline max-w-[60%]">
-                              {item.title}
-                            </a>
+                        <div className="flex-1 min-w-0 flex flex-col gap-3">
+                          <div className="flex flex-wrap items-start justify-between gap-3 mb-2">
+                            <div className="flex-1 min-w-0">
+                              <a href={`/listings/${item.id}`} className="font-bold text-xl md:text-2xl truncate text-primary hover:underline max-w-[70%] leading-tight block mb-1">
+                                {item.title}
+                              </a>
+                              {/* Views and favorites stats next to title */}
+                              <ListingCardStats id={item.id} initViews={item.views ?? 0} initFavorites={item.favorites_count ?? 0} />
+                            </div>
                             <div className="flex flex-col items-end gap-1">
-                              <div className="font-bold text-primary text-xl md:text-2xl leading-none">€ {item.price}</div>
+                              <div className="font-bold text-primary text-2xl md:text-3xl leading-none">€ {item.price}</div>
                               {item.allowOffers && (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-[10px] md:text-xs text-emerald-700 border border-emerald-200">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-xs text-emerald-700 border border-emerald-200">
                                   Bieden mogelijk
                                 </span>
                               )}
                               {item.allowOffers && typeof item.highestBid === "number" && (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-yellow-50 text-[10px] md:text-xs text-yellow-800 border border-yellow-200">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-yellow-50 text-xs text-yellow-800 border border-yellow-200">
                                   Hoogste bod: € {item.highestBid}
                                 </span>
                               )}
                             </div>
                           </div>
-                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500">
-                            <span>{item.location} • {item.state}</span>
-                            <span>Geplaatst: {item.created_at ? new Date(item.created_at).toLocaleDateString("nl-BE") : "Onbekend"}</span>
-                            <span>Categorie: {item.displayCategoryName}{item.displaySubcategoryName ? ` › ${item.displaySubcategoryName}` : ""}</span>
-                            {item.listing_number && <span className="text-gray-400">Nr: {item.listing_number}</span>}
+                          <div className="text-sm text-gray-700 line-clamp-2 leading-relaxed mb-2">{item.description}</div>
+                          <div className="flex flex-wrap items-center gap-2 mb-3">
+                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-gray-50 text-xs text-gray-700 border border-gray-200">
+                              <span className="text-gray-500">📍</span>
+                              {item.location}
+                            </span>
+                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-blue-50 text-xs text-blue-700 border border-blue-200">
+                              <span className="text-blue-500">🏷️</span>
+                              {item.displayCategoryName}{item.displaySubcategoryName ? ` › ${item.displaySubcategoryName}` : ""}
+                            </span>
+                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-green-50 text-xs text-green-700 border border-green-200">
+                              <span className="text-green-500">📅</span>
+                              {item.created_at ? new Date(item.created_at).toLocaleDateString("nl-BE") : "Onbekend"}
+                            </span>
+                            {item.listing_number && (
+                              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-purple-50 text-xs text-purple-700 border border-purple-200">
+                                <span className="text-purple-500">#</span>
+                                {item.listing_number}
+                              </span>
+                            )}
                           </div>
-                          <div className="flex items-center gap-3 text-xs text-gray-600">
-                            {/* Placeholder verkoper info - requires seller join if available */}
-                            {(() => {
-                              const sid = (listingsDataRaw || []).find(l => l.id === item.id)?.seller_id as string | undefined;
-                              const ratingInfo = sid ? sellerRatings[sid] : undefined;
-                              const profile = sid ? sellerProfiles[sid] : undefined;
-                              const avatar = profile?.avatar_url;
-                              const name = profile?.name || (sid ? `Verkoper ${sid.slice(0,6)}` : 'Verkoper');
-                              return (
-                                <>
-                                  <span className="inline-flex items-start gap-2" data-seller={sid || ''} data-has-rating={!!(ratingInfo && ratingInfo.count)}>
-                                    {avatar ? (
-                                      // eslint-disable-next-line @next/next/no-img-element
-                                      <img src={avatar} alt={name} className="w-6 h-6 rounded-full object-cover bg-gray-200" />
-                                    ) : (
-                                      <span className="w-6 h-6 rounded-full bg-gray-200 inline-block" aria-hidden="true" />
-                                    )}
-                                    <span className="flex flex-col leading-tight">
-                                      <span className="flex items-center gap-1">
-                                        {sid ? (
-                                          <a
-                                            href={`/business/${sid}`}
-                                            className="truncate max-w-[140px] text-primary hover:underline"
-                                            title={name}
-                                          >
-                                            {name}
-                                          </a>
-                                        ) : (
-                                          <span className="truncate max-w-[140px]" title={name}>{name}</span>
-                                        )}
-                                        {profile?.is_business && (
-                                          <span className="inline-block px-1.5 py-0.5 text-[10px] leading-none rounded bg-blue-50 text-blue-700 border border-blue-200">Business</span>
-                                        )}
-                                      </span>
-                                      <span className="mt-0.5 inline-flex items-center gap-1 text-[11px]" aria-label={ratingInfo && ratingInfo.count > 0 ? `Rating ${ratingInfo.rating.toFixed(1)} uit 5` : 'Nog geen reviews'}>
-                                        {ratingInfo && ratingInfo.count > 0 ? (
-                                          <>
-                                            <RatingStars rating={ratingInfo.rating} size={12} />
-                                            <span className="text-gray-600">{ratingInfo.rating.toFixed(1)}</span>
-                                            <span className="text-gray-400">({ratingInfo.count})</span>
-                                          </>
-                                        ) : (
-                                          <span className="text-gray-400 italic">Geen reviews</span>
-                                        )}
-                                      </span>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-6">
+                              {/* Seller info with stats below */}
+                              <div className="flex flex-col">
+                                {/* Seller info */}
+                                {(() => {
+                                  const sid = (listingsDataRaw || []).find(l => l.id === item.id)?.seller_id as string | undefined;
+                                  const ratingInfo = sid ? sellerRatings[sid] : undefined;
+                                  const profile = sid ? sellerProfiles[sid] : undefined;
+                                  const avatar = profile?.avatar_url;
+                                  const name = profile?.name || (sid ? `Verkoper ${sid.slice(0,6)}` : 'Verkoper');
+                                  return (
+                                    <span className="inline-flex items-center gap-2 mb-1" data-seller={sid || ''} data-has-rating={!!(ratingInfo && ratingInfo.count)}>
+                                      {avatar ? (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img src={avatar} alt={name} className="w-8 h-8 rounded-full object-cover bg-gray-200 border-2 border-white shadow-sm" />
+                                      ) : (
+                                        <span className="w-8 h-8 rounded-full bg-gray-200 inline-block border-2 border-white shadow-sm" aria-hidden="true" />
+                                      )}
+                                      <div className="flex flex-col">
+                                        <span className="flex items-center gap-2">
+                                          {sid ? (
+                                            <a
+                                              href={`/business/${sid}`}
+                                              className="font-medium text-sm text-gray-900 hover:text-primary hover:underline truncate max-w-[140px]"
+                                              title={name}
+                                            >
+                                              {name}
+                                            </a>
+                                          ) : (
+                                            <span className="font-medium text-sm text-gray-900 truncate max-w-[140px]" title={name}>{name}</span>
+                                          )}
+                                          {profile?.is_business && (
+                                            <span className="inline-block px-1.5 py-0.5 text-[10px] leading-none rounded bg-blue-50 text-blue-700 border border-blue-200 font-medium">Business</span>
+                                          )}
+                                          {profile?.is_verified && (
+                                            <span className="inline-block px-1.5 py-0.5 text-[10px] leading-none rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium">Vertrouwd</span>
+                                          )}
+                                        </span>
+                                        <span className="inline-flex items-center gap-1 text-xs text-gray-600" aria-label={ratingInfo && ratingInfo.count > 0 ? `Rating ${ratingInfo.rating.toFixed(1)} uit 5` : 'Nog geen reviews'}>
+                                          {ratingInfo && ratingInfo.count > 0 ? (
+                                            <>
+                                              <RatingStars rating={ratingInfo.rating} size={12} />
+                                              <span className="font-medium">{ratingInfo.rating.toFixed(1)}</span>
+                                              <span className="text-gray-400">({ratingInfo.count})</span>
+                                            </>
+                                          ) : (
+                                            <span className="text-gray-400 italic">Geen reviews</span>
+                                          )}
+                                        </span>
+                                      </div>
                                     </span>
-                                  </span>
-                                </>
-                              );
-                            })()}
-                          </div>
-                          <div className="text-sm text-gray-700 line-clamp-2 md:line-clamp-3">{item.description}</div>
-                          <div className="flex items-center justify-between mt-1">
-                            <div className="flex gap-2">
-                              <ListingCardStats id={item.id} initViews={item.views ?? 0} initFavorites={item.favorites_count ?? 0} />
+                                  );
+                                })()}
+                              </div>
                             </div>
                             <a
                               href={`/listings/${item.id}`}
-                              className="inline-block rounded-full bg-primary text-white px-4 py-1.5 text-sm font-semibold shadow transition hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                              className="inline-block rounded-full bg-primary text-white px-5 py-2 text-sm font-semibold shadow transition hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                             >
                               Bekijk
                             </a>

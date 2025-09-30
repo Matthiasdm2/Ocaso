@@ -27,11 +27,12 @@ export async function GET(request: Request) {
     | "price_asc"
     | "price_desc";
 
-  // Basisquery: alle listings tonen, geen status-filter
+  // Basisquery: alleen actieve listings tonen
   const wantCount = searchParams.get("count") !== '0';
   let query = supabase
     .from("listings")
-    .select("id,title,price,location,state,images,main_photo,created_at,categories,status", { count: wantCount ? "exact" : undefined });
+    .select("id,title,price,location,state,images,main_photo,created_at,categories,status", { count: wantCount ? "exact" : undefined })
+    .eq("status", "actief");
 
   // Zoeken
   if (q) {
@@ -96,6 +97,7 @@ export async function GET(request: Request) {
     const fbQuery = supabase
       .from("listings")
       .select("id,title,price,location,state,images,main_photo,created_at,categories,status")
+      .eq("status", "actief")
       .order("created_at", { ascending: false })
       .range(from, to);
     const { data: fbData } = await fbQuery;

@@ -10,7 +10,7 @@ import ListingCard from "@/components/ListingCard";
 import { supabaseServer } from "@/lib/supabaseServer";
 
 interface ListingRow { id: string; title?: string | null; price?: number | null; images?: string[] | null; created_at?: string | null; views?: number | null; favorites?: number | null; favorites_count?: number | null; category?: string | null; subcategory?: string | null; seller_id?: string | null; status?: string | null }
-interface ProfileRow { id: string; full_name?: string | null; display_name?: string | null; shop_name?: string | null; shop_slug?: string | null; business_logo_url?: string | null; business_banner_url?: string | null; business_bio?: string | null; website?: string | null; social_instagram?: string | null; social_facebook?: string | null; social_tiktok?: string | null; public_show_email?: boolean | null; public_show_phone?: boolean | null; address?: string | null; invoice_address?: string | null; is_business?: boolean | null; company_name?: string | null; vat?: string | null; registration_nr?: string | null; invoice_email?: string | null; business_plan?: string | null; business_billing_cycle?: string | null; avatar_url?: string | null }
+interface ProfileRow { id: string; full_name?: string | null; display_name?: string | null; shop_name?: string | null; shop_slug?: string | null; business_logo_url?: string | null; business_banner_url?: string | null; business_bio?: string | null; website?: string | null; social_instagram?: string | null; social_facebook?: string | null; social_tiktok?: string | null; public_show_email?: boolean | null; public_show_phone?: boolean | null; address?: { street: string; city: string; zip: string; country: string } | null; invoice_address?: string | null; is_business?: boolean | null; company_name?: string | null; vat?: string | null; registration_nr?: string | null; invoice_email?: string | null; business_plan?: string | null; business_billing_cycle?: string | null; avatar_url?: string | null; stripe_account_id?: string | null }
 
 export default async function BusinessDetailPage({ params }: { params: { id: string } }) {
 	const supabase = supabaseServer();
@@ -21,7 +21,7 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
 	{
 		const res = await supabase
 			.from('profiles')
-			.select('id, full_name, display_name, shop_name, shop_slug, business_logo_url, business_banner_url, business_bio, website, social_instagram, social_facebook, social_tiktok, public_show_email, public_show_phone, address, invoice_address, is_business, company_name, vat, registration_nr, invoice_email, business_plan, business_billing_cycle, avatar_url')
+			.select('id, full_name, display_name, shop_name, shop_slug, business_logo_url, business_banner_url, business_bio, website, social_instagram, social_facebook, social_tiktok, public_show_email, public_show_phone, address, invoice_address, is_business, company_name, vat, registration_nr, invoice_email, business_plan, business_billing_cycle, avatar_url, stripe_account_id')
 			.eq('id', businessId)
 			.maybeSingle();
 		profile = res.data; profileError = res.error;
@@ -29,7 +29,7 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
 			// Probeer slug
 			const slugRes = await supabase
 				.from('profiles')
-				.select('id, full_name, display_name, shop_name, shop_slug, business_logo_url, business_banner_url, business_bio, website, social_instagram, social_facebook, social_tiktok, public_show_email, public_show_phone, address, invoice_address, is_business, company_name, vat, registration_nr, invoice_email, business_plan, business_billing_cycle, avatar_url')
+				.select('id, full_name, display_name, shop_name, shop_slug, business_logo_url, business_banner_url, business_bio, website, social_instagram, social_facebook, social_tiktok, public_show_email, public_show_phone, address, invoice_address, is_business, company_name, vat, registration_nr, invoice_email, business_plan, business_billing_cycle, avatar_url, stripe_account_id')
 				.eq('shop_slug', rawParam)
 				.maybeSingle();
 			if (slugRes.data) {
@@ -37,6 +37,22 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
 			} else if (slugRes.error) {
 				profileError = slugRes.error;
 			}
+		}
+	}
+
+	// 1.5 Verificatie check
+	let isVerified = false;
+	if (profile?.stripe_account_id) {
+		try {
+			const stripeSecret = process.env.STRIPE_SECRET_KEY;
+			if (stripeSecret) {
+				const { default: Stripe } = await import('stripe');
+				const stripe = new Stripe(stripeSecret, { apiVersion: '2025-08-27.basil' });
+				const account = await stripe.accounts.retrieve(profile.stripe_account_id);
+				isVerified = account.details_submitted === true;
+			}
+		} catch (e) {
+			// Ignore verification errors
 		}
 	}
 
@@ -147,17 +163,16 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
 					</div>
 				</div>
 			</header>
-			<BusinessSectionNav />
-			<main className="container flex-1 py-10 md:py-12 grid gap-12 lg:grid-cols-12">
-				<div className="lg:col-span-8 space-y-16">
+			<main className="container flex-1 pt-2 md:pt-4 pb-10 md:pb-12 grid gap-12 lg:grid-cols-12">
+				<div className="lg:col-span-8 space-y-8">
 					{/* Profiel kop */}
-					<section id="shop-profiel" className="space-y-6">
-						<div className="flex flex-col md:flex-row md:items-start gap-6">
-							<div className="flex items-start gap-5">
-								<div className="relative w-28 h-28 md:w-32 md:h-32 rounded-2xl overflow-hidden ring-2 ring-white shadow bg-white border">
+					<section id="shop-profiel" className="space-y-3">
+						<div className="flex flex-col md:flex-row md:items-start gap-4">
+							<div className="flex items-start gap-4">
+								<div className="relative w-20 h-20 md:w-24 md:h-24 rounded-2xl overflow-hidden ring-2 ring-white shadow bg-white border flex-shrink-0">
 									<Image src={profile.business_logo_url || profile.avatar_url || '/placeholder.png'} alt={displayName || 'Logo'} fill className="object-cover" />
 								</div>
-								<div className="space-y-3">
+								<div className="space-y-2 min-w-0 flex-1">
 									<div className="flex flex-col gap-2">
 										<h1 className="text-3xl font-bold tracking-tight text-gray-900">{displayName}</h1>
 										<div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
@@ -165,6 +180,7 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
 											{profile.vat && <span className="rounded bg-emerald-50 text-emerald-700 px-2 py-0.5 text-xs border border-emerald-100">BTW: {profile.vat}</span>}
 											{avgRating > 0 && (<BusinessRatingBadge initialAvg={avgRating} initialCount={reviews.length} />)}
 										</div>
+										{isVerified && <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-medium shadow-sm w-fit">Vertrouwd</span>}
 									</div>
 									<div className="flex flex-wrap gap-2 text-xs">
 										{profile.website && <a className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white border text-gray-700 hover:bg-emerald-50 transition" href={profile.website} target="_blank" rel="noopener">Website</a>}
@@ -185,6 +201,7 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
 						</div>
 						<hr className="border-gray-200" />
 					</section>
+					<BusinessSectionNav />
 					{/* Over deze handelaar */}
 					{profile.business_bio && (
 						<section id="over" className="space-y-4">
@@ -229,11 +246,8 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
 					<section id="reviews" className="space-y-4">
 						<h2 className="text-xl font-semibold">Reviews</h2>
 						<div className="card p-0">
-							{Array.isArray(reviews) && reviews.length > 0 ? (
-								<BusinessReviewsSection businessId={profile.id} reviews={reviews} rating={avgRating} reviewCount={reviews.length} />
-							) : (
-								<div className="p-8 text-center text-sm text-gray-500">Nog geen reviews geplaatst.</div>
-							)}
+									{/* Render reviews section always so users can place a review even when none exist yet */}
+									<BusinessReviewsSection businessId={profile.id} reviews={reviews} rating={avgRating} reviewCount={reviews.length} />
 						</div>
 					</section>
 				</div>
@@ -257,7 +271,11 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
 							{profile.public_show_phone && profile.address && (
 								<div>
 									<div className="text-xs text-gray-400">Adres</div>
-									<div className="whitespace-pre-line">{profile.address}</div>
+									<div className="whitespace-pre-line">
+										{typeof profile.address === 'object' && profile.address
+											? `${profile.address.street || ''} ${profile.address.zip || ''} ${profile.address.city || ''}, ${profile.address.country || ''}`.trim()
+											: profile.address || ''}
+									</div>
 								</div>
 							)}
 							{(!profile.public_show_email && !profile.public_show_phone) && (

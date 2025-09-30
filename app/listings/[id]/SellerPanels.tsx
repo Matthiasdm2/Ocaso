@@ -10,6 +10,7 @@ type Seller = {
   rating?: number | null; // 0-5
   salesCount?: number | null;
   isBusiness?: boolean | null;
+  isVerified?: boolean | null;
   joinedISO?: string | null;
   responseMins?: number | null; // gemiddelde antwoordtermijn in minuten
   lastSeenISO?: string | null;
@@ -76,6 +77,11 @@ export default function SellerPanels({
               {s.isBusiness ? (
                 <span className="rounded-md bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700">
                   Zakelijk
+                </span>
+              ) : null}
+              {s.isVerified ? (
+                <span className="rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                  Vertrouwd
                 </span>
               ) : null}
             </div>

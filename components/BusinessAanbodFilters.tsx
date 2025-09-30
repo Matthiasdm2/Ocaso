@@ -42,16 +42,16 @@ export default function BusinessAanbodFilters({ initial }: { initial: Initial })
     <form onSubmit={(e) => { e.preventDefault(); apply(); }} className="rounded-2xl border bg-white/70 backdrop-blur p-4 md:p-5 shadow-sm space-y-4">
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:flex-wrap">
         <div className="flex-1 min-w-[160px]">
-          <label className="block text-xs font-medium text-gray-600 mb-1">Zoeken</label>
-          <input value={q} onChange={e => setQ(e.target.value)} placeholder="Titel..." className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+          <label htmlFor="ba-q" className="block text-xs font-medium text-gray-600 mb-1">Zoeken</label>
+          <input id="ba-q" name="q" value={q} onChange={e => setQ(e.target.value)} placeholder="Titel..." className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
         </div>
         <div className="w-28">
           <label className="block text-xs font-medium text-gray-600 mb-1">Min €</label>
-          <input value={min} onChange={e => setMin(e.target.value)} inputMode="numeric" className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+          <input id="ba-min" name="min" value={min} onChange={e => setMin(e.target.value)} inputMode="numeric" className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
         </div>
         <div className="w-28">
           <label className="block text-xs font-medium text-gray-600 mb-1">Max €</label>
-          <input value={max} onChange={e => setMax(e.target.value)} inputMode="numeric" className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+          <input id="ba-max" name="max" value={max} onChange={e => setMax(e.target.value)} inputMode="numeric" className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
         </div>
         <div className="min-w-[160px]">
           <label className="block text-xs font-medium text-gray-600 mb-1">Sorteren</label>

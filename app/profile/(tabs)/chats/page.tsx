@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
 import Avatar from '@/components/Avatar';
+import ConfirmModal from '@/components/ConfirmModal';
 import { createClient } from '@/lib/supabaseClient';
 import { useProfile } from '@/lib/useProfile';
 
@@ -28,6 +29,29 @@ export default function ChatsTabPage() {
   const [items, setItems] = useState<ConversationApiRow[]>([]);
   const [profilesMap, setProfilesMap] = useState<Record<string, ProfileLiteFetch>>({});
   const [error, setError] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [conversationToDelete, setConversationToDelete] = useState<string | null>(null);
+
+  const handleDeleteConversation = async () => {
+    if (!conversationToDelete) return;
+
+    try {
+      const response = await fetch(`/api/messages/${conversationToDelete}?conversation=true`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (response.ok) {
+        setItems(prev => prev.filter(item => item.id !== conversationToDelete));
+      } else {
+        alert('Kon chat niet verwijderen. Probeer het opnieuw.');
+      }
+    } catch (error) {
+      console.error('Error deleting conversation:', error);
+      alert('Er is een fout opgetreden bij het verwijderen van de chat.');
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -298,7 +322,7 @@ export default function ChatsTabPage() {
                     </div>
                   </div>
                   <div className="flex flex-col gap-1 ml-auto pl-4 border-l border-transparent group-hover:border-gray-100">
-                    <div className="flex gap-2">
+                  <div className="flex gap-2">
                       <button
                         type="button"
                         onClick={(e) => {
@@ -317,6 +341,15 @@ export default function ChatsTabPage() {
                         }}
                         className="px-2 py-1 rounded text-[11px] bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100"
                       >Volledig</button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setConversationToDelete(c.id);
+                          setShowDeleteModal(true);
+                        }}
+                        className="px-2 py-1 rounded text-[11px] bg-red-50 text-red-700 border border-red-200 hover:bg-red-100"
+                      >Verwijder</button>
                     </div>
                   </div>
                 </button>
@@ -324,6 +357,19 @@ export default function ChatsTabPage() {
             );
         })}
       </ul>
+
+      <ConfirmModal
+        open={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setConversationToDelete(null);
+        }}
+        onConfirm={handleDeleteConversation}
+        title="Chat verwijderen"
+        message="Weet je zeker dat je deze chat wilt verwijderen? Alle berichten worden permanent verwijderd en kunnen niet worden hersteld."
+        confirmText="Verwijderen"
+        cancelText="Annuleren"
+      />
     </div>
   );
 }

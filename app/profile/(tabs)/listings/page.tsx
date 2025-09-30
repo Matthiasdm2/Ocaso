@@ -1,9 +1,13 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import React, { useEffect, useMemo, useState } from 'react';
 
+import EditListingModal from '@/components/EditListingModal';
+import { useToast } from '@/components/Toast';
 import { createClient } from '@/lib/supabaseClient';
+import { useProfile } from '@/lib/useProfile';
 
 /* ----------------------------- types & utils ----------------------------- */
 type Listing = {
@@ -25,6 +29,10 @@ type Listing = {
   location?: string | null;
   allow_offers?: boolean | null;
   imageUrl?: string | null; // <- uniform veld vanuit API
+  description?: string | null;
+  subcategory?: string | null;
+  images?: string[] | null;
+  main_photo?: string | null;
 };
 
 type Bid = {
@@ -48,6 +56,9 @@ function clsx(...xs: Array<string | false | null | undefined>) {
 /* ---------------------------------- page --------------------------------- */
 export default function ListingsPage() {
   const supabase = createClient();
+  const { push } = useToast();
+  const { profile } = useProfile();
+  const router = useRouter();
 
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
@@ -60,6 +71,11 @@ export default function ListingsPage() {
   const [bidsOpenId, setBidsOpenId] = useState<string | null>(null);
   const [bidsList, setBidsList] = useState<Bid[]>([]);
   const [bidsLoading, setBidsLoading] = useState(false);
+  const [soldValue, setSoldValue] = useState<number>(0);
+
+  // Edit modal state
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -85,7 +101,10 @@ export default function ListingsPage() {
           price?: number | null;
           currency?: string | null;
           imageUrl?: string | null;
+          images?: string[] | null;
+          main_photo?: string | null;
           category?: string | null;
+          subcategory?: string | null;
           condition?: string | null;
           created_at?: string | null;
           status?: string | null;
@@ -100,6 +119,7 @@ export default function ListingsPage() {
           location?: string | null;
           allow_offers?: boolean | null;
           allowOffers?: boolean | null;
+          description?: string | null;
           metrics?: {
             views?: number | null;
             saves?: number | null;
@@ -115,7 +135,10 @@ export default function ListingsPage() {
           price: x.price ?? null,
           currency: x.currency ?? 'EUR',
           imageUrl: x.imageUrl ?? null, // <- hier
+          images: x.images ?? null,
+          main_photo: x.main_photo ?? null,
           category: x.category ?? null,
+          subcategory: x.subcategory ?? null,
           condition: x.condition ?? null,
           created_at: x.created_at ?? null,
           status: x.status ?? (x.sold ? 'sold' : 'active'),
@@ -128,6 +151,7 @@ export default function ListingsPage() {
           last_bid_at: x.last_bid_at ?? x.metrics?.last_bid_at ?? null,
           location: x.location ?? null,
           allow_offers: x.allow_offers ?? x.allowOffers ?? false,
+          description: x.description ?? null,
         }));
 
         setItems(rows);
@@ -199,6 +223,21 @@ export default function ListingsPage() {
     return () => { supabase.removeChannel(channel); };
   }, [supabase, items]);
 
+  // Haal verkochte waarde op
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch('/api/profile/stats', { cache: 'no-store' });
+        if (res.ok) {
+          const data = await res.json();
+          setSoldValue(data.soldValue || 0);
+        }
+      } catch (e) {
+        console.warn('Kon verkochte waarde niet ophalen:', e);
+      }
+    })();
+  }, []);
+
   async function markBidsSeen(listingId: string, count: number) {
     setUnreadBids((prev) => ({ ...prev, [listingId]: 0 }));
     try {
@@ -252,8 +291,8 @@ export default function ListingsPage() {
     const active = items.filter((x) => (x.status || '').toLowerCase() === 'active').length;
     const sold = items.filter((x) => (x.sold || (x.status || '').toLowerCase() === 'sold')).length;
     const views = sum(items.map((x) => x.views));
-    return { total, active, sold, views };
-  }, [items]);
+    return { total, active, sold, views, soldValue };
+  }, [items, soldValue]);
 
   async function updateFlags(id: string, patch: Partial<Pick<Listing, 'sold' | 'sold_via_ocaso' | 'status'>>) {
     setBusyIds((m) => ({ ...m, [id]: true }));
@@ -321,6 +360,157 @@ export default function ListingsPage() {
     setBidsList([]);
   }
 
+  async function handleContact(bid: Bid) {
+    if (!profile) {
+      router.push('/login');
+      return;
+    }
+    if (!bidsOpenId) return;
+
+    try {
+      // Start chat met de bieder
+      const otherUserId = bid.bidder_id;
+      const listingId = bidsOpenId;
+
+      // Voeg bearer token toe als fallback wanneer cookies niet doorkomen in route handler
+      let token: string | null = null;
+      try {
+        const supa = createClient();
+        const { data: { session } } = await supa.auth.getSession();
+        token = session?.access_token || null;
+      } catch { /* ignore bearer token retrieval issues */ }
+
+      const r = await fetch('/api/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ otherUserId, listingId }),
+      });
+      const d = await r.json();
+
+      if (r.status === 401 || d.error === 'unauthorized') {
+        router.push('/login');
+        return;
+      }
+
+      if (d.conversation?.id) {
+        // Fire global event to open chat dock
+        window.dispatchEvent(new CustomEvent('ocaso:open-chat-dock', {
+          detail: {
+            conversationId: d.conversation.id,
+            title: bid.bidder_name || 'Chat met bieder'
+          }
+        }));
+        // Also dispatch conversation-started so chats list updates instantly
+        window.dispatchEvent(new CustomEvent('ocaso:conversation-started', {
+          detail: {
+            conversation: {
+              id: d.conversation.id,
+              participants: d.conversation.participants || [],
+              updated_at: d.conversation.created_at || new Date().toISOString(),
+              lastMessage: null,
+              unread: 0,
+              listing_id: d.conversation.listing_id || null,
+              listing: null,
+            }
+          }
+        }));
+        // Sluit de biedingen modal
+        closeBidsModal();
+      } else if (d.error) {
+        alert('Kon chat niet starten: ' + d.error);
+      }
+    } catch (e) {
+      console.error('Chat start fout', e);
+      alert('Onbekende fout bij starten van chat');
+    }
+  }
+
+  // Edit modal functions
+  function openEditModal(listing: Listing) {
+    setSelectedListing(listing);
+    setEditModalOpen(true);
+  }
+
+  function closeEditModal() {
+    setEditModalOpen(false);
+    setSelectedListing(null);
+  }
+
+  async function handleEditSave(updatedData: Partial<Listing>) {
+    if (!selectedListing) return;
+
+    // Call API to update listing
+    const res = await fetch(`/api/listings/${selectedListing.id}`, {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(updatedData),
+    });
+    if (!res.ok) throw new Error('Update failed');
+
+    // Update local state
+    setItems((prev) =>
+      prev.map((l) =>
+        l.id === selectedListing.id ? { ...l, ...updatedData } : l
+      )
+    );
+  }
+
+  // Accept a bid: ensure conversation with bidder and post acceptance message
+  async function handleAccept(bid: Bid) {
+    const listingId = bidsOpenId;
+    if (!listingId) return;
+    if (!bid?.bidder_id) {
+      push('Bieder onbekend');
+      return;
+    }
+    setBusyIds((m) => ({ ...m, [listingId]: true }));
+    try {
+      // get access token
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+  if (!token) { window.location.href = '/login'; return; }
+
+      // Ensure conversation exists (seller <-> bidder)
+      const convRes = await fetch('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ otherUserId: String(bid.bidder_id), listingId }),
+      });
+      const convJson = await convRes.json();
+      if (!convRes.ok) throw new Error(convJson?.error || 'Kon gesprek niet aanmaken');
+      const conversationId = convJson?.conversation?.id || convJson?.conversationId;
+  if (!conversationId) throw new Error('Geen gesprek gevonden');
+
+  // Post acceptance message from seller to bidder.
+  // The chat UI will detect the plain acceptance text and show the pay button below the message.
+  const bodyText = 'Uw bod werd aanvaard';
+      const msgRes = await fetch(`/api/messages/${conversationId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ text: bodyText }),
+      });
+      if (!msgRes.ok) {
+        let txt = 'Bericht kon niet verzonden worden';
+        try { txt = await msgRes.text(); } catch { /* noop */ }
+        throw new Error(txt || 'Berichtfout');
+      }
+
+      // Close modal and refresh bids list
+      setBidsOpenId(null);
+      setBidsList([]);
+      try { window.dispatchEvent(new Event('ocaso:bids-seen-changed')); } catch { /* noop */ }
+      // Feedback via toast
+      push('Bod geaccepteerd — bieder geïnformeerd.');
+    } catch (e) {
+      push((e as Error)?.message || 'Accepteren mislukt');
+    } finally {
+      setBusyIds((m) => ({ ...m, [bidsOpenId || '']: false }));
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-emerald-50/60 via-white to-white">
       {/* HERO */}
@@ -348,11 +538,12 @@ export default function ListingsPage() {
         ) : (
           <>
             {/* Stats */}
-            <section className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <section className="mb-8 grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-5">
               <StatCard label="Totaal" value={metrics.total} />
               <StatCard label="Actief" value={metrics.active} />
               <StatCard label="Verkocht" value={metrics.sold} />
               <StatCard label="Bezoekers" value={metrics.views ?? 0} />
+              <StatCard label="Verkochte waarde" value={`€${metrics.soldValue}`} />
             </section>
 
             {/* Controls */}
@@ -514,12 +705,12 @@ export default function ListingsPage() {
                               >
                                 {it.status === 'paused' ? 'Activeren' : 'Pauzeren'}
                               </button>
-                              <Link
-                                href={`/listings/${it.id}`}
+                              <button
+                                onClick={() => openEditModal(it)}
                                 className="rounded-full px-3 py-1 text-sm w-full text-center bg-gray-100 hover:bg-gray-200 transition"
                               >
                                 Bewerken
-                              </Link>
+                              </button>
                               <button
                                 onClick={() => removeListing(it.id)}
                                 disabled={!!busyIds[it.id]}
@@ -634,12 +825,12 @@ export default function ListingsPage() {
                         >
                           {it.status === 'paused' ? 'Activeren' : 'Pauzeren'}
                         </button>
-                        <Link
-                          href={`/listings/${it.id}/edit`}
+                        <button
+                          onClick={() => openEditModal(it)}
                           className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-sm hover:bg-neutral-50"
                         >
                           Bewerken
-                        </Link>
+                        </button>
                         <button
                           onClick={() => removeListing(it.id)}
                           disabled={!!busyIds[it.id]}
@@ -675,24 +866,24 @@ export default function ListingsPage() {
               <div className="px-6 py-4 max-h-60 overflow-y-auto">
                 <ul className="space-y-2">
                   {bidsList.sort((a, b) => b.amount - a.amount).map((bid: Bid, idx) => (
-                    <li key={idx} className="flex items-center justify-between gap-4 text-sm text-gray-800 py-2 px-2 rounded bg-neutral-50 border border-neutral-100">
+                        <li key={idx} className="flex items-center justify-between gap-4 text-sm text-gray-800 py-2 px-2 rounded bg-neutral-50 border border-neutral-100">
                       <div className="flex flex-col gap-1 min-w-0">
                         <span className="font-semibold text-emerald-700">€ {bid.amount}</span>
                         <span className="text-xs text-gray-500">{bid.created_at ? new Date(bid.created_at).toLocaleString('nl-BE') : ''}</span>
-                        <span className="text-xs text-gray-700 font-medium">{bid.bidder_name ?? 'Onbekende bieder'}</span>
+                        <span className="text-xs text-gray-700 font-medium">{bid.bidder_name ?? 'Onbekende gebruiker'}</span>
                       </div>
                       <div className="flex gap-2">
                         <button
                           type="button"
                           className="px-3 py-1 rounded bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700 transition"
-                          onClick={() => alert('Bod geaccepteerd!')}
+                          onClick={() => handleAccept(bid)}
                         >
                           Accepteer
                         </button>
                         <button
                           type="button"
                           className="px-3 py-1 rounded bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 transition"
-                          onClick={() => alert('Contacteer bieder!')}
+                          onClick={() => handleContact(bid)}
                         >
                           Contacteer
                         </button>
@@ -716,11 +907,16 @@ export default function ListingsPage() {
           </div>
         </div>
       )}
+
+      <EditListingModal
+        listing={selectedListing}
+        open={editModalOpen}
+        onClose={closeEditModal}
+        onSave={handleEditSave}
+      />
     </div>
   );
 }
-
-/* --------------------------------- atoms --------------------------------- */
 function SkeletonCard({ h = 180 }: { h?: number }) {
   return (
     <div className="overflow-hidden rounded-2xl border bg-white shadow-sm">
@@ -736,7 +932,7 @@ function SkeletonCard({ h = 180 }: { h?: number }) {
   );
 }
 
-function StatCard({ label, value }: { label: string; value: number }) {
+function StatCard({ label, value }: { label: string; value: number | string }) {
   return (
     <div className="rounded-2xl border bg-white p-5 shadow-sm">
       <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-emerald-700">{label}</div>

@@ -17,7 +17,7 @@ export async function GET() {
 
     const { data, error } = await sb
       .from("categories")
-      .select("id,name,parent_id,position")
+      .select("id,name,parent_id,position,slug")
       .order("position", { ascending: true });
 
     if (error) {
@@ -28,11 +28,11 @@ export async function GET() {
     if (!rows.length) return new NextResponse(null, { status: 204, headers: { "X-Category-Source": "empty-db" } });
 
     const parents = rows.filter((r) => !r.parent_id);
-    const byParent = new Map<string, { id: string; name: string }[]>();
+    const byParent = new Map<string, { id: string; name: string; slug: string | null }[]>();
     for (const r of rows) {
       if (r.parent_id) {
         const arr = byParent.get(r.parent_id) || [];
-        arr.push({ id: r.id, name: r.name });
+        arr.push({ id: r.id, name: r.name, slug: r.slug || null });
         byParent.set(r.parent_id, arr);
       }
     }
@@ -40,7 +40,8 @@ export async function GET() {
     const shaped = parents.map((p) => ({
       id: p.id,
       name: p.name,
-      subcategories: (byParent.get(p.id) || []).map((c) => c.name),
+      slug: p.slug,
+      subcategories: (byParent.get(p.id) || []).map((c) => ({ id: c.id, name: c.name, slug: c.slug })),
     }));
 
     if (!shaped.length) return new NextResponse(null, { status: 204, headers: { "X-Category-Source": "no-parents" } });

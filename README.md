@@ -5,6 +5,7 @@ Een moderne, full-stack marketplace platform gebouwd met Next.js en Supabase.
 ## ✨ Features
 
 ### 🛒 Marketplace
+
 - **Product Listings**: Uitgebreide productpagina's met fotogalerij
 - **Geavanceerd Zoeken**: Zoeken op categorie, locatie, prijs en meer
 - **Favorieten Systeem**: Gebruikers kunnen producten opslaan
@@ -12,17 +13,20 @@ Een moderne, full-stack marketplace platform gebouwd met Next.js en Supabase.
 - **Reviews & Ratings**: Beoordeling systeem voor verkopers en producten
 
 ### 💬 Communicatie
+
 - **Real-time Chat**: Berichten tussen kopers en verkopers
 - **Notificaties**: Live updates voor nieuwe berichten en activiteiten
 - **Gesprek Management**: Georganiseerde chatoverzichten
 
 ### 👥 Gebruikersbeheer
+
 - **User Profielen**: Persoonlijke profielen met avatar upload
 - **Business Profielen**: Zakelijke accounts met branding
 - **Authenticatie**: Veilige inlog via Supabase Auth
 - **Privacy**: GDPR-compliant met cookie consent management
 
 ### 🔧 Technische Features
+
 - **Next.js 14**: Met App Router en Server Components
 - **TypeScript**: Volledige type-safety
 - **Supabase**: Backend-as-a-Service met real-time functies
@@ -42,22 +46,26 @@ Een moderne, full-stack marketplace platform gebouwd met Next.js en Supabase.
 ## 📦 Installation
 
 1. **Clone het repository**
+
    ```bash
    git clone https://github.com/Matthiasdm2/Ocaso.git
    cd Ocaso
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    ```
 
 3. **Environment variabelen**
+
    ```bash
    cp .env.example .env.local
    ```
-   
+
    Vul de volgende variabelen in:
+
    ```env
    NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
@@ -65,6 +73,7 @@ Een moderne, full-stack marketplace platform gebouwd met Next.js en Supabase.
    ```
 
 4. **Database setup**
+
    ```bash
    # Run database migrations
    npm run db:migrate
@@ -100,6 +109,7 @@ Zie `/docs/database-schema.md` voor gedetailleerde schema informatie.
 ### Manual Deployment
 
 1. Build het project:
+
    ```bash
    npm run build
    ```

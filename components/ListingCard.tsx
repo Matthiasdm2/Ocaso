@@ -2,8 +2,6 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 
-import FavoriteButton from "./FavoriteButton";
-
 const ListingCardStats = dynamic(() => import("./ListingCardStats"), { ssr: false });
 
 type Listing = {
@@ -49,7 +47,7 @@ export default function ListingCard({ listing, item, reviewAvg, reviewCount, com
         {firstImage ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={firstImage}
+            src={`${firstImage}?t=${Date.now()}`}
             alt={listingData.title}
             className={[
               "h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]",
@@ -62,11 +60,6 @@ export default function ListingCard({ listing, item, reviewAvg, reviewCount, com
             Geen afbeelding
           </div>
         )}
-        <div className="absolute top-2 right-2 z-10">
-          <div className="rounded-full bg-white/80 backdrop-blur px-2 py-1 shadow-sm hover:bg-white transition">
-            <FavoriteButton id={listingData.id} />
-          </div>
-        </div>
       </div>
       <div className={[
         "flex items-start justify-between gap-3",

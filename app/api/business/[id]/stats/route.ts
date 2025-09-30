@@ -33,7 +33,6 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   } catch { /* ignore bid aggregation errors */ }
     const stats = {
       totalListings: list.length,
-      sold: list.filter(l => l.status === 'sold').length,
       avgPrice: list.length ? Math.round(list.reduce((s,l) => s + (l.price ?? 0),0) / list.length) : 0,
       views: list.reduce((s,l) => s + (typeof l.views === 'number' ? l.views : 0),0),
       bids: totalBids,
@@ -46,6 +45,6 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     return NextResponse.json(stats);
   } catch (e) {
     console.warn('[api business stats] fallback zeros door fout', e);
-    return NextResponse.json({ totalListings: 0, sold: 0, avgPrice: 0, views: 0, bids: 0, fallback: true }, { status: 200 });
+    return NextResponse.json({ totalListings: 0, avgPrice: 0, views: 0, bids: 0, fallback: true }, { status: 200 });
   }
 }

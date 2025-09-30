@@ -115,7 +115,7 @@ export default function Header() {
         <nav className="hidden md:flex items-center gap-6 text-sm">
           <Link href="/explore" className="hover:text-gray-900">Ontdekken</Link>
           <Link href="/marketplace" className="hover:text-gray-900">Marktplaats</Link>
-          <Link href="/business" className="hover:text-gray-900">Zakelijk</Link>
+          <Link href="/business" className="hover:text-gray-900">Ocaso Shops</Link>
           <Link href="/profile" className="hover:text-gray-900 flex items-center gap-1">
             <span>Mijn profiel</span>
             {notifTotal > 0 && (

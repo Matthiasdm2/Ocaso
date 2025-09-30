@@ -3,23 +3,23 @@
 import { motion } from "framer-motion";
 import {
   ArrowRight,
-  BadgeCheck,
-  Globe2,
-  Rocket,
+  MessageCircle,
   Shield,
+  ShoppingBag,
   Sparkles,
   Store,
-  Target,
-  Zap,
+  Truck,
+  Users,
 } from "lucide-react";
 import Link from "next/link";
 
 /*
-  Save as: app/investors/page.tsx
-  Style: Light, professional; simplified partner page highlighting Ocaso core. No team section, no investor deck.
+  Over Ocaso - Wat is Ocaso?
+  Een marketplace waar mensen eenvoudig spullen kunnen kopen en verkopen,
+  met veilige betalingen, chat tussen kopers en verkopers, en logistieke ondersteuning.
 */
 
-export default function InvestorsPage() {
+export default function AboutPage() {
   return (
     <div className="relative min-h-screen bg-neutral-50 text-neutral-900">
       {/* Hero */}
@@ -32,31 +32,34 @@ export default function InvestorsPage() {
             className="max-w-4xl"
           >
             <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs text-emerald-700">
-              <Sparkles className="h-4 w-4" /> Ocaso Ecosysteem — Partners
+              <Sparkles className="h-4 w-4" /> Over Ocaso
             </div>
             <h1 className="mt-3 text-4xl font-semibold tracking-tight md:text-5xl">
-              Groei mee met het Ocaso‑ecosysteem
+              De eenvoudigste manier om spullen te kopen en verkopen
             </h1>
             <p className="mt-3 text-lg text-neutral-700 md:text-xl">
-              Ocaso is méér dan een verkoopportaal: we verbinden kopers, particuliere én zakelijke verkopers met veilige betalingen, AI‑gestuurde listing & search en schaalbare logistiek.
+              Ocaso is een Belgische marketplace waar particulieren en bedrijven veilig en eenvoudig spullen kunnen aanbieden, kopen en verkopen. Met slimme tools, directe communicatie en betrouwbare verzending.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
-              <Link href="/contact" className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-medium text-white hover:bg-emerald-700">
-                Word partner <ArrowRight className="h-4 w-4" />
+              <Link href="/explore" className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-medium text-white hover:bg-emerald-700">
+                Start met verkennen <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link href="/sell" className="inline-flex items-center gap-2 rounded-xl border border-neutral-300 bg-white px-5 py-3 text-sm font-medium hover:bg-neutral-50">
+                Begin met verkopen
               </Link>
             </div>
           </motion.div>
         </div>
       </section>
 
-      {/* Core of Ocaso */}
+      {/* Wat maakt Ocaso uniek */}
       <section className="px-6 pb-8 md:pb-12">
         <div className="mx-auto grid max-w-6xl gap-6 md:grid-cols-4">
           {[
-            { icon: Shield, title: "Escrow als standaard", desc: "Betalingen worden pas vrijgegeven na leveringsbevestiging. Minder risico, meer vertrouwen." },
-            { icon: Zap, title: "AI‑flows", desc: "1‑min listing, automatische beschrijving & prijsvoorstel, betere matching en zoekresultaten." },
-            { icon: Globe2, title: "Schaalbare logistiek", desc: "Labels, tracking en verzekerd verzenden via integraties met EU‑logistieke partners." },
-            { icon: Store, title: "Voor particulieren én B2B", desc: "Van zolderverkoop tot professionele storefronts en API‑koppelingen." },
+            { icon: Shield, title: "Veilige betalingen", desc: "Betalingen worden beschermd tot de koop succesvol is afgerond. Minder risico voor iedereen." },
+            { icon: MessageCircle, title: "Directe communicatie", desc: "Chat rechtstreeks met verkopers om vragen te stellen en afspraken te maken." },
+            { icon: Truck, title: "Verzending & afhalen", desc: "Kies tussen verzending met tracking of afhalen bij de verkoper in de buurt." },
+            { icon: Users, title: "Voor iedereen", desc: "Van particulieren die opruimen tot bedrijven die professioneel verkopen." },
           ].map((f, i) => (
             <div key={i} className="rounded-2xl border border-neutral-200 bg-white p-6">
               <f.icon className="h-6 w-6 text-emerald-600" />
@@ -67,67 +70,163 @@ export default function InvestorsPage() {
         </div>
       </section>
 
-      {/* Integraties & samenwerking */}
+      {/* Hoe het werkt */}
       <section className="px-6 pb-8 md:pb-12">
         <div className="mx-auto max-w-6xl rounded-2xl border border-neutral-200 bg-white p-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">Integraties & samenwerking</h2>
-            <Target className="h-5 w-5 text-emerald-700" />
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-semibold">Hoe Ocaso werkt</h2>
+            <p className="mt-2 text-neutral-600">In 3 eenvoudige stappen</p>
           </div>
-          <div className="mt-6 grid gap-6 md:grid-cols-3">
+          <div className="grid gap-6 md:grid-cols-3">
             {[
-              { title: "Payments", points: ["Escrow‑betalingen", "Meerdere betaalmethodes", "Uitbetalingsschema's"] },
-              { title: "Logistics", points: ["Label & tracking", "Afhaalpunten", "Verzekering & claims"] },
-              { title: "Partner API", points: ["REST/JSON", "Webhooks", "Sandbox & keys"] },
-            ].map((c, i) => (
-              <div key={i} className="rounded-xl border border-neutral-200 bg-white p-5">
-                <div className="font-medium">{c.title}</div>
-                <ul className="mt-2 list-disc pl-5 text-sm text-neutral-700 space-y-1">
-                  {c.points.map((p, j) => (<li key={j}>{p}</li>))}
-                </ul>
+              { step: "1", title: "Plaats je advertentie", desc: "Maak een gratis account, neem foto's en schrijf een korte beschrijving. AI helpt je met suggesties." },
+              { step: "2", title: "Ontvang biedingen", desc: "Kopers nemen contact op via chat. Bespreek prijs, verzending en haalafspraken." },
+              { step: "3", title: "Verkoop succesvol", desc: "Lever het product, bevestig ontvangst en het geld wordt automatisch uitbetaald." },
+            ].map((s, i) => (
+              <div key={i} className="text-center">
+                <div className="mx-auto w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center text-lg font-bold text-emerald-700 mb-4">
+                  {s.step}
+                </div>
+                <h3 className="font-medium text-lg mb-2">{s.title}</h3>
+                <p className="text-sm text-neutral-600">{s.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Roadmap high level */}
+      {/* Voor kopers en verkopers */}
       <section className="px-6 pb-8 md:pb-12">
         <div className="mx-auto max-w-6xl rounded-2xl border border-neutral-200 bg-white p-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">Roadmap (high‑level)</h2>
-            <Rocket className="h-5 w-5 text-emerald-700" />
+                    <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold">Waarom kiezen voor Ocaso?</h2>
           </div>
-          <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
-            {[
-              { phase: "Q3 2025", items: ["Core marketplace v1", "AI‑upload v1", "Eerste logistieke partners"] },
-              { phase: "Q4 2025", items: ["Escrow & disputes", "Zakelijke storefronts", "Analytics & reviews"] },
-              { phase: "2026", items: ["EU‑expansie", "Creator programma", "Open partner API"] },
-            ].map((col, i) => (
-              <div key={i} className="rounded-xl border border-neutral-200 bg-white p-5">
-                <div className="text-sm text-emerald-700">{col.phase}</div>
-                <ul className="mt-2 space-y-2 text-sm text-neutral-700">
-                  {col.items.map((it, j) => (
-                    <li key={j} className="flex gap-2"><BadgeCheck className="h-4 w-4 text-emerald-600" /> {it}</li>
-                  ))}
-                </ul>
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-5">
+              <div className="flex items-center gap-3 mb-3">
+                <ShoppingBag className="h-5 w-5 text-emerald-600" />
+                <div className="font-medium">Voor kopers</div>
               </div>
-            ))}
+              <ul className="text-sm text-neutral-700 space-y-2">
+                <li>• Zoek eenvoudig naar producten in je buurt</li>
+                <li>• Chat direct met verkopers voor vragen</li>
+                <li>• Veilige betalingen via escrow</li>
+                <li>• Keuze uit verzending of afhalen</li>
+              </ul>
+            </div>
+            <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-5">
+              <div className="flex items-center gap-3 mb-3">
+                <Store className="h-5 w-5 text-emerald-600" />
+                <div className="font-medium">Voor verkopers</div>
+              </div>
+              <ul className="text-sm text-neutral-700 space-y-2">
+                <li>• Plaats gratis advertenties</li>
+                <li>• AI helpt bij beschrijvingen en prijzen</li>
+                <li>• Beheer je verkopen eenvoudig</li>
+                <li>• Snelle uitbetalingen</li>
+              </ul>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Partner CTA */}
+      {/* Roadmap / Tijdlijn */}
+      <section className="px-6 pb-8 md:pb-12">
+        <div className="mx-auto max-w-6xl rounded-2xl border border-neutral-200 bg-white p-6">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-semibold">Wat staat er op de planning?</h2>
+            <p className="mt-2 text-neutral-600">Onze roadmap voor de komende maanden</p>
+          </div>
+          
+          <div className="relative">
+            {/* Timeline line */}
+            <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-emerald-200 md:left-1/2 md:transform md:-translate-x-0.5"></div>
+            
+            <div className="space-y-8">
+              {[
+                {
+                  quarter: "Q4 2025",
+                  title: "Geavanceerde verzendopties",
+                  description: "Automatische verzendlabels, bulk verzending en integratie met meer vervoerders voor snellere levering.",
+                  status: "planned"
+                },
+                {
+                  quarter: "Q1 2026", 
+                  title: "AI-gedreven marktanalyse",
+                  description: "Slimme prijsvoorstellen, verkoopvoorspellingen en inzichten in markttrends om verkopers te helpen.",
+                  status: "planned"
+                },
+                {
+                  quarter: "Q2 2026",
+                  title: "Mobiele app",
+                  description: "Native iOS en Android apps voor nog eenvoudigere toegang tot Ocaso onderweg.",
+                  status: "planned"
+                },
+                {
+                  quarter: "Q3 2026",
+                  title: "Internationale uitbreiding",
+                  description: "Uitbreiding naar Nederland en Luxemburg met lokale verzendopties en taalondersteuning.",
+                  status: "planned"
+                },
+                {
+                  quarter: "Q4 2026",
+                  title: "Geautomatiseerde klantenservice",
+                  description: "AI-chatbot voor snelle hulp bij veelgestelde vragen en automatische geschillenafhandeling.",
+                  status: "planned"
+                }
+              ].map((item, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  viewport={{ once: true }}
+                  className={`relative flex items-center ${
+                    index % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'
+                  }`}
+                >
+                  {/* Timeline dot */}
+                  <div className="absolute left-6 w-4 h-4 bg-emerald-600 rounded-full border-4 border-white z-10 md:left-1/2 md:transform md:-translate-x-1/2"></div>
+                  
+                  {/* Content */}
+                  <div className={`ml-16 md:ml-0 md:w-1/2 ${
+                    index % 2 === 0 ? 'md:pr-8 md:text-right' : 'md:pl-8'
+                  }`}>
+                    <div className="bg-neutral-50 rounded-xl p-4 border border-neutral-200">
+                      <div className="text-xs font-medium text-emerald-700 bg-emerald-100 inline-block px-2 py-1 rounded-full mb-2">
+                        {item.quarter}
+                      </div>
+                      <h3 className="font-medium text-lg mb-1">{item.title}</h3>
+                      <p className="text-sm text-neutral-600">{item.description}</p>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+          
+          <div className="mt-8 text-center">
+            <p className="text-sm text-neutral-500">
+              Deze planning kan veranderen gebaseerd op feedback van onze gebruikers. 
+              <Link href="/contact" className="text-emerald-600 hover:text-emerald-700 ml-1">
+                Laat ons weten wat jij belangrijk vindt!
+              </Link>
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
       <section className="px-6 pb-16">
         <div className="mx-auto max-w-6xl overflow-hidden rounded-2xl border border-neutral-200 bg-white p-6 md:p-8">
           <div className="grid grid-cols-1 items-center gap-6 md:grid-cols-3">
             <div className="md:col-span-2">
-              <h3 className="text-2xl font-semibold">Samenwerken met Ocaso?</h3>
-              <p className="mt-2 text-neutral-700">We zoeken strategische partners in logistiek, payments en zakelijke verkoopkanalen. Laat iets van je horen — we plannen graag een kennismaking.</p>
+              <h3 className="text-2xl font-semibold">Klaar om te beginnen?</h3>
+              <p className="mt-2 text-neutral-700">Sluit je aan bij duizenden Belgen die al succesvol kopen en verkopen op Ocaso.</p>
             </div>
             <div className="md:text-right">
-              <Link href="/contact" className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-medium text-white hover:bg-emerald-700">
-                Contacteer ons <ArrowRight className="h-4 w-4" />
+              <Link href="/register" className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-medium text-white hover:bg-emerald-700">
+                Maak account <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
           </div>

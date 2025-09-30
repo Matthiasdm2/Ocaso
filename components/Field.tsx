@@ -1,4 +1,5 @@
 "use client";
+import React, { useId } from 'react';
 
 export function TextField({
   label,
@@ -7,6 +8,8 @@ export function TextField({
   type = "text",
   placeholder = "",
   required = false,
+  id,
+  name,
 }: {
   label: string;
   value: string;
@@ -14,11 +17,17 @@ export function TextField({
   type?: string;
   placeholder?: string;
   required?: boolean;
+  id?: string;
+  name?: string;
 }) {
+  const autoId = useId();
+  const idToUse = id ?? name ?? `tf-${autoId}`;
   return (
-    <label className="block">
+    <label className="block" htmlFor={idToUse}>
       <div className="text-xs text-gray-600 mb-1">{label}</div>
       <input
+        id={idToUse}
+        name={name}
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -35,16 +44,24 @@ export function TextArea({
   value,
   onChange,
   rows = 4,
+  id,
+  name,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   rows?: number;
+  id?: string;
+  name?: string;
 }) {
+  const autoId = useId();
+  const idToUse = id ?? name ?? `ta-${autoId}`;
   return (
-    <label className="block">
+    <label className="block" htmlFor={idToUse}>
       <div className="text-xs text-gray-600 mb-1">{label}</div>
       <textarea
+        id={idToUse}
+        name={name}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         rows={rows}

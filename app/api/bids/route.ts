@@ -21,5 +21,24 @@ export async function GET(req: Request) {
     return NextResponse.json({ items: [], error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ items: data ?? [] });
+  // Get unique bidder_ids
+  const bidderIds = [...new Set((data ?? []).map(bid => bid.bidder_id))];
+
+  // Fetch profiles for these bidder_ids
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("id, full_name")
+    .in("id", bidderIds);
+
+  const profileMap = new Map((profiles ?? []).map(p => [p.id, p.full_name]));
+
+  // Transform data to include bidder_name
+  const transformedData = (data ?? []).map((bid) => ({
+    amount: bid.amount,
+    created_at: bid.created_at,
+    bidder_id: bid.bidder_id,
+    bidder_name: profileMap.get(bid.bidder_id) || 'Onbekende gebruiker'
+  }));
+
+  return NextResponse.json({ items: transformedData });
 }

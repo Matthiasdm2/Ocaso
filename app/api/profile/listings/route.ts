@@ -3,9 +3,20 @@ import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
+function mapStatus(dbStatus: string | null | undefined): string {
+  const mapping: Record<string, string> = {
+    "actief": "active",
+    "gepauzeerd": "paused", 
+    "verkocht": "sold",
+    "draft": "draft"
+  };
+  return mapping[dbStatus || ""] || "active";
+}
+
 interface ListingRow {
   id: string;
   title: string | null;
+  description: string | null;
   price: number | string | null;
   images: string[] | null;
   main_photo: string | null;
@@ -14,6 +25,10 @@ interface ListingRow {
   category_id?: number | null;
   subcategory_id?: number | null;
   categories?: number[] | null; // legacy array, maybe still populated
+  state?: string | null;
+  location?: string | null;
+  allowoffers?: boolean | null;
+  status?: string | null;
 }
 
 
@@ -49,7 +64,7 @@ export async function GET(req: Request) {
 
   const { data, count, error } = await supabase
     .from("listings")
-    .select("id,title,price,images,main_photo,created_at,views,category_id,subcategory_id,categories", { count: "exact" })
+    .select("id,title,description,price,images,main_photo,created_at,views,category_id,subcategory_id,categories,state,location,allowoffers,status", { count: "exact" })
     .eq("seller_id", sellerId);
 
   if (error) {
@@ -74,17 +89,36 @@ export async function GET(req: Request) {
     if (typeof l.category_id === 'number') catIds.add(l.category_id);
     if (typeof l.subcategory_id === 'number') subIds.add(l.subcategory_id);
     if (derivedSubId) subIds.add(derivedSubId);
+    // Also add IDs from categories array
+    if (Array.isArray(l.categories)) {
+      l.categories.forEach(id => {
+        if (typeof id === 'number') {
+          if (l.categories!.indexOf(id) === 0) catIds.add(id); // first is category
+          else subIds.add(id); // others are subcategories
+        }
+      });
+    }
   }
 
   // Query category namen in één keer (inclusief subcategorieën uit dezelfde tabel)
   const allIds = Array.from(new Set([...catIds, ...subIds]));
   const nameMap: Record<number, string> = {};
   if (allIds.length > 0) {
+    // Haal hoofdcategorieën op
     const { data: catsData } = await supabase
       .from("categories")
       .select("id,name")
       .in("id", allIds);
     for (const c of catsData ?? []) {
+      nameMap[c.id as number] = c.name as string;
+    }
+
+    // Haal subcategorieën op
+    const { data: subCatsData } = await supabase
+      .from("subcategories")
+      .select("id,name")
+      .in("id", allIds);
+    for (const c of subCatsData ?? []) {
       nameMap[c.id as number] = c.name as string;
     }
   }
@@ -112,14 +146,21 @@ export async function GET(req: Request) {
     items.push({
       id: l.id,
       title: l.title ?? "",
+      description: l.description ?? "",
       price: Number(l.price ?? 0),
       imageUrl: l.main_photo ?? (Array.isArray(l.images) && l.images[0] ? l.images[0] : null),
+      images: l.images ?? [],
+      main_photo: l.main_photo ?? null,
       created_at: l.created_at,
       bids,
       highest_bid,
       views: typeof l.views === 'number' ? l.views : 0,
-      category: category_id ? nameMap[category_id] ?? null : null,
-      subcategory: subcategory_id ? nameMap[subcategory_id] ?? null : null,
+      category: category_id ? nameMap[category_id] ?? null : (Array.isArray(l.categories) && l.categories.length > 0 ? nameMap[l.categories[0]] ?? null : null),
+      subcategory: subcategory_id ? nameMap[subcategory_id] ?? null : (Array.isArray(l.categories) && l.categories.length > 1 ? nameMap[l.categories[1]] ?? null : null),
+      condition: l.state ?? null,
+      location: l.location ?? null,
+      allow_offers: l.allowoffers ?? false,
+      status: mapStatus(l.status),
     });
   }
 

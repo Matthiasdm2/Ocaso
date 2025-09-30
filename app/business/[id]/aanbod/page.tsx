@@ -61,9 +61,11 @@ export default async function BusinessFullAanbodPage({ params, searchParams }: {
         status: l.status === 'actief' ? 'active' : l.status,
       }));
       // Haal categorie counts op (zonder category filter maar met overige filters)
+      // include subcategory_id and legacy categories[] so we can resolve a category even if
+      // listings were not normalized to the category_id column yet
       let catQuery = supabase
         .from('listings')
-        .select('category_id', { count: 'exact', head: false })
+        .select('category_id,subcategory_id,categories', { count: 'exact', head: false })
         .eq('seller_id', businessId);
       if (qText) catQuery = catQuery.ilike('title', `%${qText}%`);
       if (minPrice != null && !Number.isNaN(minPrice)) catQuery = catQuery.gte('price', minPrice);
@@ -71,10 +73,20 @@ export default async function BusinessFullAanbodPage({ params, searchParams }: {
       const catRes = await catQuery;
       const countMap = new Map<number, number>();
       if (catRes.data) {
-        type Row = { category_id: number | null };
+        type Row = { category_id: number | null; subcategory_id?: number | null; categories?: (number|string)[] | null };
         for (const r of catRes.data as unknown as Row[]) {
-          if (r.category_id == null) continue;
-          countMap.set(r.category_id, (countMap.get(r.category_id) || 0) + 1);
+          // Prefer explicit category_id, then subcategory_id, then legacy categories array
+          let resolved: number | undefined = undefined;
+          if (r.category_id != null) resolved = r.category_id;
+          else if (r.subcategory_id != null) resolved = r.subcategory_id;
+          else if (Array.isArray(r.categories) && r.categories.length > 0) {
+            const legacy = (r.categories as (string|number)[])
+              .map(v => (typeof v === 'number' ? v : Number(v)))
+              .filter(n => typeof n === 'number' && !Number.isNaN(n)) as number[];
+            if (legacy.length) resolved = legacy[0];
+          }
+          if (resolved == null) continue;
+          countMap.set(resolved, (countMap.get(resolved) || 0) + 1);
         }
       }
       if (countMap.size) {
@@ -126,35 +138,37 @@ export default async function BusinessFullAanbodPage({ params, searchParams }: {
           </header>
           <BusinessAanbodFilters initial={{ q: qText, min: minPrice, max: maxPrice, sort }} />
           <div className="md:grid md:grid-cols-12 md:gap-8 lg:gap-10">
-            {categories.length > 0 && (
             <aside className="hidden md:block md:col-span-3 lg:col-span-2">
               <div className="sticky top-28 space-y-3">
                 <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-500">Categorieën</h2>
-                <ul className="space-y-1">
-                  <li>
-                    {(() => { const p = new URLSearchParams(); Object.entries(searchParams).forEach(([k,v])=> { if (typeof v==='string') p.set(k,v); }); p.delete('cat'); const href='?' + p.toString(); return (
-                      <Link scroll={false} href={href} className={!activeCatId ? 'block px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-sm font-medium' : 'block px-3 py-1.5 rounded-lg text-sm text-gray-700 hover:bg-neutral-100'}>
-                        Alle ({Array.from(categories).reduce((s,c)=> s + c.count, 0)})
-                      </Link>
-                    ); })()}
-                  </li>
-                  {categories.map(c => {
-                    const href = (() => { const p = new URLSearchParams(); Object.entries(searchParams).forEach(([k,v])=> { if (typeof v==='string') p.set(k,v); }); p.set('cat', String(c.id)); return '?' + p.toString(); })();
-                    const active = c.id === activeCatId;
-                    return (
-                      <li key={c.id}>
-                        <Link scroll={false} href={href} className={active ? 'flex items-center justify-between px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-sm font-medium border border-emerald-200' : 'flex items-center justify-between px-3 py-1.5 rounded-lg text-sm text-gray-700 hover:bg-neutral-100'}>
-                          <span className="truncate">{c.name}</span>
-                          <span className="ml-2 text-[11px] px-1.5 py-0.5 rounded bg-neutral-200/60 text-neutral-700 font-medium">{c.count}</span>
+                {categories.length > 0 ? (
+                  <ul className="space-y-1">
+                    <li>
+                      {(() => { const p = new URLSearchParams(); Object.entries(searchParams).forEach(([k,v])=> { if (typeof v==='string') p.set(k,v); }); p.delete('cat'); const href='?' + p.toString(); return (
+                        <Link scroll={false} href={href} className={!activeCatId ? 'block px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-sm font-medium' : 'block px-3 py-1.5 rounded-lg text-sm text-gray-700 hover:bg-neutral-100'}>
+                          Alle ({Array.from(categories).reduce((s,c)=> s + c.count, 0)})
                         </Link>
-                      </li>
-                    );
-                  })}
-                </ul>
+                      ); })()}
+                    </li>
+                    {categories.map(c => {
+                      const href = (() => { const p = new URLSearchParams(); Object.entries(searchParams).forEach(([k,v])=> { if (typeof v==='string') p.set(k,v); }); p.set('cat', String(c.id)); return '?' + p.toString(); })();
+                      const active = c.id === activeCatId;
+                      return (
+                        <li key={c.id}>
+                          <Link scroll={false} href={href} className={active ? 'flex items-center justify-between px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-sm font-medium border border-emerald-200' : 'flex items-center justify-between px-3 py-1.5 rounded-lg text-sm text-gray-700 hover:bg-neutral-100'}>
+                            <span className="truncate">{c.name}</span>
+                            <span className="ml-2 text-[11px] px-1.5 py-0.5 rounded bg-neutral-200/60 text-neutral-700 font-medium">{c.count}</span>
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : (
+                  <div className="p-4 border rounded-lg bg-white text-sm text-gray-600">Geen categorieën gevonden voor dit aanbod.</div>
+                )}
               </div>
             </aside>
-            )}
-            <div className={categories.length ? 'md:col-span-9 lg:col-span-10' : ''}>
+            <div className="md:col-span-9 lg:col-span-10">
               {listings.length > 0 ? (
                 <ul className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3 md:gap-4">
                   {listings.map(l => {
@@ -167,7 +181,7 @@ export default async function BusinessFullAanbodPage({ params, searchParams }: {
                       views: l.views ?? 0,
                       favorites: l.favorites != null ? l.favorites : (l.favorites_count != null ? l.favorites_count : 0),
                     };
-                    return <li key={l.id}><ListingCard compact listing={listingForCard} /></li>;
+                    return <li key={l.id}><ListingCard listing={listingForCard} /></li>;
                   })}
                 </ul>
               ) : (

@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useState } from "react";
 
 import { useProfile } from "@/lib/useProfile";
@@ -9,6 +8,7 @@ interface Props {
   listingId?: string | number | null;
   price?: number;
   sellerId?: string | number | null;
+  sellerKycCompleted?: boolean;
   allowOffers?: boolean;
   min_bid?: number;
 }
@@ -17,6 +17,7 @@ export default function ClientActions({
   listingId,
   price,
   sellerId,
+  sellerKycCompleted,
   allowOffers,
   min_bid,
 }: Props) {
@@ -28,6 +29,99 @@ export default function ClientActions({
   // Haal de ingelogde gebruiker op
   const { profile, loading } = useProfile();
   const [contactLoading, setContactLoading] = useState(false);
+  const [payBusy, setPayBusy] = useState(false);
+  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
+  const [shippingMode, setShippingMode] = useState<"pickup" | "ship">("pickup");
+  const [contactName, setContactName] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
+  const [addrLine1, setAddrLine1] = useState("");
+  const [addrPostal, setAddrPostal] = useState("");
+  const [addrCity, setAddrCity] = useState("");
+  const [addrCountry, setAddrCountry] = useState("BE");
+
+  type ShippingPayload = {
+    mode: "pickup" | "ship";
+    contact?: { name: string; email: string; phone?: string };
+    address?: { line1: string; postal_code: string; city: string; country: string };
+  };
+
+  const proceedToPayment = useCallback(async () => {
+    if (!listingId) return;
+    if (shippingMode === "ship") {
+      if (!contactName || !contactEmail || !addrLine1 || !addrPostal || !addrCity || !addrCountry) {
+        alert("Vul alle verzendgegevens in (naam, e-mail, adres, postcode, stad, land)");
+        return;
+      }
+    }
+    try {
+      setPayBusy(true);
+      const payload: { listingId: string; shipping: ShippingPayload } = {
+        listingId: String(listingId),
+        shipping: { mode: shippingMode },
+      };
+      if (shippingMode === "ship") {
+        payload.shipping.contact = { name: contactName, email: contactEmail, phone: contactPhone };
+        payload.shipping.address = { line1: addrLine1, postal_code: addrPostal, city: addrCity, country: addrCountry };
+      }
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (res.status === 401) { window.location.href = "/login"; return; }
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || "Checkout mislukt");
+      }
+      const data = await res.json();
+      if (!data?.url) throw new Error("Geen redirect URL ontvangen");
+      window.location.href = data.url;
+    } catch (e) {
+      alert((e as Error).message || "Kan betaalpagina niet openen");
+    } finally {
+      setPayBusy(false);
+    }
+  }, [listingId, shippingMode, contactName, contactEmail, contactPhone, addrLine1, addrPostal, addrCity, addrCountry]);
+
+  // Vraag betaalverzoek via chat als er geen Stripe is
+  const requestPaymentViaChat = useCallback(async () => {
+    if (!sellerId || !listingId) return;
+    try {
+      setPayBusy(true);
+      // Zorg dat user ingelogd is
+      const { createClient } = await import("@/lib/supabaseClient");
+      const supa = createClient();
+      const { data: { session } } = await supa.auth.getSession();
+      const token = session?.access_token;
+      if (!token) { window.location.href = "/login"; return; }
+
+      // Vraag server om een betalingsverzoek bericht te sturen
+      // Bij ophalen (pickup) geen label/extra return in chat
+      const r = await fetch('/api/payments/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ listingId: String(listingId), shipping: { mode: shippingMode } }),
+      });
+      const d = await r.json();
+      if (!r.ok || !d?.ok) {
+        const detail = d?.detail ? `: ${String(d.detail)}` : '';
+        throw new Error((d?.error || 'Kon verzoek niet versturen') + detail);
+      }
+      const conversationId: string = d.conversationId;
+
+      // Open de chat dock direct
+      try {
+        window.dispatchEvent(new CustomEvent('ocaso:open-chat-dock', { detail: { conversationId } }));
+      } catch { /* ignore */ }
+
+      setShowCheckoutModal(false);
+    } catch (e) {
+      alert((e as Error)?.message || 'Kon geen betaalverzoek sturen');
+    } finally {
+      setPayBusy(false);
+    }
+  }, [sellerId, listingId, shippingMode]);
   // Haal het Supabase access token op
   async function getAccessToken() {
     const { createClient } = await import("@/lib/supabaseClient");
@@ -38,13 +132,15 @@ export default function ClientActions({
   return (
     <>
       <div className="flex flex-col sm:flex-row gap-2">
-        <Link
-          href={listingId ? `/checkout?listing=${listingId}` : "#"}
-          className="flex-1 rounded-full bg-primary text-black px-3 py-1.5 text-sm font-semibold text-center border border-primary/30 hover:bg-primary/80 transition"
+        <button
+          type="button"
+          disabled={payBusy || !listingId}
+          onClick={() => setShowCheckoutModal(true)}
+          className="flex-1 rounded-full bg-primary text-black px-3 py-1.5 text-sm font-semibold text-center border border-primary/30 hover:bg-primary/80 transition disabled:opacity-60 disabled:cursor-not-allowed"
           aria-label="Koop nu"
         >
-          Koop nu — {typeof price === "number" ? new Intl.NumberFormat("nl-BE", { style: "currency", currency: "EUR" }).format(price) : "—"}
-        </Link>
+          {payBusy ? "Bezig…" : `Koop nu — ${typeof price === "number" ? new Intl.NumberFormat("nl-BE", { style: "currency", currency: "EUR" }).format(price) : "—"}`}
+        </button>
 
         <button
           type="button"
@@ -212,6 +308,98 @@ export default function ClientActions({
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {showCheckoutModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-lg rounded-2xl bg-white p-5 shadow-xl">
+            <h4 className="text-lg font-semibold">Kies leveringsmethode</h4>
+            <div className="mt-4 space-y-2">
+              <label className="flex items-center gap-3">
+                <input
+                  type="radio"
+                  name="shipmode"
+                  value="pickup"
+                  checked={shippingMode === "pickup"}
+                  onChange={() => setShippingMode("pickup")}
+                />
+                <span>Afhalen</span>
+              </label>
+              <label className="flex items-center gap-3">
+                <input
+                  type="radio"
+                  name="shipmode"
+                  value="ship"
+                  checked={shippingMode === "ship"}
+                  onChange={() => setShippingMode("ship")}
+                />
+                <span>Verzenden</span>
+              </label>
+            </div>
+
+            {shippingMode === "ship" && (
+              <div className="mt-6 grid grid-cols-1 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label htmlFor="ship-name" className="block text-sm text-gray-700">Naam</label>
+                    <input id="ship-name" name="ship_name" className="mt-1 w-full rounded-lg border px-3 py-2" value={contactName} onChange={(e) => setContactName(e.target.value)} />
+                  </div>
+                  <div>
+                    <label htmlFor="ship-email" className="block text-sm text-gray-700">E-mail</label>
+                    <input id="ship-email" name="ship_email" type="email" className="mt-1 w-full rounded-lg border px-3 py-2" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label htmlFor="ship-phone" className="block text-sm text-gray-700">Telefoon</label>
+                    <input id="ship-phone" name="ship_phone" className="mt-1 w-full rounded-lg border px-3 py-2" value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} />
+                  </div>
+                </div>
+                <div>
+                  <label htmlFor="ship-line1" className="block text-sm text-gray-700">Adres (straat + nr.)</label>
+                  <input id="ship-line1" name="ship_line1" className="mt-1 w-full rounded-lg border px-3 py-2" value={addrLine1} onChange={(e) => setAddrLine1(e.target.value)} />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label htmlFor="ship-postal" className="block text-sm text-gray-700">Postcode</label>
+                    <input id="ship-postal" name="ship_postal" className="mt-1 w-full rounded-lg border px-3 py-2" value={addrPostal} onChange={(e) => setAddrPostal(e.target.value)} />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label htmlFor="ship-city" className="block text-sm text-gray-700">Gemeente/Stad</label>
+                    <input id="ship-city" name="ship_city" className="mt-1 w-full rounded-lg border px-3 py-2" value={addrCity} onChange={(e) => setAddrCity(e.target.value)} />
+                  </div>
+                </div>
+                <div>
+                  <label htmlFor="ship-country" className="block text-sm text-gray-700">Land</label>
+                  <select id="ship-country" name="ship_country" className="mt-1 w-full rounded-lg border px-3 py-2" value={addrCountry} onChange={(e) => setAddrCountry(e.target.value)}>
+                    <option value="BE">België</option>
+                    <option value="NL">Nederland</option>
+                    <option value="FR">Frankrijk</option>
+                    <option value="DE">Duitsland</option>
+                  </select>
+                </div>
+              </div>
+            )}
+
+            <div className="mt-6 flex gap-2">
+              <button
+                type="button"
+                className="rounded-lg border px-4 py-2"
+                onClick={() => setShowCheckoutModal(false)}
+              >
+                Annuleren
+              </button>
+              <button
+                type="button"
+                className="ml-auto rounded-lg bg-primary text-black px-4 py-2 font-medium hover:opacity-90 disabled:opacity-60"
+                disabled={payBusy}
+                onClick={sellerKycCompleted ? proceedToPayment : requestPaymentViaChat}
+              >
+                {payBusy ? "Even geduld…" : (sellerKycCompleted ? "Ga naar betalen" : "Stuur betaalverzoek")}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </>

@@ -2,7 +2,7 @@
 # https://supabase.com/docs/guides/local-development/cli/config
 # A string used to distinguish different Supabase projects on the same host. Defaults to the
 # working directory name when running `supabase init`.
-project_id = "Ocaso_Frontend_versie_1_"
+project_id = "Ocaso_Versie_4_kopie_14_-_github_push_ko"
 
 [api]
 enabled = true
@@ -20,6 +20,9 @@ max_rows = 1000
 [api.tls]
 # Enable HTTPS endpoints locally using a self-signed certificate.
 enabled = false
+# Paths to self-signed certificate pair.
+# cert_path = "../certs/my-cert.pem"
+# key_path = "../certs/my-key.pem"
 
 [db]
 # Port to use for the local database URL.
@@ -303,13 +306,14 @@ enabled = false
 
 [edge_runtime]
 enabled = true
-# Configure one of the supported request policies: `oneshot`, `per_worker`.
-# Use `oneshot` for hot reload, or `per_worker` for load testing.
-policy = "oneshot"
+# Supported request policies: `oneshot`, `per_worker`.
+# `per_worker` (default) — enables hot reload during local development.
+# `oneshot` — fallback mode if hot reload causes issues (e.g. in large repos or with symlinks).
+policy = "per_worker"
 # Port to attach the Chrome inspector for debugging edge functions.
 inspector_port = 8083
 # The Deno major version to use.
-deno_version = 1
+deno_version = 2
 
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"

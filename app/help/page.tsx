@@ -41,8 +41,18 @@ export default function HelpPage() {
         faqs: [
           {
             q: "Hoe werkt betalen met escrow?",
-            a: "Bij escrow wordt je betaling veilig vastgezet tot je de levering bevestigt. Pas daarna ontvangt de verkoper het geld. Bij een probleem start je eenvoudig een dispute vanuit je bestelling.",
+            a: "Bij escrow wordt je betaling veilig vastgezet tot je de levering bevestigt. Pas daarna ontvangt de verkoper het geld. Bij een probleem start je eenvoudig een dispute vanuit je bestelling. Dit beschermt zowel koper als verkoper.",
             icon: CreditCard,
+          },
+          {
+            q: "Kan ik betalen met Bancontact of Payconiq?",
+            a: "Ja, Ocaso ondersteunt populaire Belgische betaalmethoden zoals Bancontact, Payconiq en iDEAL. Je kunt ook betalen met creditcard of SEPA overschrijving.",
+            icon: CreditCard,
+          },
+          {
+            q: "Kan ik producten ook afhalen bij de verkoper?",
+            a: "Absoluut! Naast verzending kun je vaak kiezen voor afhalen bij de verkoper. Dit is sneller, goedkoper en beter voor het milieu. Bekijk de productdetails voor afhaalopties.",
+            icon: Store,
           },
           {
             q: "Wanneer ontvang ik mijn tracking?",
@@ -63,7 +73,12 @@ export default function HelpPage() {
         faqs: [
           {
             q: "Hoe plaats ik sneller een zoekertje?",
-            a: "Upload een foto; onze AI genereert automatisch titel, beschrijving en een prijsvoorstel. Je kunt dit altijd nog aanpassen.",
+            a: "Upload een foto; onze AI genereert automatisch titel, beschrijving en een prijsvoorstel. Je kunt dit altijd nog aanpassen voordat je publiceert.",
+            icon: CheckCircle2,
+          },
+          {
+            q: "Kan ik meerdere foto's uploaden?",
+            a: "Ja, je kunt tot 10 foto's per advertentie uploaden. Goede foto's vergroten je verkoopkans aanzienlijk. Sleep eenvoudig meerdere afbeeldingen tegelijk.",
             icon: CheckCircle2,
           },
           {
@@ -146,22 +161,22 @@ export default function HelpPage() {
       },
       {
         id: "business",
-        title: "Zakelijke verkopers & API",
+        title: "Zakelijke verkopers",
         icon: Globe2,
         faqs: [
           {
-            q: "Hoe krijg ik toegang tot de Ocaso API?",
-            a: "Na zakelijke verificatie kun je API‑toegang aanvragen via het partnerportaal. Je krijgt sandbox‑keys en documentatie.",
+            q: "Kan ik als bedrijf verkopen op Ocaso?",
+            a: "Ja, bedrijven kunnen zich registreren als verkoper. Je hebt een zakelijk account nodig met verificatie van je ondernemingsnummer.",
             icon: Globe2,
           },
           {
-            q: "Ondersteunen jullie bulk‑uploads?",
-            a: "Ja, via CSV/Excel en via API. Ga naar ‘Bulk upload’ in je storefront om een template te downloaden.",
+            q: "Ondersteunen jullie bulk‑uploads voor bedrijven?",
+            a: "Ja, zakelijke verkopers kunnen meerdere producten tegelijk uploaden via CSV import. Ga naar 'Bulk upload' in je verkopersdashboard.",
             icon: Store,
           },
           {
             q: "Welke fees gelden voor zakelijke accounts?",
-            a: "Transparant model: platformfee per transactie en optionele abonnementen voor extra features. Zie het tarievenoverzicht in je account.",
+            a: "Transparant model: platformfee per succesvolle verkoop en optionele abonnementen voor extra zichtbaarheid. Zie het tarievenoverzicht in je account.",
             icon: CreditCard,
           },
         ],
@@ -192,7 +207,7 @@ export default function HelpPage() {
               Help & Q&A
             </div>
             <h1 className="mt-3 text-4xl font-semibold tracking-tight md:text-5xl">Hoe kunnen we je helpen?</h1>
-            <p className="mt-3 text-lg text-neutral-700 md:text-xl">Vind snel antwoorden of neem contact op met ons supportteam. Veilig, transparant en snel.</p>
+            <p className="mt-3 text-lg text-neutral-700 md:text-xl">Vind snel antwoorden op veelgestelde vragen over kopen, verkopen en verzending op Ocaso.</p>
 
             {/* Search */}
             <div className="mt-6 flex items-center gap-2 rounded-xl border border-neutral-200 bg-white p-2">

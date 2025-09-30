@@ -1,9 +1,8 @@
-import pkg from 'exceljs';
+import { Workbook } from 'exceljs';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import vm from 'vm';
-const { Workbook } = pkg;
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const categoriesFile = path.join(__dirname, '..', 'lib', 'categories.ts');
 

@@ -129,8 +129,8 @@ export default function HomeCategoryRibbons() {
                   data-row={ri}
                 >
                   <Link
-                    // Link nu direct naar marketplace met category filter (slug)
-                    href={`/marketplace?category=${encodeURIComponent(c.slug)}`}
+                    // Link nu direct naar marketplace met category filter (naam)
+                    href={`/marketplace?category=${encodeURIComponent(c.name)}`}
                     className="group flex items-center gap-3 rounded-2xl border bg-white/70 backdrop-blur-sm px-3 py-2.5 hover:bg-white transition shadow-sm hover:shadow focus:outline-none focus:ring-2 focus:ring-primary/50"
                   >
                     <CategoryAvatar name={c.name} slug={c.slug} />

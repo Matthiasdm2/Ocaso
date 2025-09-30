@@ -1,5 +1,6 @@
 "use client";
 import Image from 'next/image';
+import QRCode from 'qrcode';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import Avatar from '@/components/Avatar';
@@ -8,9 +9,32 @@ import { useProfile } from '@/lib/useProfile';
 // Chat attachments bucket (must exist as public in Supabase). Override via NEXT_PUBLIC_CHAT_BUCKET
 const CHAT_BUCKET = process.env.NEXT_PUBLIC_CHAT_BUCKET || 'chat-attachments';
 
-type Attachment = { id?: string; url: string; content_type: string | null; name?: string };
-type Msg = { id: string; from: "me" | "them"; text: string; at: string; edited_at?: string | null; deleted_at?: string | null; attachments?: Attachment[]; read?: boolean; readAt?: string | null };
-interface ApiMessage { id: string; sender_id: string; body: string; created_at: string; edited_at?: string | null; deleted_at?: string | null; attachments?: Attachment[]; read?: boolean }
+// Supports both legacy (url/content_type) and new schema (storage_path/mime_type/size_bytes)
+type NormalizedAttachment = {
+  id?: string;
+  url: string; // guaranteed for rendering
+  content_type: string | null;
+  name?: string;
+  storage_path?: string | null;
+  mime_type?: string | null;
+  size_bytes?: number | null;
+};
+type Msg = { id: string; from: "me" | "them"; text: string; at: string; edited_at?: string | null; deleted_at?: string | null; attachments?: NormalizedAttachment[]; read?: boolean; readAt?: string | null };
+interface ApiMessage { id: string; sender_id: string; body: string; created_at: string; edited_at?: string | null; deleted_at?: string | null; attachments?: unknown[]; read?: boolean }
+
+// Helper function to extract IBAN from EPC attachment name
+const extractIbanFromAttachment = (att: NormalizedAttachment): string | null => {
+  const name = att.name || '';
+  const match = name.match(/epc[-_](?:qr-)?([A-Z]{2}\d{14}|[A-Z]{2}\d{2}\s*\d{4}\s*\d{4}\s*\d{4}\s*\d{2,4})(?:_EUR[\d.]+)?\.png$/i);
+  return match ? match[1].replace(/\s+/g, '') : null;
+};
+
+// Helper function to extract amount from EPC attachment name
+const extractAmountFromAttachment = (att: NormalizedAttachment): string | null => {
+  const name = att.name || '';
+  const match = name.match(/epc[-_](?:qr-)?[A-Z0-9]+_(EUR[\d.]+)\.png$/i);
+  return match ? match[1] : null;
+};
 
 export default function ChatDock({
   chatId,
@@ -47,7 +71,7 @@ export default function ChatDock({
   const [listingTitle, setListingTitle] = useState<string | null>(null);
   const [listingImage, setListingImage] = useState<string | null>(null);
   const [bubbleUnread, setBubbleUnread] = useState(0);
-  const [draftAttachments, setDraftAttachments] = useState<Attachment[]>([]);
+  const [draftAttachments, setDraftAttachments] = useState<NormalizedAttachment[]>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadStatus, setUploadStatus] = useState<{ current?: string; processed: number; total: number; failed: { name: string; reason: string }[] }>({ processed: 0, total: 0, failed: [] });
@@ -55,6 +79,51 @@ export default function ChatDock({
   const boxRef = useRef<HTMLDivElement | null>(null);
   const markPending = useRef<NodeJS.Timeout | null>(null);
   const [peer, setPeer] = useState<{ id: string; full_name: string | null; avatar_url: string | null } | null>(null);
+  const [isSeller, setIsSeller] = useState(false);
+  // EPC QR local state (seller only)
+  const [epcOpen, setEpcOpen] = useState(false);
+  const [epcAmount, setEpcAmount] = useState('');
+  const [epcDesc, setEpcDesc] = useState('');
+  const [epcBusy, setEpcBusy] = useState(false);
+  const [epcError, setEpcError] = useState<string | null>(null);
+  const [payBusy, setPayBusy] = useState(false);
+  const [myIban, setMyIban] = useState<string>('');
+  const [myName, setMyName] = useState<string>('');
+  // Phrase used to detect seller acceptance messages (buyer should see pay CTA below)
+  const acceptPhrase = 'Uw bod werd aanvaard';
+  // legacy message token (kept but prefixed with _ to avoid unused-var lint error)
+  const _PAYMENT_TOKEN = '[ocaso:payment-request]';
+  // mark as used to satisfy lint rules that disallow assigned-but-unused even if prefixed
+  void _PAYMENT_TOKEN;
+
+  // Normalize incoming attachments to always have a usable public URL
+  const normalizeAttachments = useCallback((atts: unknown): NormalizedAttachment[] => {
+    if (!Array.isArray(atts)) return [];
+    const toPublicUrl = (sp?: string | null): string | undefined => {
+      if (!sp) return undefined;
+      try {
+        const { data } = supabase.storage.from(CHAT_BUCKET).getPublicUrl(sp);
+        return data?.publicUrl || undefined;
+      } catch {
+        return undefined;
+      }
+    };
+    return atts.map((a) => {
+      const obj = a as Record<string, unknown>;
+      const storagePath = typeof obj.storage_path === 'string'
+        ? (obj.storage_path as string)
+        : (typeof obj.path === 'string' ? (obj.path as string) : null);
+      const url: string | undefined = typeof obj.url === 'string' ? (obj.url as string) : toPublicUrl(storagePath);
+      const contentType: string | null = typeof obj.content_type === 'string'
+        ? (obj.content_type as string)
+        : (typeof obj.mime_type === 'string' ? (obj.mime_type as string) : null);
+      const name: string | undefined = typeof obj.name === 'string' ? (obj.name as string) : (storagePath ? storagePath.split('/').pop() : undefined);
+      const id: string | undefined = typeof obj.id === 'string' ? (obj.id as string) : undefined;
+      const mime: string | null = typeof obj.mime_type === 'string' ? (obj.mime_type as string) : null;
+      const size: number | null = typeof obj.size_bytes === 'number' ? (obj.size_bytes as number) : null;
+      return { id, url: url as string, content_type: contentType, name, storage_path: storagePath, mime_type: mime, size_bytes: size } as NormalizedAttachment;
+    }).filter(att => !!att.url) as NormalizedAttachment[];
+  }, [supabase]);
 
   const markRead = useCallback(() => {
     if (!profile) return;
@@ -107,7 +176,7 @@ export default function ChatDock({
           setListingImage(null);
         }
   const peerLast = (typeof d === 'object' && d && 'peer_last_read_at' in d) ? (d as { peer_last_read_at?: string | null }).peer_last_read_at || null : null;
-        setMessages(arr.map((m) => {
+    setMessages(arr.map((m) => {
           const mine = profile && m.sender_id === profile.id;
             const read = !!m.read;
             return {
@@ -117,7 +186,8 @@ export default function ChatDock({
               at: m.created_at,
               edited_at: m.edited_at,
               deleted_at: m.deleted_at,
-              attachments: m.attachments || [],
+      // normalize to ensure url is present for rendering
+              attachments: normalizeAttachments(m.attachments || []),
               read,
               readAt: read && peerLast ? peerLast : null,
             } as Msg;
@@ -128,9 +198,55 @@ export default function ChatDock({
     } finally {
       setLoaded(true);
     }
-  }, [chatId, profile, supabase]);
+  }, [chatId, profile, supabase, normalizeAttachments]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Determine if current user is the seller of the listing
+  useEffect(() => {
+    if (!profile?.id || !listingId) return;
+    (async () => {
+      try {
+        const { data: listing } = await supabase
+          .from('listings')
+          .select('id,seller_id,price')
+          .eq('id', listingId)
+          .maybeSingle();
+        if (listing && listing.seller_id === profile.id) setIsSeller(true);
+        else setIsSeller(false);
+        if (listing && 'price' in listing) {
+          const raw = (listing as { price?: unknown }).price as unknown;
+          const num = typeof raw === 'number' ? raw : Number(raw || 0);
+          const val = Number.isFinite(num) ? num : null;
+          if (!epcAmount && val && val > 0) {
+            setEpcAmount(val.toFixed(2));
+          }
+        }
+      } catch {
+        setIsSeller(false);
+      }
+    })();
+  }, [supabase, profile?.id, listingId, epcAmount]);
+
+  // When opening EPC panel, ensure we have own bank details
+  useEffect(() => {
+    if (!epcOpen) return;
+    if (myIban && myName) return;
+    (async () => {
+      try {
+        if (!profile?.id) return;
+        const { data: p } = await supabase
+          .from('profiles')
+          .select('full_name, bank')
+          .eq('id', profile.id)
+          .maybeSingle();
+        const fullName = (p as { full_name?: string | null })?.full_name || 'Verkoper';
+        const bank = (p as { bank?: { iban?: string; bic?: string } | null })?.bank || null;
+        setMyName(fullName || 'Verkoper');
+        setMyIban((bank?.iban || '').trim());
+      } catch { /* ignore */ }
+    })();
+  }, [epcOpen, supabase, profile?.id, myIban, myName]);
 
   // Fetch peer (other participant) profile for avatar/name
   useEffect(() => {
@@ -229,12 +345,27 @@ export default function ChatDock({
         // Fetch attachments for this new message (if any)
         (async () => {
           try {
-            const { data: atts } = await supabase
+            let atts: unknown[] | null = null;
+            let errMsg: string | null = null;
+            const res1 = await supabase
               .from('message_attachments')
-              .select('id,url,content_type')
+              .select('id,url,content_type,storage_path,mime_type,size_bytes')
               .eq('message_id', raw.id);
+            if (res1.error) {
+              errMsg = res1.error.message;
+            } else {
+              atts = res1.data as unknown[] | null;
+            }
+            if ((!atts || !atts.length) && errMsg) {
+              const res2 = await supabase
+                .from('message_attachments')
+                .select('id,url,content_type')
+                .eq('message_id', raw.id);
+              if (!res2.error) atts = res2.data as unknown[] | null;
+            }
             if (atts && atts.length) {
-              setMessages(prev => prev.map(m => m.id === raw.id ? { ...m, attachments: atts.map(a => ({ id: a.id, url: a.url, content_type: (a as { content_type?: string | null }).content_type || null })) } : m));
+              const normalized = normalizeAttachments(atts);
+              setMessages(prev => prev.map(m => m.id === raw.id ? { ...m, attachments: normalized } : m));
             }
           } catch {/* ignore */}
         })();
@@ -245,7 +376,7 @@ export default function ChatDock({
       })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [supabase, chatId, profile, minimized]);
+  }, [supabase, chatId, profile, minimized, normalizeAttachments]);
 
   // Realtime read receipts (other participant)
   useEffect(() => {
@@ -276,8 +407,16 @@ export default function ChatDock({
     const t = text.trim();
     if (!t && draftAttachments.length === 0) return;
     // Snapshot draft attachments before clearing so we can fallback if server fails
-    const draftSnapshot = [...draftAttachments];
-    const attachmentsPayload = draftSnapshot.map(a => ({ url: a.url, content_type: a.content_type }));
+  const draftSnapshot = [...draftAttachments];
+  // Prefer new schema fields; keep url for legacy/server fallback
+  const attachmentsPayload = draftSnapshot.map(a => ({
+    url: a.url,
+    content_type: a.content_type,
+    name: a.name,
+    storage_path: a.storage_path ?? undefined,
+    mime_type: a.mime_type ?? a.content_type ?? undefined,
+    size_bytes: typeof a.size_bytes === 'number' ? a.size_bytes : undefined,
+  }));
     setText("");
     setDraftAttachments([]);
     setSendError(null);
@@ -298,22 +437,27 @@ export default function ChatDock({
       if (m) {
         // Fallback: if server returned no attachments but we had drafted some and an error occurred, attach them locally (optimistic)
     const serverAtts = m.attachments || [];
-    const finalAtts = (serverAtts.length === 0 && draftSnapshot.length > 0 && attErr) ? draftSnapshot : serverAtts;
-        setMessages(prev => prev.some(p => p.id === m.id) ? prev : [...prev, { id: m.id, from: 'me', text: m.body, at: m.created_at, edited_at: m.edited_at, deleted_at: m.deleted_at, attachments: finalAtts, read: false }]);
+    const finalAttsNorm = normalizeAttachments((serverAtts.length === 0 && draftSnapshot.length > 0 && attErr) ? draftSnapshot : serverAtts);
+        setMessages(prev => prev.some(p => p.id === m.id) ? prev : [...prev, { id: m.id, from: 'me', text: m.body, at: m.created_at, edited_at: m.edited_at, deleted_at: m.deleted_at, attachments: finalAttsNorm, read: false }]);
     if (attErr) setSendError(`Bijlagen lokaal toegevoegd (server fout): ${attErr}`);
       }
       markRead();
       // Force reload to catch any missed messages
       load();
-    } else if (process.env.NODE_ENV !== 'production') {
+    } else {
+      // Show server-provided error messages to the user (always, not only in dev)
+      // d may be undefined if parsing failed
       // eslint-disable-next-line no-console
-      console.debug('Send zonder message object', d);
-      if (typeof d === 'object' && d && 'error' in d) {
-        const err = (d as { error?: string; hint?: string }).error;
+      console.debug('Send response without message object', d, 'status', r.status);
+      if (d && typeof d === 'object' && 'error' in d) {
+        const err = (d as { error?: string; detail?: string; hint?: string }).error;
+        const detail = (d as { error?: string; detail?: string }).detail;
         const hint = (d as { error?: string; hint?: string }).hint;
-        setSendError(hint ? `${err}: ${hint}` : err || 'Onbekende fout');
+        setSendError(detail ? `${err}: ${detail}` : hint ? `${err}: ${hint}` : (err || `Onbekende fout (HTTP ${r.status})`));
       } else if (!r.ok) {
         setSendError(`HTTP ${r.status}`);
+      } else {
+        setSendError('Onbekende fout bij verzenden');
       }
     }
   };
@@ -371,7 +515,14 @@ export default function ChatDock({
           } else if (data) {
             const { data: pub } = supabase.storage.from(CHAT_BUCKET).getPublicUrl(data.path);
             if (pub?.publicUrl) {
-              setDraftAttachments(prev => [...prev, { url: pub.publicUrl, content_type: file.type || null, name: file.name }]);
+              setDraftAttachments(prev => [...prev, {
+                url: pub.publicUrl,
+                content_type: file.type || null,
+                name: file.name,
+                storage_path: data.path,
+                mime_type: file.type || null,
+                size_bytes: file.size || undefined,
+              }]);
             } else {
               setUploadStatus(s => ({ ...s, failed: [...s.failed, { name: file.name, reason: 'Publieke URL ontbreekt' }] }));
               setUploadError('Upload mislukt voor sommige bestanden');
@@ -389,6 +540,109 @@ export default function ChatDock({
       setUploadStatus(s => ({ ...s, current: undefined }));
       e.target.value = '';
     })();
+  };
+
+  // Generate EPC QR and attach as draft (uploads to storage first)
+  const generateAndAttachEpc = async () => {
+    setEpcError(null);
+    if (!isSeller) return;
+    const cleanIban = (myIban || '').replace(/\s+/g, '').toUpperCase();
+    const cleanBic = ''; // BIC optioneel voor Belgische betalingen
+    const sanitize = (v: string, max = 70) =>
+      v
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^\x20-\x7E]/g, '')
+        .slice(0, max);
+    if (!cleanIban) {
+      setEpcError('Vul eerst je IBAN in bij je profiel.');
+      return;
+    }
+    const amt = parseFloat((epcAmount || '').replace(',', '.'));
+    const amountLine = isFinite(amt) && amt > 0 ? `EUR${amt.toFixed(2)}` : '';
+    const rem = sanitize((epcDesc || `Ocaso ${listingId || ''}`), 35);
+    const lines = [
+      'BCD', '001', '1', 'SCT',
+      cleanBic || '',
+      sanitize((myName || 'Verkoper'), 70),
+      cleanIban,
+      amountLine,
+      '', // Purpose: empty for maximum compatibility
+      rem,
+    ];
+    const epc = lines.join('\n') + '\n';
+    console.log('EPC QR data:', epc);
+
+    // For EPC QR codes, the qrcode library expects a string and handles encoding.
+    // Our sanitize function already strips diacritics and non-ASCII chars.
+    setEpcBusy(true);
+    try {
+      const dataUrl = await QRCode.toDataURL(epc, { errorCorrectionLevel: 'L', scale: 8, margin: 4, color: { dark: '#000000', light: '#FFFFFF' } });
+      // Convert to Blob
+      const res = await fetch(dataUrl);
+      const blob = await res.blob();
+      // Some storage backends / client versions behave better when given a File with a name
+      // instead of a raw Blob. Create a File wrapper and try uploading that first.
+      const fileName = `epc_${cleanIban}${amountLine ? `_${amountLine}` : ''}.png`;
+  const fileToUpload: Blob | File = new File([blob], fileName, { type: 'image/png' });
+  const path = `${chatId}/${fileName}`;
+  let uploadResult: { data?: { path?: string } | null; error?: { message?: string } | null } | null = null;
+      try {
+        uploadResult = await supabase.storage.from(CHAT_BUCKET).upload(path, fileToUpload, { contentType: 'image/png', upsert: false });
+      } catch (uploadException) {
+        // Capture richer debug info and rethrow as Error so UI shows helpful message
+        const errMsg = uploadException instanceof Error ? uploadException.message : JSON.stringify(uploadException);
+        throw new Error(`Upload failed: ${errMsg} (blob-size=${(blob as Blob).size}, blob-type=${(blob as Blob).type})`);
+      }
+      const { data, error } = uploadResult || {};
+      if (error) {
+        // Try one more time with raw blob as fallback before failing
+        try {
+          const fallback = await supabase.storage.from(CHAT_BUCKET).upload(path, blob, { contentType: 'image/png', upsert: false });
+          if (fallback.error) throw fallback.error;
+          const { data: pub } = supabase.storage.from(CHAT_BUCKET).getPublicUrl(fallback.data.path);
+          const publicUrl = pub?.publicUrl;
+          if (!publicUrl) throw new Error('Public URL ontbreekt');
+          // success via fallback
+          setDraftAttachments(prev => [...prev, {
+            url: publicUrl,
+            content_type: 'image/png',
+            name: `epc-qr-${cleanIban}.png`,
+            storage_path: fallback.data.path,
+            mime_type: 'image/png',
+            size_bytes: (blob as Blob).size,
+          }]);
+          setEpcOpen(false);
+          setEpcAmount('');
+          setEpcDesc('');
+          setEpcBusy(false);
+          return;
+        } catch (fbErr) {
+          const msg = fbErr instanceof Error ? fbErr.message : JSON.stringify(fbErr);
+          throw new Error(`Upload failed: ${msg} (initial error: ${error?.message || JSON.stringify(error)})`);
+        }
+      }
+      const uploadedPath = data?.path;
+      const { data: pub } = supabase.storage.from(CHAT_BUCKET).getPublicUrl(uploadedPath || '');
+      const publicUrl = pub?.publicUrl;
+      if (!publicUrl || !uploadedPath) throw new Error('Public URL ontbreekt');
+      setDraftAttachments(prev => [...prev, {
+        url: publicUrl,
+        content_type: 'image/png',
+        name: `epc-qr-${cleanIban}.png`,
+        storage_path: uploadedPath,
+        mime_type: 'image/png',
+        size_bytes: (blob as Blob).size,
+      }]);
+      setEpcOpen(false);
+      setEpcAmount('');
+      setEpcDesc('');
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'QR genereren mislukt';
+      setEpcError(msg);
+    } finally {
+      setEpcBusy(false);
+    }
   };
 
   const removeDraftAttachment = (url: string) => {
@@ -437,6 +691,44 @@ export default function ChatDock({
       </div>
     );
   }
+
+  // Handle click on payment-request button (buyer flow). This triggers the checkout endpoint and
+  // redirects the user to the payment provider (Stripe) when ready. Keep minimal so Stripe integration
+  // can be wired later server-side.
+  const handlePaymentRequest = async (messageId?: string) => {
+    if (!listingId) { alert('Ontbrekend zoekertje'); return; }
+    try {
+      setPayBusy(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) { window.location.href = '/login'; return; }
+
+      // Default shipping mode: pickup. Adjust later if you want to support shipping data here.
+      const payload = { listingId, shipping: { mode: 'pickup' as const }, messageId: messageId || null };
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(payload),
+      });
+      if (res.status === 401) { window.location.href = '/login'; return; }
+      if (!res.ok) {
+        const txt = await res.text().catch(() => 'Checkout mislukt');
+        throw new Error(txt || 'Checkout mislukt');
+      }
+      const d = await res.json().catch(() => null);
+      if (d && d.url) {
+        window.location.href = d.url;
+        return;
+      }
+      // If server doesn't return direct url, dispatch event so host app can handle Stripe flow
+      try { window.dispatchEvent(new CustomEvent('ocaso:payment-requested', { detail: { listingId, messageId } })); } catch { /* noop */ }
+      alert('Betaling gestart. Volg de instructies op de volgende pagina.');
+    } catch (e) {
+      alert((e as Error)?.message || 'Kan betaalpagina niet openen');
+    } finally {
+      setPayBusy(false);
+    }
+  };
 
   return (
     <div
@@ -563,6 +855,31 @@ export default function ChatDock({
             ref={boxRef}
             className={`${messageHeightClass} overflow-y-auto p-4 space-y-3 bg-white grow`}
           >
+            {/* Seller CTA banner when buyer requested a payment */}
+            {isSeller && loaded && !loadError && messages.length > 0 && (() => {
+              const lastIncoming = [...messages].reverse().find(m => m.from === 'them' && !!m.text);
+              // legacy token removed; detection now uses the acceptance phrase
+              const cleanMsgShip = 'De koper vraagt een betaalverzoek';
+              const cleanMsgPickup = 'De koper vraagt een betaalverzoek (afhalen)';
+              const txt = lastIncoming?.text || '';
+              // Toon de betaalverzoek-knop altijd, ongeacht verzending of afhalen
+              if (lastIncoming && typeof txt === 'string' && (txt.includes(acceptPhrase) || txt.trim() === cleanMsgShip || txt.trim() === cleanMsgPickup)) {
+                return (
+                  <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900 shadow-sm flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <svg viewBox="0 0 24 24" className="w-5 h-5 text-emerald-700" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1v22M5 8l7-7 7 7" /></svg>
+                      <span>De koper vraagt om een betaalverzoek te sturen.</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setEpcOpen(true)}
+                      className="rounded-full bg-emerald-600 text-white px-3 py-1.5 text-xs font-semibold hover:bg-emerald-700"
+                    >genereer betaalverzoek</button>
+                  </div>
+                );
+              }
+              return null;
+            })()}
             {!loaded && (
               <div className="text-xs text-gray-500 text-center py-6">Laden…</div>
             )}
@@ -578,24 +895,106 @@ export default function ChatDock({
                 )}
                 <div className={`max-w-[78%] rounded-2xl px-3 py-2 text-sm shadow-sm leading-relaxed space-y-2 ${own ? 'bg-primary text-black rounded-br-sm' : 'bg-gray-100 rounded-bl-sm'}`}>
                   {m.attachments && m.attachments.length > 0 && (
-                    <div className="grid grid-cols-3 gap-1">
-                      {m.attachments.map(att => {
-                        const isImg = (att.content_type || '').startsWith('image/');
-                        const ext = att.name?.split('.').pop() || att.url.split('?')[0].split('#')[0].split('.').pop() || '';
-                        return isImg ? (
-                          <a key={att.url} href={att.url} target="_blank" rel="noreferrer" className="block group relative">
-                            <Image src={att.url} alt={att.name || 'afbeelding'} width={100} height={100} className="w-full h-20 object-cover rounded-lg border border-black/10 group-hover:opacity-90" />
-                          </a>
-                        ) : (
-                          <a key={att.url} href={att.url} target="_blank" rel="noreferrer" className="group flex flex-col items-center justify-center h-20 rounded-lg border border-black/10 bg-white hover:bg-gray-50 text-[10px] px-2 text-center">
-                            <div className="w-9 h-9 rounded-md bg-gray-200 flex items-center justify-center font-semibold text-gray-700 group-hover:bg-gray-300 transition">{ext.slice(0,4).toUpperCase()}</div>
-                            <span className="line-clamp-2 mt-1 text-gray-600 break-all">{att.name || ext.toUpperCase()}</span>
-                          </a>
-                        );
-                      })}
-                    </div>
+                    <>
+                      {/* EPC QR codes apart weergeven met volledige breedte */}
+                      {m.attachments
+                        .filter(att => {
+                          const iban = extractIbanFromAttachment(att);
+                          return iban !== null;
+                        })
+                        .map(att => {
+                          const url = att.url || '';
+                          return (
+                            <div key={url} className="block group relative mb-2">
+                              <div className="text-center mb-2">
+                                <div className="text-sm font-medium text-gray-800">
+                                  Scan en betaal
+                                </div>
+                              </div>
+                              <a href={url} target="_blank" rel="noreferrer" className="flex justify-center">
+                                <Image src={url} alt={att.name || 'QR code'} width={120} height={120} className="w-30 h-30 object-cover rounded-lg border border-black/10 group-hover:opacity-90" />
+                              </a>
+                              <div className="mt-2 text-center space-y-1">
+                                <div className="text-[9px] text-gray-500">
+                                  Sommige bankapps ondersteunen deze QR code nog niet
+                                </div>
+                                <div className="text-[10px] font-medium text-gray-700">
+                                  Alternatief: {extractIbanFromAttachment(att)}{extractAmountFromAttachment(att) ? ` - ${extractAmountFromAttachment(att)?.replace('EUR', 'EUR ').replace('.', ',')}` : ''}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      {/* Andere attachments in grid */}
+                      {m.attachments.filter(att => {
+                        const iban = extractIbanFromAttachment(att);
+                        return iban === null;
+                      }).length > 0 && (
+                        <div className="grid grid-cols-3 gap-1">
+                          {m.attachments
+                            .filter(att => {
+                              const iban = extractIbanFromAttachment(att);
+                              return iban === null;
+                            })
+                            .map(att => {
+                              const url = att.url || '';
+                              const isImg = (att.content_type || '').startsWith('image/');
+                              const ext = att.name?.split('.').pop() || url.split('?')[0].split('#')[0].split('.').pop() || '';
+                              return isImg ? (
+                                <a key={url} href={url} target="_blank" rel="noreferrer" className="block group relative">
+                                  <Image src={url} alt={att.name || 'afbeelding'} width={100} height={100} className="w-full h-20 object-cover rounded-lg border border-black/10 group-hover:opacity-90" />
+                                </a>
+                              ) : (
+                                <a key={url} href={url} target="_blank" rel="noreferrer" className="group flex flex-col items-center justify-center h-20 rounded-lg border border-black/10 bg-white hover:bg-gray-50 text-[10px] px-2 text-center">
+                                  <div className="w-9 h-9 rounded-md bg-gray-200 flex items-center justify-center font-semibold text-gray-700 group-hover:bg-gray-300 transition">{ext.slice(0,4).toUpperCase()}</div>
+                                  <span className="line-clamp-2 mt-1 text-gray-600 break-all">{att.name || ext.toUpperCase()}</span>
+                                </a>
+                              );
+                            })}
+                        </div>
+                      )}
+                    </>
                   )}
                   {m.text && <div className={m.deleted_at ? 'italic text-gray-500' : ''}>{m.deleted_at ? '[verwijderd]' : m.text}</div>}
+                  {/* Payment actions: always render after the text so buttons appear at the bottom of the message */}
+                  {/* Show explicit pay CTA only for acceptance messages; do NOT show for 'scan en betaal' text */}
+                  {(!own && m.text && typeof m.text === 'string' && m.text.includes(acceptPhrase)) && (
+                    <div className="pt-1">
+                      <button
+                        type="button"
+                        onClick={async () => { await handlePaymentRequest(m.id); }}
+                        className="mt-1 rounded-full bg-emerald-600 text-white px-3 py-1 text-[11px] font-semibold hover:bg-emerald-700"
+                        disabled={payBusy}
+                      >{payBusy ? 'Even geduld…' : 'Betaal'}</button>
+                    </div>
+                  )}
+                  {/* EPC 'betaald' action: show for EPC PNG attachments (only for delivery, not pickup) */}
+                  {!own && m.attachments && m.attachments.some(a => {
+                    const ct = (a.content_type || a.mime_type || '').toLowerCase();
+                    const name = (a.name || '').toLowerCase();
+                    const sp = (a.storage_path || '').toLowerCase();
+                    const isPng = ct === 'image/png' || (name.endsWith('.png') || sp.endsWith('.png'));
+                    const mentionsEpc = name.includes('epc') || sp.includes('epc');
+                    const isPickup = m.text && m.text.includes('afhalen');
+                    return isPng && mentionsEpc && !isPickup;
+                  }) && (
+                    <div className="pt-1">
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            const headers: Record<string,string> = { 'Content-Type': 'application/json' };
+                            const { data: { session } } = await supabase.auth.getSession();
+                            if (session?.access_token) headers.Authorization = `Bearer ${session?.access_token}`;
+                            await fetch('/api/payments/qr/paid', { method: 'POST', headers, body: JSON.stringify({ conversationId: chatId, messageId: m.id }) });
+                            const optimistic = { id: `${m.id}-paid-${Date.now()}`, from: 'me' as const, text: 'Betaald — label werd aangevraagd.', at: new Date().toISOString(), edited_at: null, deleted_at: null, attachments: [] as NormalizedAttachment[], read: false };
+                            setMessages(prev => [...prev, optimistic]);
+                          } catch { /* ignore */ }
+                        }}
+                        className="mt-1 rounded-full bg-emerald-600 text-white px-3 py-1 text-[11px] font-semibold hover:bg-emerald-700"
+                      >Markeer als betaald</button>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between gap-2 text-[10px] opacity-70">
                     <div className="flex items-center gap-2">
                       <span>{new Date(m.at).toLocaleTimeString()}</span>
@@ -632,22 +1031,84 @@ export default function ChatDock({
         {/* Input */}
         {!minimized && (
           <div className="flex flex-col gap-2 p-3 border-t bg-white shrink-0">
+            {isSeller && (
+              <div className="-mt-1">
+                <button
+                  type="button"
+                  onClick={() => setEpcOpen(o => !o)}
+                  className="inline-flex items-center gap-1 rounded-full bg-primary text-black px-3 py-1.5 text-xs font-semibold border border-primary/30 hover:bg-primary/80 transition focus:outline-none focus:ring-2 focus:ring-primary/40"
+                >
+                  {epcOpen ? 'Verberg betaalverzoek' : 'Betaalverzoek toevoegen'}
+                </button>
+                {epcOpen && (
+                  <div className="mt-2 rounded-lg border p-2 bg-emerald-50/40">
+                    <div className="grid gap-2 md:grid-cols-3">
+                      <div>
+                        <label className="block text-[11px] text-neutral-600 mb-1">Bedrag (optioneel)</label>
+                        <input
+                          type="text"
+                          value={epcAmount}
+                          onChange={(e) => setEpcAmount(e.target.value)}
+                          placeholder="bv. 25,00"
+                          className="w-full rounded border px-2 py-1 text-sm"
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-[11px] text-neutral-600 mb-1">Omschrijving (max 35 tekens)</label>
+                        <input
+                          type="text"
+                          value={epcDesc}
+                          onChange={(e) => setEpcDesc(e.target.value)}
+                          placeholder="bv. Ocaso betaling"
+                          className="w-full rounded border px-2 py-1 text-sm"
+                        />
+                      </div>
+                    </div>
+                    <div className="mt-2 flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={generateAndAttachEpc}
+                        disabled={epcBusy}
+                        className="rounded bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60"
+                      >{epcBusy ? 'Bezig…' : 'Genereer & voeg toe'}</button>
+                      {epcError && <span className="text-[11px] text-red-600">{epcError}</span>}
+                    </div>
+                    {!myIban && <div className="mt-1 text-[11px] text-neutral-500">Vul je IBAN in via Profiel → Facturatie & verzending.</div>}
+                  </div>
+                )}
+              </div>
+            )}
             {draftAttachments.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {draftAttachments.map(a => {
                   const isImg = (a.content_type || '').startsWith('image/');
-                  const ext = a.name?.split('.').pop() || a.url.split('?')[0].split('#')[0].split('.').pop() || '';
+                  const url = a.url || '';
+                  const ext = a.name?.split('.').pop() || url.split('?')[0].split('#')[0].split('.').pop() || '';
+                  const iban = extractIbanFromAttachment(a);
+                  const isEpcQr = iban !== null;
                   return (
-                    <div key={a.url} className="relative group w-16 h-16">
-                      {isImg ? (
-                        <Image src={a.url} alt={a.name || 'bijlage'} width={64} height={64} className="w-16 h-16 object-cover rounded border" />
-                      ) : (
-                        <div className="w-16 h-16 rounded border bg-gray-50 flex flex-col items-center justify-center text-[10px] p-1 text-gray-600">
-                          <div className="w-10 h-10 bg-gray-200 rounded flex items-center justify-center font-semibold text-gray-700">{ext.slice(0,4).toUpperCase()}</div>
-                          <span className="truncate w-full">{ext.toUpperCase()}</span>
-                        </div>
+                    <div key={url} className="relative group">
+                      <div className="w-16 h-16">
+                        {isImg ? (
+                          <Image src={url} alt={a.name || 'bijlage'} width={64} height={64} className="w-16 h-16 object-cover rounded border" />
+                        ) : (
+                          <div className="w-16 h-16 rounded border bg-gray-50 flex flex-col items-center justify-center text-[10px] p-1 text-gray-600">
+                            <div className="w-10 h-10 bg-gray-200 rounded flex items-center justify-center font-semibold text-gray-700">{ext.slice(0,4).toUpperCase()}</div>
+                            <span className="truncate w-full">{ext.toUpperCase()}</span>
+                          </div>
+                        )}
+                      </div>
+                      {isEpcQr && (
+                        <>
+                          <div className="mt-1 text-[8px] text-center text-gray-500 w-full">
+                            Sommige bankapps ondersteunen deze QR code nog niet
+                          </div>
+                          <div className="mt-0.5 text-[9px] text-center font-medium text-gray-700 w-full">
+                            Alternatief: {iban}
+                          </div>
+                        </>
                       )}
-                      <button type="button" onClick={() => removeDraftAttachment(a.url)} className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-5 h-5 text-[10px] flex items-center justify-center opacity-90 group-hover:opacity-100">×</button>
+                      <button type="button" onClick={() => removeDraftAttachment(url)} className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-5 h-5 text-[10px] flex items-center justify-center opacity-90 group-hover:opacity-100">×</button>
                     </div>
                   );
                 })}

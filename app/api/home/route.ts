@@ -26,7 +26,7 @@ export async function GET(request: Request) {
   const { data: sponsoredData } = await supabase
     .from("listings")
     .select("id,title,price,location,state,images,main_photo,created_at,status")
-    .eq("status", "active")
+    .eq("status", "actief")
     .eq("is_sponsored", true) // <-- maak deze kolom aan als je hem nog niet hebt
     .order("created_at", { ascending: false })
     .limit(12);
@@ -50,7 +50,7 @@ export async function GET(request: Request) {
   const { data, error } = await supabase
     .from("listings")
     .select("id,title,price,location,state,images,main_photo,created_at,status")
-    .eq("status", "active")
+    .eq("status", "actief")
     .order("created_at", { ascending: false })
     .range(from, to);
 

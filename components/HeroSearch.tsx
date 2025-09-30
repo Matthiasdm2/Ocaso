@@ -102,9 +102,6 @@ export default function HeroSearch({ noContainer = false }: { noContainer?: bool
             </div>
           )}
         </div>
-        <p className="text-sm text-gray-500 mt-3">
-          De zoekbalk in de header verschijnt zodra je naar beneden scrolt.
-        </p>
       </div>
     </section>
   );

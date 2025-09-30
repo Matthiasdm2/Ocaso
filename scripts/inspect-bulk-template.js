@@ -1,8 +1,7 @@
-import pkg from 'exceljs';
+import { Workbook } from 'exceljs';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-const { Workbook } = pkg;
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const file = path.join(__dirname, '..', 'public', 'templates', 'bulk-listings-template.xlsx');

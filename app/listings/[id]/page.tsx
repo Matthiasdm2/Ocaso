@@ -26,9 +26,29 @@ export default async function ListingPage({ params }: { params: { id: string } }
     .from("listings")
     // Via foreign key listings_seller_id_fkey koppelen we naar profiles en aliassen dit als seller
     // We halen extra velden op: is_business + created_at (aansluitdatum)
-  .select("*,categories,seller:profiles!listings_seller_id_fkey(id,display_name,full_name,avatar_url,is_business,created_at,address,invoice_address)")
+  .select("*,categories,seller:profiles!listings_seller_id_fkey(id,display_name,full_name,avatar_url,is_business,created_at,address,invoice_address,stripe_account_id)")
     .eq("id", params.id)
     .maybeSingle();
+
+  // Haal KYC status op voor de verkoper
+  const sellerStripeAccountId = (listing as { seller?: { stripe_account_id?: string | null } })?.seller?.stripe_account_id ?? null;
+  const sellerKycCompleted = await getSellerKycCompleted(sellerStripeAccountId);
+
+  // Helper functie om KYC status op te halen
+  async function getSellerKycCompleted(sellerStripeAccountId: string | null): Promise<boolean> {
+    if (!sellerStripeAccountId) return false;
+    try {
+      const stripeSecret = process.env.STRIPE_SECRET_KEY;
+      if (!stripeSecret) return false;
+      const { default: Stripe } = await import('stripe');
+      const stripe = new Stripe(stripeSecret, { apiVersion: '2025-08-27.basil' });
+      const account = await stripe.accounts.retrieve(sellerStripeAccountId);
+      return account.details_submitted && account.charges_enabled;
+    } catch (e) {
+      console.error('Error fetching KYC status:', e);
+      return false;
+    }
+  }
 
   // 1) Probeer eerst rating voor dit listing zelf (sneller & altijd relevant)
   let sellerRating: number | null = null;
@@ -261,6 +281,7 @@ export default async function ListingPage({ params }: { params: { id: string } }
                 listingId={listing.id}
                 price={listing.price}
                 sellerId={listing.seller?.id ?? null}
+                sellerKycCompleted={sellerKycCompleted}
                 allowOffers={listing.allowOffers}
                 min_bid={listing.min_bid}
               />
@@ -284,6 +305,7 @@ export default async function ListingPage({ params }: { params: { id: string } }
               seller_sales_count?: number | null;
               seller_review_count?: number | null;
               seller_is_business?: boolean | null;
+              seller_is_verified?: boolean | null;
               joinedISO?: string | null;
               location?: string | null;
             } = {
@@ -296,6 +318,7 @@ export default async function ListingPage({ params }: { params: { id: string } }
               seller_sales_count: null,
               seller_review_count: sellerReviewCount,
               seller_is_business: (raw as { is_business?: boolean | null })?.is_business ?? null,
+              seller_is_verified: sellerKycCompleted,
               joinedISO: (raw as { created_at?: string | null })?.created_at || null,
               location: sellerLocation,
             };

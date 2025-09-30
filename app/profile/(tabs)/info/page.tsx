@@ -4,6 +4,7 @@ import Image from 'next/image';
 import React, { useEffect, useRef, useState } from 'react';
 
 import { ConsentModal } from '@/components/ConsentModal';
+import KycForm from '@/components/KycForm';
 import { useToast } from '@/components/Toast';
 // PhotoUploader verwijderd voor subtielere UI
 import { type CookiePrefs, getCookiePrefs, updateCookiePrefs } from '@/lib/cookiePrefs';
@@ -30,6 +31,7 @@ const emptyProfile: Profile = {
   avatarUrl: '',
   bio: '',
   address: { street: '', city: '', zip: '', country: 'België' },
+  bank: { iban: '', bic: '' },
   preferences: { language: 'nl', newsletter: false, cookieConsent: undefined },
   notifications: { newMessages: true, bids: true, priceDrops: true, tips: true },
   business: {
@@ -49,6 +51,7 @@ const emptyProfile: Profile = {
     description: '',
     socials: { instagram: '', facebook: '', tiktok: '' },
     public: { showEmail: false, showPhone: false },
+  verified: false,
   },
 };
 
@@ -66,6 +69,11 @@ export default function InfoPage() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
   const { push } = useToast();
+  // Stripe KYC status
+  const [stripeStatus, setStripeStatus] = useState<{
+    status: 'not_onboarded' | 'incomplete' | 'pending' | 'approved' | 'rejected';
+    message: string;
+  } | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -83,7 +91,7 @@ export default function InfoPage() {
           .from('profiles')
           .select(`
             id, email, full_name, phone, avatar_url, bio,
-            address, preferences, notifications
+            address, bank, preferences, notifications
           `)
           .eq('id', user.id)
           .maybeSingle();
@@ -104,6 +112,8 @@ export default function InfoPage() {
               zip: r.address?.zip ?? '',
               country: r.address?.country ?? 'België',
             },
+            // Bankgegevens voor particuliere verkopers (profiles.bank JSONB)
+            bank: { iban: (r as { bank?: { iban?: string; bic?: string } }).bank?.iban ?? '', bic: (r as { bank?: { iban?: string; bic?: string } }).bank?.bic ?? '' },
             preferences: {
               language: r.preferences?.language ?? 'nl',
               newsletter: r.preferences?.newsletter ?? false,
@@ -132,6 +142,43 @@ export default function InfoPage() {
     setCookiePrefs(getCookiePrefs());
   }, []);
 
+  // Load Stripe KYC status
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) return;
+
+        const res = await fetch('/api/stripe/custom/status', {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setStripeStatus(data);
+        }
+      } catch (e) {
+        console.error('Stripe status laden mislukt:', e);
+      }
+    })();
+  }, [supabase]);
+
+  const refreshStripeStatus = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) return;
+
+      const res = await fetch('/api/stripe/custom/status', {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setStripeStatus(data);
+      }
+    } catch (e) {
+      console.error('Stripe status refresh mislukt:', e);
+    }
+  };
+
   async function save() {
     setSaving(true);
     try {
@@ -150,6 +197,11 @@ export default function InfoPage() {
           city: profile.address.city || '',
           zip: profile.address.zip || '',
           country: profile.address.country || 'België',
+        },
+        // Sla bankgegevens op in profiles.bank (JSONB)
+        bank: {
+          iban: profile.bank?.iban || '',
+          bic: profile.bank?.bic || '',
         },
         preferences: {
           ...(profile.preferences || { language: 'nl', newsletter: false }),
@@ -186,7 +238,7 @@ export default function InfoPage() {
           if (upErr) throw upErr;
 
           // If fallback succeeded, fetch a fresh profile row to reflect canonical fields
-          const { data: fresh } = await _supabase.from('profiles').select('id, full_name, email, phone, avatar_url, bio, address, preferences, notifications').eq('id', dbPayload.id).maybeSingle();
+      const { data: fresh } = await _supabase.from('profiles').select('id, full_name, email, phone, avatar_url, bio, address, bank, preferences, notifications').eq('id', dbPayload.id).maybeSingle();
           if (fresh) {
             const nm = splitName(fresh.full_name || '');
             setProfile((p) => ({
@@ -202,6 +254,7 @@ export default function InfoPage() {
                 zip: fresh.address?.zip || '',
                 country: fresh.address?.country || 'België',
               },
+        bank: { iban: (fresh as { bank?: { iban?: string; bic?: string } }).bank?.iban || '', bic: (fresh as { bank?: { iban?: string; bic?: string } }).bank?.bic || '' },
               preferences: {
                 language: fresh.preferences?.language || (p.preferences?.language || 'nl'),
                 newsletter: !!fresh.preferences?.newsletter,
@@ -226,12 +279,13 @@ export default function InfoPage() {
           throw new Error(`${msg} — fallback mislukte: ${m}`);
         }
       }
-      const resp = await r.json().catch(() => ({} as { profile?: {
+  const resp = await r.json().catch(() => ({} as { profile?: {
         full_name?: string | null;
         phone?: string | null;
         avatar_url?: string | null;
         bio?: string | null;
         address?: { street?: string; city?: string; zip?: string; country?: string } | null;
+        bank?: { iban?: string; bic?: string } | null;
         preferences?: { language?: string; newsletter?: boolean; cookieConsent?: unknown } | null;
         notifications?: { newMessages?: boolean; bids?: boolean; priceDrops?: boolean; tips?: boolean } | null;
       } }));
@@ -258,6 +312,7 @@ export default function InfoPage() {
               zip: row.address?.zip || '',
               country: row.address?.country || 'België',
             },
+            bank: { iban: (row as { bank?: { iban?: string; bic?: string } }).bank?.iban || '', bic: (row as { bank?: { iban?: string; bic?: string } }).bank?.bic || '' },
             preferences: {
               language: row.preferences?.language || (p.preferences?.language || 'nl'),
               newsletter: !!row.preferences?.newsletter,
@@ -415,6 +470,14 @@ export default function InfoPage() {
             <div className="min-w-0">
               <p className="text-xs font-semibold uppercase tracking-wider text-emerald-700">Profiel</p>
               <h1 className="mt-1 text-2xl font-bold tracking-tight md:text-3xl">Mijn gegevens</h1>
+              {profile.business?.verified && (
+                <div className="mt-2 inline-flex items-center gap-2">
+                  <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 text-emerald-800 px-3 py-1 text-xs font-semibold border border-emerald-100">
+                    <svg viewBox="0 0 24 24" className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
+                    Geverifieerde gebruiker
+                  </span>
+                </div>
+              )}
               <p className="mt-2 max-w-2xl text-sm text-neutral-600">
                 Alles wat je bij de registratie invulde, overzichtelijk in één plaats. Werk je gegevens bij en sla op.
               </p>
@@ -608,6 +671,59 @@ export default function InfoPage() {
                     }
                   />
                 </Field>
+                {/* Bankgegevens voor QR-betalingen (particulier) */}
+                <Field label="IBAN (voor QR-overschrijving)">
+                  <Input
+                    placeholder="BE68 5390 0754 7034"
+                    value={profile.bank?.iban || ''}
+                    onChange={(e) => setProfile((p) => ({ ...p, bank: { ...(p.bank || { iban: '', bic: '' }), iban: e.target.value } }))}
+                  />
+                </Field>
+                <Field label="BIC (optioneel)">
+                  <Input
+                    placeholder="KREDBEBB"
+                    value={profile.bank?.bic || ''}
+                    onChange={(e) => setProfile((p) => ({ ...p, bank: { ...(p.bank || { iban: '', bic: '' }), bic: e.target.value } }))}
+                  />
+                </Field>
+              </div>
+
+            </Section>
+
+            {/* Ontvangen via Ocaso (Stripe onboarding) */}
+            <Section
+              overline="Betalingen"
+              title="Ontvangen via Ocaso"
+              subtitle="Registreer je als verkoper om betalingen veilig via Ocaso te ontvangen."
+            >
+              <div className="rounded-lg border bg-white p-4">
+                <p className="text-sm text-neutral-700 mb-3">Wil je dat kopers via Ocaso kunnen betalen en dat wij uitbetalingen voor je afhandelen? Registreer je verkopersaccount bij onze betalingsprovider.</p>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-neutral-600">Betalen via Ocaso betekent veilig betalen voor je klant. Door je gegevens aan te leveren ontvang je de badge ‘geverifieerde gebruiker’. Betalingen lopen rechtstreeks via onze betaalprovider en klanten kunnen uit verschillende betaalwijzen kiezen. Dit verhoogt het vertrouwen van kopers aanzienlijk.</span>
+                </div>
+                {stripeStatus && (
+                  <div className="mt-4">
+                    <div className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${
+                      stripeStatus.status === 'approved' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' :
+                      stripeStatus.status === 'pending' ? 'bg-yellow-50 text-yellow-800 border border-yellow-200' :
+                      stripeStatus.status === 'rejected' ? 'bg-red-50 text-red-800 border border-red-200' :
+                      'bg-gray-50 text-gray-800 border border-gray-200'
+                    }`}>
+                      <div className={`w-2 h-2 rounded-full ${
+                        stripeStatus.status === 'approved' ? 'bg-emerald-500' :
+                        stripeStatus.status === 'pending' ? 'bg-yellow-500' :
+                        stripeStatus.status === 'rejected' ? 'bg-red-500' :
+                        'bg-gray-500'
+                      }`} />
+                      {stripeStatus.message}
+                    </div>
+                  </div>
+                )}
+                <div className="mt-6">
+                  <h4 className="text-sm font-semibold mb-3">Registratie</h4>
+                  <p className="text-sm text-neutral-700 mb-3">Vul hieronder je gegevens en upload identiteitsdocumenten. Ocaso verwerkt dit namens jou en stuurt de gegevens naar onze betalingsprovider.</p>
+                  <KycForm onSuccess={refreshStripeStatus} />
+                </div>
               </div>
             </Section>
 
@@ -732,6 +848,7 @@ export default function InfoPage() {
     </div>
   );
 }
+
 
 /* ------------------------- atoms (Over-OCASO-style) ------------------------- */
 function Section({

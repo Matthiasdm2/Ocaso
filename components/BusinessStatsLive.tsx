@@ -7,42 +7,38 @@ export interface BusinessStatsLiveProps {
   businessId: string;
   initial: {
     totalListings?: number;
-    sold?: number;
-    avgPrice?: number;
     views?: number;
-  bids?: number;
-  followers?: number;
+    bids?: number;
   } | null | undefined;
-  fallbackListingsCount?: number; // ter vervanging als totalListings ontbreekt
+  fallbackListingsCount?: number;
 }
 
-// Contract:
-// Input: businessId + initiële stats (server fetch)
-// Output: live geüpdatete stats via realtime kanaal op tabel `dashboard_stats` (verwacht schema matching velden)
-// Fallback: als realtime nooit vuurt, blijven initiële waarden zichtbaar.
 export default function BusinessStatsLive({ businessId, initial, fallbackListingsCount = 0 }: BusinessStatsLiveProps) {
+  console.log('[BusinessStatsLive] Rendered with businessId:', businessId, 'initial:', initial);
   const supabase = createClient();
   interface DebugListing { id: string; status?: string | null; views?: unknown; bids?: unknown }
-  const [stats, setStats] = useState<{ totalListings?: number; sold?: number; avgPrice?: number; views?: number; bids?: number; followers?: number; fallback?: boolean; _debugListings?: DebugListing[] } | null | undefined>(initial);
+  const [stats, setStats] = useState<{ totalListings?: number; views?: number; bids?: number; fallback?: boolean; _debugListings?: DebugListing[] } | null | undefined>(initial);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(initial && Object.keys(initial).length ? new Date() : null);
   const [error, setError] = useState<string | null>(null);
 
-  // Altijd één initiële fetch zodat we zeker de lightweight endpoint proberen
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
         console.debug('[BusinessStatsLive] Initial fetch start', { businessId, initial });
-  const debugParam = typeof window !== 'undefined' && window.location.search.includes('statsDebug=1') ? '?debug=1' : '';
-  const res = await fetch(`/api/business/${businessId}/stats${debugParam}`, { cache: 'no-store' });
+        const debugParam = typeof window !== 'undefined' && window.location.search.includes('statsDebug=1') ? '?debug=1' : '';
+        const res = await fetch(`/api/business/${businessId}/stats${debugParam}`, { cache: 'no-store' });
         if (!res.ok) throw new Error('HTTP ' + res.status);
-  const json = await res.json();
-  if (json && json.error) throw new Error(json.error);
+        const json = await res.json();
+        if (json && json.error) throw new Error(json.error);
         if (!json || typeof json !== 'object') throw new Error('Leeg antwoord');
         if (!cancelled) {
           console.debug('[BusinessStatsLive] Initial fetch data', json);
-          setStats(s => ({ ...s, ...json }));
+          setStats(s => {
+            console.log('[BusinessStatsLive] Setting stats:', { ...s, ...json });
+            return { ...s, ...json };
+          });
           setLastUpdated(new Date());
           setError(null);
         }
@@ -72,18 +68,16 @@ export default function BusinessStatsLive({ businessId, initial, fallbackListing
     return () => { cancelled = true; };
   }, [businessId, initial]);
 
-  // Periodic refresh elke 30s
   useEffect(() => {
     const id = setInterval(() => {
-  const debugParam = typeof window !== 'undefined' && window.location.search.includes('statsDebug=1') ? '?debug=1' : '';
-  fetch(`/api/business/${businessId}/stats${debugParam}`, { cache: 'no-store' })
+      const debugParam = typeof window !== 'undefined' && window.location.search.includes('statsDebug=1') ? '?debug=1' : '';
+      fetch(`/api/business/${businessId}/stats${debugParam}`, { cache: 'no-store' })
         .then(r => r.ok ? r.json() : null)
         .then(d => { if (d) { setStats(s => ({ ...s, ...d })); setLastUpdated(new Date()); } });
     }, 30000);
     return () => clearInterval(id);
   }, [businessId]);
 
-  // Realtime subscription
   useEffect(() => {
     const channel = supabase
       .channel(`business-stats:${businessId}`)
@@ -94,14 +88,14 @@ export default function BusinessStatsLive({ businessId, initial, fallbackListing
         filter: `business_id=eq.${businessId}`,
       }, (payload: { new?: RealtimeRow | null }) => {
         if (payload?.new) {
-    console.debug('[BusinessStatsLive] Realtime payload', payload.new);
-    setStats(s => ({ ...s, ...mapPayload(payload.new!) }));
-    setLastUpdated(new Date());
+          console.debug('[BusinessStatsLive] Realtime payload', payload.new);
+          setStats(s => ({ ...s, ...mapPayload(payload.new!) }));
+          setLastUpdated(new Date());
         }
       })
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
-    console.debug('[BusinessStatsLive] Realtime SUBSCRIBED');
+          console.debug('[BusinessStatsLive] Realtime SUBSCRIBED');
         }
       });
     return () => { supabase.removeChannel(channel); };
@@ -110,33 +104,27 @@ export default function BusinessStatsLive({ businessId, initial, fallbackListing
   const isFallback = !!stats?.fallback;
   useEffect(() => {
     if (!loading && stats && !isFallback) {
-      const allZero = [stats.totalListings, stats.sold, stats.avgPrice, stats.views, stats.bids].every(v => !v);
+      const allZero = [stats.totalListings, stats.views, stats.bids].every(v => !v);
       if (allZero) {
         console.warn('[BusinessStatsLive] Alle statistieken zijn 0 maar niet in fallback mode – mogelijk geen data in DB of aggregaties ontbreken', stats);
       }
     }
   }, [loading, isFallback, stats]);
+  
   const totalListings = typeof stats?.totalListings === 'number' ? stats.totalListings : fallbackListingsCount;
-  const sold = typeof stats?.sold === 'number' ? stats.sold : 0;
-  const avgPrice = typeof stats?.avgPrice === 'number' ? stats.avgPrice : 0;
   const views = typeof stats?.views === 'number' ? stats.views : 0;
   const bids = typeof stats?.bids === 'number' ? stats.bids : 0;
-  const followers = typeof stats?.followers === 'number' ? stats.followers : 0;
 
   const loadingValue = <span className="inline-block w-10 h-6 bg-gray-200 animate-pulse rounded" />;
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 relative">
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 relative">
       <Stat label="Actieve zoekertjes" value={loading ? loadingValue : totalListings} />
-      <Stat label="Verkocht" value={loading ? loadingValue : sold} />
-      <Stat label="Gem. prijs" value={loading ? loadingValue : `€ ${toPrice(avgPrice)}`} />
       <Stat label="Bezoeken" value={loading ? loadingValue : views} />
       <Stat label="Biedingen" value={loading ? loadingValue : bids} />
-      <Stat label="Volgers" value={loading ? loadingValue : followers} />
       {error && !loading && (
         <div className="col-span-full text-xs text-amber-600 mt-1">{error}</div>
       )}
-  {/* Placeholder melding verwijderd op verzoek */}
-  {!error && !loading && !isFallback && stats?._debugListings && (
+      {!error && !loading && !isFallback && stats?._debugListings && (
         <pre className="col-span-full mt-2 p-2 bg-gray-50 border text-[10px] max-h-40 overflow-auto">{JSON.stringify(stats._debugListings, null, 2)}</pre>
       )}
       {lastUpdated && (
@@ -157,10 +145,9 @@ function Stat({ label, value }: { label: string; value: number | string | JSX.El
 
 interface RealtimeRow {
   business_id?: string;
-  listings?: number; // server kan deze naam gebruiken
+  listings?: number;
   totalListings?: number;
   total_listings?: number;
-  sold?: number;
   avg_price?: number;
   avgPrice?: number;
   views?: number;
@@ -171,14 +158,9 @@ interface RealtimeRow {
 function mapPayload(p: RealtimeRow) {
   return {
     totalListings: typeof p.listings === 'number' ? p.listings : (typeof p.totalListings === 'number' ? p.totalListings : (typeof p.total_listings === 'number' ? p.total_listings : undefined)),
-    sold: typeof p.sold === 'number' ? p.sold : undefined,
     avgPrice: typeof p.avg_price === 'number' ? p.avg_price : (typeof p.avgPrice === 'number' ? p.avgPrice : undefined),
     views: typeof p.views === 'number' ? p.views : undefined,
-  bids: typeof p.bids === 'number' ? p.bids : undefined,
-  followers: typeof p.followers === 'number' ? p.followers : undefined,
+    bids: typeof p.bids === 'number' ? p.bids : undefined,
+    followers: typeof p.followers === 'number' ? p.followers : undefined,
   };
-}
-
-function toPrice(n: number) {
-  return n.toLocaleString('nl-BE', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 }

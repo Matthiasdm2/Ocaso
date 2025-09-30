@@ -11,6 +11,7 @@ type UpsertPayload = Partial<{
   avatar_url: string | null;
   bio: string | null;
   address: Record<string, unknown> | null;
+  bank: { iban?: string; bic?: string } | null;
   preferences: Record<string, unknown> | null;
   notifications: Record<string, unknown> | null;
   full_name: string | null;
@@ -47,7 +48,7 @@ export async function PUT(req: Request) {
   const allowed: UpsertPayload & { id?: string } = {};
   const allowKeys = [
     "email", "phone", "avatar_url", "bio",
-    "address", "preferences", "notifications", "full_name",
+    "address", "bank", "preferences", "notifications", "full_name",
   ] as const satisfies Readonly<Array<keyof UpsertPayload>>;
   function assign<K extends keyof UpsertPayload>(key: K) {
     const v = body[key];
@@ -63,7 +64,7 @@ export async function PUT(req: Request) {
     const { data: upserted, error } = await service
       .from("profiles")
       .upsert(allowed)
-      .select("id, full_name, email, phone, avatar_url, bio, address, preferences, notifications")
+      .select("id, full_name, email, phone, avatar_url, bio, address, bank, preferences, notifications")
       .single();
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 });
@@ -78,7 +79,7 @@ export async function PUT(req: Request) {
       .from("profiles")
       .update(allowed)
       .eq("id", user.id)
-      .select("id, full_name, email, phone, avatar_url, bio, address, preferences, notifications")
+      .select("id, full_name, email, phone, avatar_url, bio, address, bank, preferences, notifications")
       .single();
     if (updErr) {
       return NextResponse.json({ error: updErr.message || 'Kon profiel niet opslaan' }, { status: 400 });

@@ -8,6 +8,11 @@ interface Props {
   mainIndex: number;
   markAsMain: (i: number) => void;
   onDragStart?: (i: number) => void;
+  onDragOver?: (e: React.DragEvent, i: number) => void;
+  onDragEnd?: () => void;
+  onDrop?: (e: React.DragEvent, i: number) => void;
+  draggedIndex?: number | null;
+  dragOverIndex?: number | null;
   scrollByCards?: (dir: "left" | "right") => void;
   trackRef?: React.RefObject<HTMLDivElement>;
   onRemove?: (i: number) => void;
@@ -18,6 +23,11 @@ export default function ImagePreviewSlider({
   mainIndex,
   markAsMain,
   onDragStart,
+  onDragOver,
+  onDragEnd,
+  onDrop,
+  draggedIndex,
+  dragOverIndex,
   scrollByCards,
   trackRef,
   onRemove,
@@ -66,9 +76,17 @@ export default function ImagePreviewSlider({
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") markAsMain(i);
             }}
+            draggable
+            onDragStart={(e) => {
+              onDragStart?.(i);
+              e.dataTransfer.effectAllowed = 'move';
+            }}
+            onDragOver={(e) => onDragOver?.(e, i)}
+            onDragEnd={onDragEnd}
+            onDrop={(e) => onDrop?.(e, i)}
             className={`flex-shrink-0 w-36 h-28 rounded-xl overflow-hidden border ${
               i === mainIndex ? "ring-2 ring-emerald-500 border-emerald-200" : "border-gray-200"
-            } relative cursor-pointer`}
+            } ${i === draggedIndex ? "opacity-50" : ""} ${i === dragOverIndex ? "ring-2 ring-blue-500" : ""} relative cursor-pointer`}
             title={i === mainIndex ? "Hoofdafbeelding" : `Zet als hoofdafbeelding (${i + 1})`}
           >
             <Image

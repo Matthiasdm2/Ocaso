@@ -35,7 +35,7 @@ export async function GET(request: Request) {
     let base = supabase
       .from('listings')
       .select('id,title,price,location,state,images,main_photo,created_at,status,isBusinessSeller', { count: 'exact' });
-    if (!showAll) base = base.eq('status','active');
+    if (!showAll) base = base.eq('status','actief');
     if (qLower) {
       base = base.or(`title.ilike.%${qLower}%,description.ilike.%${qLower}%`);
     }
@@ -70,7 +70,7 @@ export async function GET(request: Request) {
     .from("listings")
     .select("id,title,price,location,state,images,main_photo,created_at,categories,status,isBusinessSeller", { count: "exact" });
   if (!showAll) {
-    query = query.eq("status", "active");
+    query = query.eq("status", "actief");
   }
 
   // Heuristische categoriedetectie alleen indien expliciet aangevraagd (?heuristics=1)
@@ -160,7 +160,7 @@ export async function GET(request: Request) {
     const fbQuery = supabase
       .from("listings")
       .select("id,title,price,location,state,images,main_photo,created_at,categories,status,isBusinessSeller", { count: "exact" })
-      .eq("status", "active")
+      .eq("status", "actief")
       .or(orString)
       .range(0, limit - 1);
     const fb = await fbQuery;
@@ -179,7 +179,7 @@ export async function GET(request: Request) {
       .from("listings")
       .select("id,title,price,location,state,images,main_photo,created_at,categories,status,isBusinessSeller", { count: "exact" })
       .or(broadOr);
-    if (!showAll) broadQ.eq("status", "active");
+    if (!showAll) broadQ.eq("status", "actief");
     const broad = await broadQ.range(0, limit - 1);
     if (!broad.error && (broad.data?.length ?? 0) > 0) {
       data = broad.data;
@@ -195,6 +195,7 @@ export async function GET(request: Request) {
     const any = await supabase
       .from("listings")
       .select("id,title,price,location,state,images,main_photo,created_at,categories,status,isBusinessSeller", { count: "exact" })
+      .eq("status", "actief")
       .order("created_at", { ascending: false })
       .range(0, limit - 1);
     if (!any.error && (any.data?.length ?? 0) > 0) {

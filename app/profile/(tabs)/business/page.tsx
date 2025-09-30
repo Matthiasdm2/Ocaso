@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { BillingCycle, Profile } from '@/lib/profiletypes';
 import { createClient } from '@/lib/supabaseClient';
@@ -67,6 +67,10 @@ export default function BusinessProfilePage() {
   const [bannerError, setBannerError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [formOk, setFormOk] = useState<string | null>(null);
+
+  // BTW verificatie state
+  const [vatVerificationStatus, setVatVerificationStatus] = useState<'idle' | 'verifying' | 'valid' | 'invalid'>('idle');
+  const [vatVerificationMessage, setVatVerificationMessage] = useState<string>('');
 
   // NEW: modal state voor preview
   const [showPreview, setShowPreview] = useState(false);
@@ -302,10 +306,59 @@ export default function BusinessProfilePage() {
     }, 500);
   }
 
+  // BTW verificatie functie
+  const verifyVatNumber = useCallback(async (vatNumber: string) => {
+
+    if (!vatNumber.trim()) {
+      setVatVerificationStatus('idle');
+      setVatVerificationMessage('');
+      return;
+    }
+
+    setVatVerificationStatus('verifying');
+    setVatVerificationMessage('BTW nummer controleren...');
+
+    try {
+      const res = await fetch('/api/vies', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ vatNumber }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setVatVerificationStatus('invalid');
+        setVatVerificationMessage(data.error || 'Verificatie mislukt');
+        return;
+      }
+
+      setVatVerificationStatus('valid');
+      setVatVerificationMessage(`✓ Geldig BTW nummer${data.name ? ` - ${data.name}` : ''}`);
+    } catch (error) {
+      console.error('VAT verification error:', error);
+      setVatVerificationStatus('invalid');
+      setVatVerificationMessage('Kon BTW nummer niet verifiëren');
+    }
+  }, []);
+
   const verified = useMemo(() => {
     const b = profile.business;
-    return !!(b.vatNumber && b.registrationNr && b.companyName);
-  }, [profile.business]);
+    // Basis verificatie: alle velden ingevuld EN BTW nummer geverifieerd
+    return !!(b.vatNumber && b.registrationNr && b.companyName && vatVerificationStatus === 'valid');
+  }, [profile.business, vatVerificationStatus]);
+
+  // Onmiddellijke BTW verificatie
+  useEffect(() => {
+    if (profile.business.vatNumber.trim()) {
+      verifyVatNumber(profile.business.vatNumber);
+    } else {
+      setVatVerificationStatus('idle');
+      setVatVerificationMessage('');
+    }
+  }, [profile.business.vatNumber, verifyVatNumber]);
 
   /* ---------------------------------- UI ---------------------------------- */
   return (
@@ -693,6 +746,11 @@ export default function BusinessProfilePage() {
                     onChange={(e) => setProfile(p => ({ ...p, business: { ...p.business, vatNumber: e.target.value } }))}
                     placeholder="BE0123.456.789"
                   />
+                  {vatVerificationMessage && (
+                    <p className={`text-xs mt-1 ${vatVerificationStatus === 'valid' ? 'text-green-600' : vatVerificationStatus === 'invalid' ? 'text-red-600' : 'text-neutral-500'}`}>
+                      {vatVerificationMessage}
+                    </p>
+                  )}
                 </Field>
                 <Field label="Ondernemingsnr. (KBO)">
                   <Input
@@ -706,11 +764,11 @@ export default function BusinessProfilePage() {
                   <div className="text-sm">
                     Verificatie-status:{' '}
                     <span className={verified ? 'text-emerald-700' : 'text-amber-700'}>
-                      {verified ? 'Geverifieerd (basis)' : 'Niet geverifieerd'}
+                      {verified ? 'Geverifieerd (basis)' : vatVerificationStatus === 'valid' ? 'BTW geverifieerd - vul KBO in' : 'Niet geverifieerd'}
                     </span>
                   </div>
                   <p className="mt-1 text-xs text-neutral-600">
-                    Vul bedrijfsnaam, BTW en KBO in voor een basis-verificatiebadge.
+                    Vul bedrijfsnaam, BTW (moet geldig zijn) en KBO in voor een basis-verificatiebadge.
                   </p>
                 </div>
               </div>

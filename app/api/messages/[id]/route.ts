@@ -76,30 +76,40 @@ export async function GET(request: Request, { params }: { params: { id: string }
   const ordered = (messages || []).reverse();
   const hasMore = (messages || []).length === 50;
 
-  // Batch load attachments
-  const attachmentsMap: Record<string, { id: string; url: string; content_type: string | null }[]> = {};
+  // Batch load attachments (support both legacy url/content_type and new storage_path/mime_type/size_bytes)
+  type AttachmentOut = {
+    id: string;
+    url?: string | null;
+    content_type?: string | null;
+    storage_path?: string;
+    mime_type?: string | null;
+    size_bytes?: number | null;
+  };
+  const attachmentsMap: Record<string, AttachmentOut[]> = {};
   try {
     const ids = ordered.map(m => m.id);
     if (ids.length) {
-      interface AttRow { id: string; message_id: string; url: string; content_type?: string | null }
-      interface LegacyAttRow { id: string; message_id: string; url: string }
-      const { data: atts, error: attErr } = await supabase
+      interface NewAttRow { id: string; message_id: string; storage_path: string; mime_type?: string | null; size_bytes?: number | null; url?: string | null; content_type?: string | null }
+      interface OldAttRow { id: string; message_id: string; url: string; content_type?: string | null }
+      // Try selecting new + legacy columns together
+      const { data: attsNew, error: attErrNew } = await supabase
         .from('message_attachments')
-        .select('id,message_id,url,content_type')
+        .select('id,message_id,storage_path,mime_type,size_bytes,url,content_type')
         .in('message_id', ids);
-      if (attErr && /column .*content_type/i.test(attErr.message)) {
-        const { data: legacyAtts } = await supabase
+      if (attErrNew && /column .*storage_path/i.test(attErrNew.message)) {
+        // Fallback to legacy-only
+        const { data: attsOld } = await supabase
           .from('message_attachments')
-          .select('id,message_id,url')
+          .select('id,message_id,url,content_type')
           .in('message_id', ids);
-        (legacyAtts as LegacyAttRow[] | null | undefined || []).forEach(a => {
-          if (!attachmentsMap[a.message_id]) attachmentsMap[a.message_id] = [];
-          attachmentsMap[a.message_id].push({ id: a.id, url: a.url, content_type: null });
-        });
-      } else {
-        (atts as AttRow[] | null | undefined || []).forEach(a => {
+        (attsOld as OldAttRow[] | null | undefined || []).forEach(a => {
           if (!attachmentsMap[a.message_id]) attachmentsMap[a.message_id] = [];
           attachmentsMap[a.message_id].push({ id: a.id, url: a.url, content_type: a.content_type || null });
+        });
+      } else {
+        (attsNew as NewAttRow[] | null | undefined || []).forEach(a => {
+          if (!attachmentsMap[a.message_id]) attachmentsMap[a.message_id] = [];
+          attachmentsMap[a.message_id].push({ id: a.id, url: a.url || null, content_type: a.content_type || a.mime_type || null, storage_path: a.storage_path, mime_type: a.mime_type || null, size_bytes: a.size_bytes ?? null });
         });
       }
     }
@@ -193,10 +203,16 @@ export async function POST(request: Request, { params }: { params: { id: string 
 
   const bodyJson = await request.json();
   const text = String(bodyJson.text || "").trim().slice(0, 2000);
-  interface IncomingAttachment { url: string; content_type?: string | null }
+  interface IncomingAttachment { url?: string; content_type?: string | null; name?: string; storage_path?: string; mime_type?: string | null; size_bytes?: number | null }
   const attachments: IncomingAttachment[] = Array.isArray(bodyJson.attachments)
     ? (bodyJson.attachments as unknown[])
-        .filter((a): a is IncomingAttachment => typeof a === 'object' && a !== null && 'url' in a && typeof (a as { url: unknown }).url === 'string')
+        .filter((a): a is IncomingAttachment => {
+          if (typeof a !== 'object' || a === null) return false;
+          const o = a as Record<string, unknown>;
+          const hasStorage = typeof o.storage_path === 'string' && !!(o.storage_path as string);
+          const hasUrl = typeof o.url === 'string' && !!(o.url as string);
+          return hasStorage || hasUrl;
+        })
         .slice(0, 5)
     : [];
   if (!text && attachments.length === 0) return NextResponse.json({ error: "empty" }, { status: 400 });
@@ -210,6 +226,18 @@ export async function POST(request: Request, { params }: { params: { id: string 
     .gt('created_at', since);
   if ((recentCount || 0) > 30) return NextResponse.json({ error: 'rate_limited' }, { status: 429 });
 
+  // Choose default body if only attachments provided
+  const hasImageAttachment = attachments.some(a => {
+    const ct = (a.mime_type || a.content_type || '').toLowerCase();
+    return typeof ct === 'string' && ct.startsWith('image/');
+  });
+  const hasEpcQr = attachments.some(a => {
+    const name = (a.name || '').toLowerCase();
+    return name.includes('epc') && (a.mime_type || a.content_type || '').toLowerCase().startsWith('image/');
+  });
+  const defaultBody = attachments.length ? (hasImageAttachment && !hasEpcQr ? 'scan en betaal' : hasEpcQr ? '' : '[bijlage]') : '';
+  console.log('Message creation:', { hasImageAttachment, hasEpcQr, defaultBody, attachmentNames: attachments.map(a => a.name) });
+
   // Backward compatibility: legacy messages schema may still have NOT NULL listing_id / recipient_id columns.
   // Strategy:
   // 1. Attempt insert including listing_id when we have it (prevents NOT NULL failure).
@@ -219,7 +247,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
   type InsertedMessage = { id: string; sender_id: string; body: string; created_at: string; edited_at?: string | null; deleted_at?: string | null };
   let inserted: unknown = null; // will narrow after successful insert
   const listingId = (conv as { listing_id?: string | null })?.listing_id || null;
-  const basePayload: Record<string, unknown> = { conversation_id: params.id, sender_id: user.id, body: text || (attachments.length ? '[bijlage]' : '') };
+  const basePayload: Record<string, unknown> = { conversation_id: params.id, sender_id: user.id, body: text || defaultBody };
   if (listingId) basePayload.listing_id = listingId;
   {
     const { data, error } = await supabase
@@ -271,39 +299,63 @@ export async function POST(request: Request, { params }: { params: { id: string 
   await supabase.from("conversations").update({ updated_at: new Date().toISOString() }).eq("id", params.id);
 
   // Insert attachments
-  let insertedAttachments: { id: string; url: string; content_type: string | null }[] = [];
+  type AttachmentOut = { id: string; url?: string | null; content_type?: string | null; storage_path?: string; mime_type?: string | null; size_bytes?: number | null };
+  const insertedAttachments: AttachmentOut[] = [];
   let attachmentsError: string | null = null;
   if (msg && attachments.length) {
-    const rowsFull = attachments.map(a => ({ message_id: msg.id, url: a.url, content_type: a.content_type || null }));
-    if (rowsFull.length) {
+    // Partition attachments
+    const newOnes = attachments.filter(a => !!a.storage_path);
+    const legacyOnes = attachments.filter(a => !a.storage_path && !!a.url);
+    // Try new schema first (if any)
+    if (newOnes.length) {
       try {
-        const { data: ins, error: attErr } = await supabase
+        const newRows = newOnes.map(a => ({ message_id: msg.id, storage_path: a.storage_path!, mime_type: a.mime_type || a.content_type || null, size_bytes: a.size_bytes ?? null }));
+        const { data: insNew, error: errNew } = await supabase
           .from('message_attachments')
-          .insert(rowsFull)
-          .select('id,message_id,url,content_type');
-        if (attErr && /column .*content_type/i.test(attErr.message)) {
-          // Retry legacy schema without content_type column
-          const legacyRows = attachments.map(a => ({ message_id: msg.id, url: a.url }));
-          const { data: legacyIns, error: legacyErr } = await supabase
-            .from('message_attachments')
-            .insert(legacyRows)
-            .select('id,message_id,url');
-          if (legacyErr) {
-            attachmentsError = legacyErr.message || 'attachment_insert_failed';
-          } else if (legacyIns) {
-            insertedAttachments = (legacyIns as { id: string; message_id: string; url: string }[]).map(r => ({ id: r.id, url: r.url, content_type: null }));
-            attachmentsError = 'content_type_column_missing';
+          .insert(newRows)
+          .select('id,message_id,storage_path,mime_type,size_bytes');
+    if (errNew && /column .*storage_path/i.test(errNew.message)) {
+          // Table doesn't have new columns; fall back to legacy for these (requires url)
+          const fallbacks = newOnes.filter(a => !!a.url).map(a => ({ message_id: msg.id, url: a.url!, content_type: a.mime_type || a.content_type || null }));
+          if (fallbacks.length) {
+            const { data: insLegacyFromNew, error: errLegacyFromNew } = await supabase
+              .from('message_attachments')
+              .insert(fallbacks)
+              .select('id,message_id,url,content_type');
+            if (errLegacyFromNew) {
+              attachmentsError = errLegacyFromNew.message || 'attachment_insert_failed';
+            } else if (insLegacyFromNew) {
+        insertedAttachments.push(...(insLegacyFromNew as { id: string; message_id: string; url: string; content_type?: string | null }[]).map(r => ({ id: r.id, url: r.url, content_type: r.content_type || null })));
+            }
           }
-        } else {
-          if (attErr) {
-            attachmentsError = attErr.message || 'attachment_insert_failed';
-            if (process.env.NODE_ENV !== 'production') console.error('[messages/:id POST] attachments insert error', attErr.message);
-          }
-          if (ins) insertedAttachments = (ins as { id: string; message_id: string; url: string; content_type?: string | null }[]).map(r => ({ id: r.id, url: r.url, content_type: r.content_type || null }));
+        } else if (errNew) {
+          attachmentsError = errNew.message || 'attachment_insert_failed';
+          if (process.env.NODE_ENV !== 'production') console.error('[messages/:id POST] attachments(new) insert error', errNew.message);
+        } else if (insNew) {
+      insertedAttachments.push(...(insNew as { id: string; message_id: string; storage_path: string; mime_type?: string | null; size_bytes?: number | null }[]).map(r => ({ id: r.id, storage_path: r.storage_path, mime_type: r.mime_type || null, size_bytes: r.size_bytes ?? null })));
         }
       } catch (e) {
         attachmentsError = (e as Error)?.message || 'attachment_insert_failed';
-        if (process.env.NODE_ENV !== 'production') console.error('[messages/:id POST] attachments insert exception', attachmentsError);
+      }
+    }
+    // Then try legacy ones
+    if (legacyOnes.length) {
+      try {
+        const legacyRows = legacyOnes.map(a => ({ message_id: msg.id, url: a.url!, content_type: a.content_type || a.mime_type || null }));
+        const { data: insOld, error: errOld } = await supabase
+          .from('message_attachments')
+          .insert(legacyRows)
+          .select('id,message_id,url,content_type');
+        if (errOld && (/column .*url/i.test(errOld.message) || /null value in column "storage_path"/i.test(errOld.message))) {
+          // DB uses new schema only; can't save url-only attachments
+          attachmentsError = errOld.message || 'attachment_insert_failed';
+        } else if (errOld) {
+          attachmentsError = errOld.message || 'attachment_insert_failed';
+        } else if (insOld) {
+          insertedAttachments.push(...(insOld as { id: string; message_id: string; url: string; content_type?: string | null }[]).map(r => ({ id: r.id, url: r.url, content_type: r.content_type || null })));
+        }
+      } catch (e) {
+        attachmentsError = (e as Error)?.message || 'attachment_insert_failed';
       }
     }
   }
@@ -337,8 +389,8 @@ export async function PATCH(request: Request) {
   return NextResponse.json({ ok: true });
 }
 
-// DELETE (soft)
-export async function DELETE(request: Request) {
+// DELETE (soft delete message or hard delete conversation)
+export async function DELETE(request: Request, { params }: { params: { id: string } }) {
   let supabase = supabaseServer();
   let { data: { user } } = await supabase.auth.getUser();
   if (!user) {
@@ -351,13 +403,36 @@ export async function DELETE(request: Request) {
     }
   }
   if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
-  const payload = await request.json();
-  const messageId = String(payload.messageId || '');
-  if (!messageId) return NextResponse.json({ error: 'invalid' }, { status: 400 });
-  const { data: msg } = await supabase.from('messages').select('id, sender_id').eq('id', messageId).maybeSingle();
-  if (!msg || msg.sender_id !== user.id) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
-  const { error } = await supabase.from('messages').update({ deleted_at: new Date().toISOString(), body: '' }).eq('id', messageId);
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-  return NextResponse.json({ ok: true });
+
+  const url = new URL(request.url);
+  const isConversationDelete = url.searchParams.has('conversation');
+
+  if (isConversationDelete) {
+    // Delete entire conversation - verify user is participant
+    const { data: conv } = await supabase
+      .from('conversations')
+      .select('id, participants')
+      .eq('id', params.id)
+      .maybeSingle();
+    if (!conv || !Array.isArray(conv.participants) || !conv.participants.includes(user.id)) {
+      return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+    }
+    // Hard delete the conversation and all its messages
+    const { error: msgError } = await supabase.from('messages').delete().eq('conversation_id', params.id);
+    if (msgError) return NextResponse.json({ error: msgError.message }, { status: 400 });
+    const { error: convError } = await supabase.from('conversations').delete().eq('id', params.id);
+    if (convError) return NextResponse.json({ error: convError.message }, { status: 400 });
+    return NextResponse.json({ ok: true });
+  } else {
+    // Delete individual message (existing logic)
+    const payload = await request.json();
+    const messageId = String(payload.messageId || '');
+    if (!messageId) return NextResponse.json({ error: 'invalid' }, { status: 400 });
+    const { data: msg } = await supabase.from('messages').select('id, sender_id').eq('id', messageId).maybeSingle();
+    if (!msg || msg.sender_id !== user.id) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+    const { error } = await supabase.from('messages').update({ deleted_at: new Date().toISOString(), body: '' }).eq('id', messageId);
+    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    return NextResponse.json({ ok: true });
+  }
 }
 

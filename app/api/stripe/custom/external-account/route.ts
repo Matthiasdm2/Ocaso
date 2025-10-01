@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 
+export const dynamic = "force-dynamic";
+
 const stripeSecret = process.env.STRIPE_SECRET_KEY;
 if (!stripeSecret) {
   console.error('Missing STRIPE_SECRET_KEY');

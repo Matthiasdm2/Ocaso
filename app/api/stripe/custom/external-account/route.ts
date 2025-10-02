@@ -3,18 +3,19 @@ import Stripe from 'stripe';
 
 export const dynamic = "force-dynamic";
 
-const stripeSecret = process.env.STRIPE_SECRET_KEY;
-if (!stripeSecret) {
-  console.error('Missing STRIPE_SECRET_KEY');
-}
-const stripe = new Stripe(stripeSecret || '', { apiVersion: '2025-08-27.basil' });
-
 export async function POST(req: Request) {
   try {
-  const raw = await req.json().catch(() => ({})) as unknown;
-  const body = typeof raw === 'object' && raw !== null ? raw as Record<string, unknown> : {};
-  const accountId = typeof body.accountId === 'string' ? body.accountId : undefined;
-  const bankToken = typeof body.bankToken === 'string' ? body.bankToken : undefined;
+    const stripeSecret = process.env.STRIPE_SECRET_KEY;
+    if (!stripeSecret) {
+      console.error('Missing STRIPE_SECRET_KEY');
+      return NextResponse.json({ error: 'Missing STRIPE_SECRET_KEY' }, { status: 500 });
+    }
+    const stripe = new Stripe(stripeSecret, { apiVersion: '2025-08-27.basil' });
+
+    const raw = await req.json().catch(() => ({})) as unknown;
+    const body = typeof raw === 'object' && raw !== null ? raw as Record<string, unknown> : {};
+    const accountId = typeof body.accountId === 'string' ? body.accountId : undefined;
+    const bankToken = typeof body.bankToken === 'string' ? body.bankToken : undefined;
     if (!accountId) return NextResponse.json({ error: 'accountId ontbreekt' }, { status: 400 });
     if (!bankToken) return NextResponse.json({ error: 'bankToken ontbreekt' }, { status: 400 });
 

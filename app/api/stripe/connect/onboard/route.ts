@@ -3,6 +3,8 @@ import Stripe from "stripe";
 
 import { supabaseServer } from "@/lib/supabaseServer";
 
+export const dynamic = 'force-dynamic';
+
 /**
  * POST /api/stripe/connect/onboard
  * Creates (or reuses) a Standard connected account for the current user and returns an Account Link URL.

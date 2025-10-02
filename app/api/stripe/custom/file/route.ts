@@ -9,6 +9,8 @@ async function bufferToStream(buffer: Buffer) {
   return stream;
 }
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: Request) {
   try {
     const stripeSecret = process.env.STRIPE_SECRET_KEY;

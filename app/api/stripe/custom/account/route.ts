@@ -3,6 +3,8 @@ import Stripe from 'stripe';
 
 import { supabaseServiceRole } from '@/lib/supabaseServiceRole';
 
+export const dynamic = 'force-dynamic';
+
 export async function PATCH(req: Request) {
   try {
     const stripeSecret = process.env.STRIPE_SECRET_KEY;

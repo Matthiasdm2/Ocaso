@@ -1,9 +1,11 @@
 import ListingCard from "@/components/ListingCard";
+import { getBaseUrl } from "@/lib/getBaseUrl";
 import type { Listing } from "@/lib/types";
 
 async function getData(): Promise<{ items: Listing[] }> {
+  const base = getBaseUrl();
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL || ""}/api/listings?page=1&limit=24&sort=date_desc`,
+    `${base}/api/listings?page=1&limit=24&sort=date_desc`,
     { cache: "no-store" },
   );
   if (!res.ok) return { items: [] };

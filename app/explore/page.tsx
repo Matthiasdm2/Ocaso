@@ -1,12 +1,15 @@
 "use client";
 import { useEffect, useState } from "react";
 
+import { getBaseUrl } from "@/lib/getBaseUrl";
 import HeroSearch from "@/components/HeroSearch";
 import ListingCard from "@/components/ListingCard";
 import type { Listing } from "@/lib/types";
 
-function getData(): Promise<{ sponsored: Listing[]; recommended: Listing[] }> {
-  return fetch("/api/home", { cache: "no-store" }).then((res) => res.json());
+async function getData(): Promise<{ sponsored: Listing[]; recommended: Listing[] }> {
+  const base = getBaseUrl();
+  const res = await fetch(`${base}/api/home`, { cache: "no-store" });
+  return res.json();
 }
 
 export default function ExplorePage() {

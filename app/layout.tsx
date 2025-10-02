@@ -1,4 +1,6 @@
 import "./globals.css";
+// Global fetch patch to ensure relative /api/* calls are absolutized on server
+import "@/lib/ensureAbsoluteApiFetch";
 
 import type { Metadata } from "next";
 import dynamic from 'next/dynamic';

@@ -66,14 +66,16 @@ export async function GET(request: Request, { params }: { params: { id: string }
       .limit(50);
     if (before) legacy = legacy.lt('created_at', before);
     const legacyRes = await legacy;
-    messages = legacyRes.data?.map(m => ({ ...m, edited_at: null, deleted_at: null })) as typeof messages;
+  interface LegacyMsg { id: string; sender_id: string; body: string; created_at: string }
+  messages = (legacyRes.data as LegacyMsg[] | null | undefined)?.map((m: LegacyMsg) => ({ ...m, edited_at: null, deleted_at: null })) as typeof messages;
     error = legacyRes.error;
   }
   if (error) {
     if (process.env.NODE_ENV !== 'production') console.error('[messages/:id GET] query error', error.message);
     return NextResponse.json({ error: error.message, hint: 'Check that chat migrations are applied (edited_at/deleted_at columns)' }, { status: 400 });
   }
-  const ordered = (messages || []).reverse();
+  interface MsgRow { id: string; sender_id: string; body: string; created_at: string; edited_at?: string | null; deleted_at?: string | null }
+  const ordered = ((messages as MsgRow[] | null | undefined) || []).reverse();
   const hasMore = (messages || []).length === 50;
 
   // Batch load attachments (support both legacy url/content_type and new storage_path/mime_type/size_bytes)
@@ -87,7 +89,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
   };
   const attachmentsMap: Record<string, AttachmentOut[]> = {};
   try {
-    const ids = ordered.map(m => m.id);
+  const ids = ordered.map((m: MsgRow) => m.id);
     if (ids.length) {
       interface NewAttRow { id: string; message_id: string; storage_path: string; mime_type?: string | null; size_bytes?: number | null; url?: string | null; content_type?: string | null }
       interface OldAttRow { id: string; message_id: string; url: string; content_type?: string | null }
@@ -150,7 +152,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
       // ignore listing fetch errors
     }
   }
-  const messagesWithMeta = ordered.map((m) => ({
+  const messagesWithMeta = ordered.map((m: MsgRow) => ({
     ...m,
     attachments: attachmentsMap[m.id] || [],
     read: m.sender_id === user.id && peer_last_read_at ? (new Date(peer_last_read_at) >= new Date(m.created_at)) : false,

@@ -55,7 +55,7 @@ export default async function BusinessFullAanbodPage({ params, searchParams }: {
     else query = query.order('created_at', { ascending: false });
     const qRes = await query;
     if (qRes.data) {
-      listings = qRes.data.map(l => ({
+  listings = (qRes.data as ListingRow[]).map((l: ListingRow) => ({
         ...l,
         favorites: l.favorites_count != null ? l.favorites_count : 0,
         status: l.status === 'actief' ? 'active' : l.status,

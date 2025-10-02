@@ -46,7 +46,8 @@ export async function GET(request: Request) {
     if (error) {
       return NextResponse.json({ items: [], page:1, limit, total:0, error: error.message }, { headers: { 'Cache-Control': 'no-store' } });
     }
-    const items = (data ?? []).map(l => ({
+  interface SimpleListingRow { id: number; title: string; price: number; location?: string | null; state?: string | null; images?: string[] | null; main_photo?: string | null; created_at: string; status?: string; isBusinessSeller?: boolean | null }
+  const items = (data as SimpleListingRow[] | null | undefined ?? []).map((l: SimpleListingRow) => ({
       id: l.id,
       title: l.title,
       price: l.price,

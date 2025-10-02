@@ -33,7 +33,9 @@ export async function GET(request: Request) {
     .order("created_at", { ascending: false })
     .limit(12);
 
-  sponsored = (sponsoredData ?? []).map((l) => ({
+  type ImageField = string[] | null | undefined;
+  interface RawListing { id: number; title: string; price: number; location?: string | null; state?: string | null; images?: ImageField; main_photo?: string | null; created_at: string }
+  sponsored = (sponsoredData as RawListing[] | null | undefined ?? []).map((l: RawListing) => ({
     id: l.id,
     title: l.title,
     price: l.price,
@@ -60,7 +62,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ sponsored: [], recommended: [], error: error.message }, { status: 400 });
   }
 
-  const recommended = (data ?? []).map((l) => ({
+  const recommended = (data as RawListing[] | null | undefined ?? []).map((l: RawListing) => ({
     id: l.id,
     title: l.title,
     price: l.price,

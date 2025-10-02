@@ -137,7 +137,8 @@ export async function POST(request: Request) {
     .limit(5);
   existingQuery = existingQuery.eq('listing_id', listingId);
   const { data: existingCandidates } = await existingQuery;
-  const existing = (existingCandidates || []).find(c => Array.isArray(c.participants) && c.participants.length === 2 && c.participants[0] === participants[0] && c.participants[1] === participants[1]);
+  interface ConversationRow { id: string; participants: string[]; listing_id?: string | null; created_at?: string }
+  const existing = (existingCandidates as ConversationRow[] | null | undefined || []).find((c: ConversationRow) => Array.isArray(c.participants) && c.participants.length === 2 && c.participants[0] === participants[0] && c.participants[1] === participants[1]);
   if (existing) {
     return NextResponse.json({ conversation: existing, created: false });
   }
@@ -159,7 +160,7 @@ export async function POST(request: Request) {
         .limit(5);
   retry = retry.eq('listing_id', listingId);
       const { data: retryList } = await retry;
-      const again = (retryList || []).find(c => Array.isArray(c.participants) && c.participants.length === 2 && c.participants[0] === participants[0] && c.participants[1] === participants[1]);
+  const again = (retryList as ConversationRow[] | null | undefined || []).find((c: ConversationRow) => Array.isArray(c.participants) && c.participants.length === 2 && c.participants[0] === participants[0] && c.participants[1] === participants[1]);
       if (again) return NextResponse.json({ conversation: again, created: false });
       return NextResponse.json({ error: 'conflict_retry_failed' }, { status: 409 });
     }

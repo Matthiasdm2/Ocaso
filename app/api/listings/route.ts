@@ -110,7 +110,8 @@ export async function GET(request: Request) {
   }
 
   // Normaliseren naar front-end Listing type
-  const items = (workingData ?? []).map((l) => ({
+  interface ListingRow { id: number; title: string; price: number; location?: string | null; state?: string | null; images?: string[] | null; main_photo?: string | null; created_at: string }
+  const items = (workingData as ListingRow[] | null | undefined ?? []).map((l: ListingRow) => ({
     id: l.id,
     title: l.title,
     price: l.price,

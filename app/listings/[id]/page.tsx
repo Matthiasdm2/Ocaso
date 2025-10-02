@@ -61,7 +61,8 @@ export default async function ListingPage({ params }: { params: { id: string } }
       .limit(200);
     if (listingReviews && listingReviews.length) {
       sellerReviewCount = listingReviews.length;
-      const sum = listingReviews.reduce((s, r) => s + (Number(r.rating) || 0), 0);
+      interface ReviewRow { rating?: number | null }
+      const sum = (listingReviews as ReviewRow[]).reduce((s: number, r: ReviewRow) => s + (Number(r.rating) || 0), 0);
       sellerRating = sum / listingReviews.length;
     }
   }
@@ -72,7 +73,8 @@ export default async function ListingPage({ params }: { params: { id: string } }
       .select('id')
       .eq('seller_id', listing.seller_id)
       .limit(500);
-    const listingIds = (sellerListings || []).map(l => l.id).filter(Boolean);
+  interface SellerListingRow { id: string | null }
+  const listingIds = (sellerListings as SellerListingRow[] | null | undefined || []).map((l: SellerListingRow) => l.id).filter((v): v is string => Boolean(v));
     if (listingIds.length > 0) {
       const { data: reviewRows } = await supabase
         .from('reviews')
@@ -81,7 +83,8 @@ export default async function ListingPage({ params }: { params: { id: string } }
         .limit(1000);
       if (reviewRows && reviewRows.length) {
         sellerReviewCount = reviewRows.length;
-        const sum = reviewRows.reduce((s, r) => s + (Number(r.rating) || 0), 0);
+        interface ReviewRow2 { rating?: number | null }
+        const sum = (reviewRows as ReviewRow2[]).reduce((s: number, r: ReviewRow2) => s + (Number(r.rating) || 0), 0);
         sellerRating = sum / reviewRows.length;
       } else {
         sellerReviewCount = 0;
@@ -103,7 +106,8 @@ export default async function ListingPage({ params }: { params: { id: string } }
         .limit(2000);
       if (bizReviews && bizReviews.length) {
         sellerReviewCount = bizReviews.length;
-        const sum = bizReviews.reduce((s, r) => s + (Number((r as { rating?: number }).rating) || 0), 0);
+        interface BizReviewRow { rating?: number | null }
+        const sum = (bizReviews as BizReviewRow[]).reduce((s: number, r: BizReviewRow) => s + (Number(r.rating) || 0), 0);
         sellerRating = sum / bizReviews.length;
       } else if (sellerReviewCount == null) {
         sellerReviewCount = 0;

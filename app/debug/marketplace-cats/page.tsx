@@ -15,11 +15,11 @@ export default async function MarketplaceCatsDebugPage({ searchParams }: { searc
 
   const catIndex = new Map<number, CatRow>();
   const subsByParent = new Map<number, CatRow[]>();
-  (cats||[]).forEach(c => {
-    catIndex.set(c.id, c as CatRow);
+  (cats as CatRow[] | null | undefined || []).forEach((c: CatRow) => {
+    catIndex.set(c.id, c);
     if (c.parent_id) {
       const arr = subsByParent.get(c.parent_id) || [];
-      arr.push(c as CatRow);
+      arr.push(c);
       subsByParent.set(c.parent_id, arr);
     }
   });
@@ -33,14 +33,14 @@ export default async function MarketplaceCatsDebugPage({ searchParams }: { searc
   if (categoryParam) {
     if (isNum(categoryParam)) categoryFilterId = Number(categoryParam);
     else {
-      const found = (cats||[]).find(c => c.slug === categoryParam && !c.parent_id);
+  const found = (cats as CatRow[] | null | undefined || []).find((c: CatRow) => c.slug === categoryParam && !c.parent_id);
       if (found) categoryFilterId = found.id;
     }
   }
   if (subParam) {
     if (isNum(subParam)) subFilterId = Number(subParam);
     else {
-      const found = (cats||[]).find(c => c.slug === subParam && c.parent_id);
+  const found = (cats as CatRow[] | null | undefined || []).find((c: CatRow) => c.slug === subParam && c.parent_id);
       if (found) subFilterId = found.id;
     }
   }
@@ -54,7 +54,7 @@ export default async function MarketplaceCatsDebugPage({ searchParams }: { searc
     q = q.or(`subcategory_id.eq.${subFilterId},categories.cs.{${subFilterId}}`);
   } else if (categoryFilterId) {
     // include parent + subs
-    const subs = (cats||[]).filter(c => c.parent_id === categoryFilterId).map(c => c.id);
+  const subs = (cats as CatRow[] | null | undefined || []).filter((c: CatRow) => c.parent_id === categoryFilterId).map((c: CatRow) => c.id);
     const orParts: string[] = [`category_id.eq.${categoryFilterId}`, `categories.cs.{${categoryFilterId}}`];
     for (const sid of subs) {
       orParts.push(`subcategory_id.eq.${sid}`);
@@ -65,7 +65,8 @@ export default async function MarketplaceCatsDebugPage({ searchParams }: { searc
 
   const { data: listings, error } = await q;
 
-  const rows = (listings||[]).map(l => {
+  interface ListingRow { id: number | string; title?: string | null; category_id?: number | null; subcategory_id?: number | null; categories?: (number|string)[] | null }
+  const rows = (listings as ListingRow[] | null | undefined || []).map((l: ListingRow) => {
   const legacy: number[] = Array.isArray(l.categories)
     ? (l.categories as (string|number)[])
       .map(v => (typeof v === 'number' ? v : Number(v)))

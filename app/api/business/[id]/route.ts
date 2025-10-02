@@ -91,12 +91,14 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   }
 
   // Statistieken
+  interface ListingRow { status?: string; price?: number | null; views?: { count?: number | null }; bids?: { count?: number | null } }
+  const listArr = (listings as ListingRow[] | null | undefined) || [];
   const stats = {
-    totalListings: listings?.length ?? 0,
-    sold: listings?.filter(l => l.status === "sold").length ?? 0,
-    avgPrice: listings && listings.length ? Math.round(listings.reduce((sum, l) => sum + (l.price ?? 0), 0) / listings.length) : 0,
-    views: listings?.reduce((sum, l) => sum + (l.views?.count ?? 0), 0) ?? 0,
-    bids: listings?.reduce((sum, l) => sum + (l.bids?.count ?? 0), 0) ?? 0,
+    totalListings: listArr.length,
+    sold: listArr.filter((l: ListingRow) => l.status === "sold").length,
+    avgPrice: listArr.length ? Math.round(listArr.reduce((sum: number, l: ListingRow) => sum + (l.price ?? 0), 0) / listArr.length) : 0,
+    views: listArr.reduce((sum: number, l: ListingRow) => sum + (l.views?.count ?? 0), 0),
+    bids: listArr.reduce((sum: number, l: ListingRow) => sum + (l.bids?.count ?? 0), 0),
   };
 
   console.log(`[API /business/[id]] Response:`, { business, listings, reviews, stats });

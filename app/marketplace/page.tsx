@@ -279,7 +279,8 @@ export default async function MarketplacePage({ searchParams }: { searchParams?:
       .select('id,seller_id')
       .in('seller_id', sellerIds)
       .limit(600);
-    const allListingIds = (sellerListingsAll || []).map(l => l.id).filter(Boolean);
+  interface SellerListingIdRow { id: string | null; seller_id?: string | null }
+  const allListingIds = (sellerListingsAll as SellerListingIdRow[] | null | undefined || []).map((l: SellerListingIdRow) => l.id).filter((v): v is string => Boolean(v));
     if (allListingIds.length) {
       const { data: reviewRows } = await supabase
         .from('reviews')
@@ -287,17 +288,17 @@ export default async function MarketplacePage({ searchParams }: { searchParams?:
         .in('listing_id', allListingIds)
         .limit(5000);
       const listingToSeller: Record<string, string> = {};
-      (sellerListingsAll || []).forEach(l => { if (l.id && l.seller_id) listingToSeller[l.id] = l.seller_id; });
+  (sellerListingsAll as SellerListingIdRow[] | null | undefined || []).forEach((l: SellerListingIdRow) => { if (l.id && l.seller_id) listingToSeller[l.id] = l.seller_id; });
       const agg: Record<string, { sum: number; count: number }> = {};
       if (reviewRows) {
-        reviewRows.forEach(r => {
-          const row = r as { listing_id?: string; rating?: number };
-          const sid = row.listing_id ? listingToSeller[row.listing_id] : undefined;
-            if (!sid) return;
-            const val = Number(row.rating) || 0;
-            if (!agg[sid]) agg[sid] = { sum: 0, count: 0 };
-            agg[sid].sum += val;
-            agg[sid].count += 1;
+        interface ReviewRow { listing_id?: string | null; rating?: number | null }
+        (reviewRows as ReviewRow[]).forEach((r: ReviewRow) => {
+          const sid = r.listing_id ? listingToSeller[r.listing_id] : undefined;
+          if (!sid) return;
+          const val = Number(r.rating) || 0;
+          if (!agg[sid]) agg[sid] = { sum: 0, count: 0 };
+          agg[sid].sum += val;
+          agg[sid].count += 1;
         });
       }
       // Extra: voor business sellers zonder listing reviews -> probeer business_id aggregatie
@@ -420,8 +421,9 @@ export default async function MarketplacePage({ searchParams }: { searchParams?:
     featuredData = globalFeatured ?? [];
   }
 
+  interface FeaturedRow { id: number | string; title?: string | null; price?: number | null; images?: string[] | null; main_photo?: string | null; location?: string | null }
   const featuredItems =
-    (featuredData ?? []).map((x) => ({
+    (featuredData as FeaturedRow[] | null | undefined ?? []).map((x: FeaturedRow) => ({
       id: x.id,
       title: String(x.title ?? ""),
       price: Number(x.price ?? 0),

@@ -17,7 +17,7 @@ export default async function ListingsDebugPage() {
     <main style={{ padding: 24 }}>
       <h1>Listings (debug)</h1>
       <ul>
-        {data.map((l) => (
+  {(data as { id: number; title: string; price: number | null; created_at?: string | null }[]).map((l) => (
           <li key={l.id}>
             <strong>{l.title}</strong> — €{l.price}{" "}
             <small>({new Date(l.created_at!).toLocaleString()})</small>

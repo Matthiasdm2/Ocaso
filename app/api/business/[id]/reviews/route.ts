@@ -137,7 +137,8 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     console.error("[GET /business/:id/reviews] error", error);
     return NextResponse.json({ error: "Kon reviews niet laden" }, { status: 500 });
   }
-  const items = (data || []).map(r => {
+  interface ReviewRow { id: number; rating: number; comment: string; created_at: string; author?: unknown }
+  const items = (data as ReviewRow[] | null | undefined || []).map((r: ReviewRow) => {
     const rawAuthor: unknown = (r as unknown as { author?: unknown }).author;
     let display: string | null = null;
     let avatar: string | null = null;

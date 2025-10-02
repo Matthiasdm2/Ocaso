@@ -38,7 +38,8 @@ async function fetchBusinessProfiles(q?: string) {
     .select('id,full_name,avatar_url,is_business')
     .in('id', ids.slice(0, 60));
   if (pErr || !profiles) return [];
-  const business = profiles.filter(p => p.is_business).slice(0, 12);
+  interface ProfileRow { id: string; full_name: string | null; avatar_url: string | null; is_business: boolean }
+  const business = (profiles as ProfileRow[]).filter((p: ProfileRow) => p.is_business).slice(0, 12);
   return business as Array<{ id: string; full_name: string | null; avatar_url: string | null; is_business: boolean }>;
 }
 

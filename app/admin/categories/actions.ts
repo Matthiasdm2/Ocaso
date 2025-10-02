@@ -33,8 +33,8 @@ export async function importCategoriesCsv(form: FormData) {
   if (l1Payload.length) {
     const { error } = await sb.from("categories").upsert(l1Payload, { onConflict: "slug" });
     if (error) return { ok: false, error: error.message };
-    const { data } = await sb.from("categories").select("id,slug").in("slug", l1Payload.map(x=>x.slug));
-    data?.forEach((d) => l1Map.set(d.slug, d.id));
+  const { data } = await sb.from("categories").select("id,slug").in("slug", l1Payload.map(x=>x.slug));
+  (data as { id: number; slug: string }[] | null | undefined)?.forEach((d: { id: number; slug: string }) => l1Map.set(d.slug, d.id));
   }
 
   // 2) upsert L2
@@ -49,8 +49,8 @@ export async function importCategoriesCsv(form: FormData) {
   if (l2Payload.length) {
     const { error } = await sb.from("subcategories").upsert(l2Payload, { onConflict: "slug" });
     if (error) return { ok: false, error: error.message };
-    const { data } = await sb.from("subcategories").select("id,slug").in("slug", l2Payload.map(x=>x.slug));
-    data?.forEach((d) => l2Map.set(d.slug, d.id));
+  const { data } = await sb.from("subcategories").select("id,slug").in("slug", l2Payload.map(x=>x.slug));
+  (data as { id: number; slug: string }[] | null | undefined)?.forEach((d: { id: number; slug: string }) => l2Map.set(d.slug, d.id));
   }
 
   // 3) (optioneel) L3 (als je een aparte tabel L3 zou hebben; nu hangen we L3 onder L2 in JSON-model)

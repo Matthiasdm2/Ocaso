@@ -32,16 +32,15 @@ type Category = {
   subs?: Subcategory[];
 };
 
-/** ---------- Supabase Client ---------- */
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
 /**
  * Categorieën ophalen
  */
 async function fetchCategories(): Promise<Category[]> {
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+
   const { data, error } = await supabase
     .from("categories")
     .select(`

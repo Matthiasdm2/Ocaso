@@ -14,6 +14,13 @@ export function createClient() {
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!url || !anon) {
+    // During build time, return a mock client to prevent errors
+    if (typeof window === 'undefined') {
+      return {
+        auth: { getUser: () => Promise.resolve({ data: { user: null }, error: null }) },
+        from: () => ({ select: () => Promise.resolve({ data: null, error: null }) })
+      } as unknown as SupabaseClient;
+    }
     throw new Error(
       "Supabase: ontbrekende env vars. Zet NEXT_PUBLIC_SUPABASE_URL en NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local"
     );
@@ -31,4 +38,4 @@ export function createClient() {
 }
 
 /** Compat: laat ook `import { supabase } from '@/lib/supabaseClient'` werken */
-export const supabase = createClient();
+export const supabase = typeof window !== 'undefined' && process.env.NEXT_PUBLIC_SUPABASE_URL ? createClient() : ({} as unknown as SupabaseClient);

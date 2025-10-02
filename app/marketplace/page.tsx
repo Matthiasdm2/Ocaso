@@ -1,4 +1,4 @@
-import dynamic from "next/dynamic";
+import dynamicImport from "next/dynamic";
 
 import CategorySidebar from "@/components/CategorySidebar";
 import CollapsibleContainer from "@/components/CollapsibleContainer";
@@ -10,8 +10,10 @@ import RatingStars from "@/components/RatingStars";
 import { supabaseServer } from "@/lib/supabaseServer";
 import type { Category, Listing as BaseListing, Subcategory } from "@/lib/types";
 
-const ListingImageSlider = dynamic(() => import("@/components/ListingImageSlider"), { ssr: false });
-const ListingCardStats = dynamic(() => import("@/components/ListingCardStats"), { ssr: false });
+export const dynamic = 'force-dynamic';
+
+const ListingImageSlider = dynamicImport(() => import("@/components/ListingImageSlider"), { ssr: false });
+const ListingCardStats = dynamicImport(() => import("@/components/ListingCardStats"), { ssr: false });
 
 type Listing = BaseListing & {
   category_id?: number;

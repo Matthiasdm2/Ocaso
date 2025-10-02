@@ -4,6 +4,8 @@ import { NextResponse } from 'next/server';
 
 import { resolveServerConsent } from '@/lib/consentServer';
 
+export const dynamic = 'force-dynamic';
+
 type ProfilePreferences = {
   cookieConsent?: {
     functional?: boolean;

@@ -1,5 +1,7 @@
 import { supabaseServer } from "../../../lib/supabaseServer";
 
+export const dynamic = 'force-dynamic';
+
 export default async function ListingsDebugPage() {
   const supabase = supabaseServer();
   const { data, error } = await supabase

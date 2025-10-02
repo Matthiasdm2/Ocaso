@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 
 import { supabaseServer } from "@/lib/supabaseServer";
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Query parameters (alle optioneel):
  * - q           : string (fulltext op title & description)

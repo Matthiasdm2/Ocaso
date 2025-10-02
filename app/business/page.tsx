@@ -2,6 +2,8 @@ import { supabaseServer } from "@/lib/supabaseServer";
 
 import BusinessListClient from "./BusinessListClient";
 
+export const dynamic = 'force-dynamic';
+
 type CategorySidebarCategory = {
   id: number;
   name: string;

@@ -29,14 +29,6 @@ interface ListingRow {
   location?: string | null;
   allowoffers?: boolean | null;
   status?: string | null;
-  metrics?: {
-    stock?: number | null;
-    views?: number | null;
-    saves?: number | null;
-    bids?: number | null;
-    highest_bid?: number | null;
-    last_bid_at?: string | null;
-  } | null;
 }
 
 
@@ -70,58 +62,10 @@ export async function GET(req: Request) {
     );
   }
 
-  const colsBase = "id,title,description,price,images,main_photo,created_at,views,category_id,subcategory_id,categories,state,location,allowoffers,status";
-  const colsWithMetrics = `${colsBase},metrics`;
-  let data: ListingRow[] | null = null;
-  let count: number | null = null;
-  let error: { message: string } | null = null;
-  // Try with metrics first
-  {
-    const res = await supabase
-      .from("listings")
-      .select(colsWithMetrics, { count: "exact" })
-      .eq("seller_id", sellerId);
-    data = res.data as unknown as ListingRow[] | null;
-    count = res.count ?? null;
-    error = res.error as unknown as { message: string } | null;
-    // Fallback if metrics column doesn't exist
-  if (error && /column\s+"?metrics"?\s+does not exist/i.test(error.message || "")) {
-      const res2 = await supabase
-        .from("listings")
-        .select(colsBase, { count: "exact" })
-        .eq("seller_id", sellerId);
-      data = res2.data as unknown as ListingRow[] | null;
-      count = res2.count ?? null;
-      error = res2.error as unknown as { message: string } | null;
-    }
-  }
-
-  // Try legacy fallbacks if no error but zero results (e.g., data stored under organization_id or user_id)
-  if (!error && ((data?.length ?? 0) === 0)) {
-    try {
-      // organization_id fallback
-      const resOrg = await supabase
-        .from("listings")
-        .select(colsWithMetrics, { count: "exact" })
-        .eq("organization_id", sellerId);
-      if (resOrg.data && resOrg.data.length > 0) {
-        data = resOrg.data as unknown as ListingRow[];
-        count = resOrg.count ?? resOrg.data.length;
-      } else if (!resOrg.data || resOrg.data.length === 0) {
-        // user_id fallback (very old rows)
-        const resUser = await supabase
-          .from("listings")
-          .select(colsWithMetrics, { count: "exact" })
-          .eq("user_id", sellerId);
-        if (resUser.data && resUser.data.length > 0) {
-          data = resUser.data as unknown as ListingRow[];
-          count = resUser.count ?? resUser.data.length;
-        }
-      }
-    } catch (_) {
-      // ignore: columns may not exist in this DB
-    }
-  }
+  const { data, count, error } = await supabase
+    .from("listings")
+    .select("id,title,description,price,images,main_photo,created_at,views,category_id,subcategory_id,categories,state,location,allowoffers,status", { count: "exact" })
+    .eq("seller_id", sellerId);
 
   if (error) {
     return NextResponse.json(
@@ -217,10 +161,6 @@ export async function GET(req: Request) {
       location: l.location ?? null,
       allow_offers: l.allowoffers ?? false,
       status: mapStatus(l.status),
-      stock: ((): number | null => {
-        const s = l.metrics?.stock;
-        return typeof s === 'number' ? s : null;
-      })(),
     });
   }
 

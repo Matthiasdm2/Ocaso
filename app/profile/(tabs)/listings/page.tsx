@@ -33,7 +33,6 @@ type Listing = {
   subcategory?: string | null;
   images?: string[] | null;
   main_photo?: string | null;
-  stock?: number | null; // optioneel, enkel voor zakelijke verkopers
 };
 
 type Bid = {
@@ -127,9 +126,7 @@ export default function ListingsPage() {
             bids?: number | null;
             highest_bid?: number | null;
             last_bid_at?: string | null;
-            stock?: number | null;
           };
-          stock?: number | null; // indien API rechtstreeks meegeeft
         };
 
         const rows: Listing[] = (d.items || []).map((x: ApiListing) => ({
@@ -155,12 +152,6 @@ export default function ListingsPage() {
           location: x.location ?? null,
           allow_offers: x.allow_offers ?? x.allowOffers ?? false,
           description: x.description ?? null,
-          stock: ((): number | null => {
-            const direct = (x as { stock?: number | null }).stock;
-            if (typeof direct === 'number') return direct;
-            const fromMetrics = x.metrics?.stock;
-            return typeof fromMetrics === 'number' ? fromMetrics : null;
-          })(),
         }));
 
         setItems(rows);
@@ -612,9 +603,6 @@ export default function ListingsPage() {
                         <th className="px-3 py-3 text-left w-[72px]">Foto</th>
                         <th className="px-3 py-3 text-left">Titel</th>
                         <th className="px-3 py-3 text-right w-28">Prijs</th>
-                        {profile?.business?.isBusiness ? (
-                          <th className="px-3 py-3 text-center w-24">Voorraad</th>
-                        ) : null}
                         <th className="px-3 py-3 text-center w-24">Bezoekers</th>
                         <th className="px-3 py-3 text-center w-24">Opgeslagen</th>
                         <th className="px-3 py-3 text-center w-32">Biedingen</th>
@@ -657,11 +645,6 @@ export default function ListingsPage() {
                           <td className="px-3 py-3 text-right text-sm tabular-nums">
                             {formatCurrency(it.price ?? null, it.currency || 'EUR')}
                           </td>
-                          {profile?.business?.isBusiness ? (
-                            <td className="px-3 py-3 text-center text-sm tabular-nums">
-                              {typeof it.stock === 'number' ? it.stock : '—'}
-                            </td>
-                          ) : null}
                           <td className="px-3 py-3 text-center text-sm tabular-nums">{it.views ?? 0}</td>
                           <td className="px-3 py-3 text-center text-sm tabular-nums">{it.saves ?? 0}</td>
                           <td className="px-3 py-3 text-center text-sm">

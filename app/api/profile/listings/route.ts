@@ -96,20 +96,30 @@ export async function GET(req: Request) {
     }
   }
 
-  // Legacy fallback: some databases may still store owner in user_id
-  if (!error && (!data || data.length === 0)) {
+  // Try legacy fallbacks if no error but zero results (e.g., data stored under organization_id or user_id)
+  if (!error && ((data?.length ?? 0) === 0)) {
     try {
-      const resLegacy = await supabase
+      // organization_id fallback
+      const resOrg = await supabase
         .from("listings")
-  .select(colsWithMetrics, { count: "exact" })
-  .eq("user_id", sellerId as string);
-      if (!resLegacy.error && Array.isArray(resLegacy.data) && resLegacy.data.length > 0) {
-        data = resLegacy.data as unknown as ListingRow[];
-        count = resLegacy.count ?? data.length;
-        error = null;
+        .select(colsWithMetrics, { count: "exact" })
+        .eq("organization_id", sellerId);
+      if (resOrg.data && resOrg.data.length > 0) {
+        data = resOrg.data as unknown as ListingRow[];
+        count = resOrg.count ?? resOrg.data.length;
+      } else if (!resOrg.data || resOrg.data.length === 0) {
+        // user_id fallback (very old rows)
+        const resUser = await supabase
+          .from("listings")
+          .select(colsWithMetrics, { count: "exact" })
+          .eq("user_id", sellerId);
+        if (resUser.data && resUser.data.length > 0) {
+          data = resUser.data as unknown as ListingRow[];
+          count = resUser.count ?? resUser.data.length;
+        }
       }
-    } catch {
-      // ignore if column doesn't exist or any other postgrest error
+    } catch (_) {
+      // ignore: columns may not exist in this DB
     }
   }
 

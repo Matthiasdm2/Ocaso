@@ -73,6 +73,33 @@ export async function POST(request: Request) {
         .single();
       orderId = (row as { id: string } | null)?.id || null;
     }
+    // Decrement stock for the listing when payment is confirmed via bank transfer
+    if (listingId) {
+      try {
+        const { data: lst } = await admin
+          .from('listings')
+          .select('stock')
+          .eq('id', listingId)
+          .maybeSingle();
+        const cur = (lst as { stock?: number | null } | null)?.stock;
+        // try find quantity from the order we've just set/created
+        let qty = 1;
+        if (orderId) {
+          const { data: ord } = await admin.from('orders').select('quantity').eq('id', orderId).maybeSingle();
+          qty = Math.max(1, Number((ord as { quantity?: number | null } | null)?.quantity ?? 1));
+        }
+        if (typeof cur === 'number' && cur > 0) {
+          await admin
+            .from('listings')
+            .update({ stock: Math.max(0, cur - qty) })
+            .eq('id', listingId)
+            .eq('stock', cur);
+        }
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error('stock decrement (bank transfer) failed', e);
+      }
+    }
   } catch (e) {
     // continue without failing hard
   }

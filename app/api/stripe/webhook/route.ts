@@ -72,6 +72,34 @@ export async function POST(req: Request) {
           .update({ state: "captured", released_at: new Date().toISOString() })
           .eq("stripe_payment_intent_id", pi.id);
         if (error) console.error("orders update (succeeded)", error);
+        // Also decrement stock for the linked listing by 1, if available
+        try {
+          const { data: orderRow } = await supabase
+            .from('orders')
+            .select('listing_id,quantity')
+            .eq('stripe_payment_intent_id', pi.id)
+            .maybeSingle();
+          const listingId = (orderRow as { listing_id?: string | null } | null)?.listing_id || null;
+          const qty = Math.max(1, Number((orderRow as { quantity?: number | null } | null)?.quantity ?? 1));
+          if (listingId) {
+            // Safe read-modify-write with optimistic check to avoid negatives
+            const { data: lst } = await supabase
+              .from('listings')
+              .select('stock')
+              .eq('id', listingId)
+              .maybeSingle();
+            const cur = (lst as { stock?: number | null } | null)?.stock;
+            if (typeof cur === 'number' && cur > 0) {
+              await supabase
+                .from('listings')
+                .update({ stock: Math.max(0, cur - qty) })
+                .eq('id', listingId)
+                .eq('stock', cur); // optimistic concurrency guard
+            }
+          }
+        } catch (e) {
+          console.error('stock decrement on payment_intent.succeeded failed', e);
+        }
         break;
       }
       case "charge.dispute.created": {

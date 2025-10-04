@@ -288,6 +288,8 @@ export default async function ListingPage({ params }: { params: { id: string } }
                 sellerKycCompleted={sellerKycCompleted}
                 allowOffers={listing.allowOffers}
                 min_bid={listing.min_bid}
+                // pass stock for capping of qty
+                stock={(listing as { stock?: number | null }).stock ?? null}
               />
             </div>
           </section>

@@ -1,7 +1,11 @@
 // app/api/profile/listings/route.ts
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+
+// Ensure this route is always dynamic (uses cookies/auth)
+export const dynamic = 'force-dynamic';
 
 function mapStatus(dbStatus: string | null | undefined): string {
   const mapping: Record<string, string> = {
@@ -18,6 +22,7 @@ interface ListingRow {
   title: string | null;
   description: string | null;
   price: number | string | null;
+  stock?: number | null;
   images: string[] | null;
   main_photo: string | null;
   created_at: string | null;
@@ -42,16 +47,35 @@ export async function GET(req: Request) {
   // const offset = (page - 1) * limit;
 
   // Supabase client met cookies (zodat auth werkt)
-  const supabase = createRouteHandlerClient({ cookies });
+  let supabase = createRouteHandlerClient({ cookies });
 
   // 1) seller_id uit query gebruiken (client stuurt deze mee)
   //    zo niet aanwezig: terugvallen op ingelogde user
   let sellerId = searchParams.get("seller_id") ?? undefined;
-  if (!sellerId) {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    sellerId = user?.id;
+  // Probeer user af te leiden uit cookies; als dat faalt, val terug op Bearer token
+  let { data: { user } } = await supabase.auth.getUser();
+  if (!sellerId) sellerId = user?.id;
+  if (!sellerId || !user) {
+    const auth = req.headers.get('authorization');
+    const token = auth?.toLowerCase().startsWith('bearer ') ? auth.slice(7) : null;
+    if (token) {
+      try {
+        const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+        const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+        const alt = createClient(url, anon, {
+          global: { headers: { Authorization: `Bearer ${token}` } },
+          auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+        });
+        const got = await alt.auth.getUser();
+        if (got.data.user) {
+          supabase = alt as unknown as typeof supabase; // switch naar bearer-gebonden client
+          user = got.data.user;
+          if (!sellerId) sellerId = got.data.user.id;
+        }
+      } catch {
+        // ignore
+      }
+    }
   }
 
   if (!sellerId) {
@@ -62,16 +86,36 @@ export async function GET(req: Request) {
     );
   }
 
-  const { data, count, error } = await supabase
-    .from("listings")
-    .select("id,title,description,price,images,main_photo,created_at,views,category_id,subcategory_id,categories,state,location,allowoffers,status", { count: "exact" })
-    .eq("seller_id", sellerId);
-
-  if (error) {
-    return NextResponse.json(
-      { items: [], page, limit, total: 0, error: error.message },
-      { headers: { "Cache-Control": "no-store" } },
-    );
+  // Try selecting with stock; if the column doesn't exist in this environment, retry without it.
+  let noStockColumn = false;
+  let data: ListingRow[] | null = null;
+  let count: number | null = null;
+  {
+    const first = await supabase
+      .from("listings")
+      .select("id,title,description,price,stock,images,main_photo,created_at,views,category_id,subcategory_id,categories,state,location,allowoffers,status", { count: "exact" })
+      .eq("seller_id", sellerId);
+    const msg = first.error?.message || "";
+    const unknownColumn = /column|does not exist|unknown|invalid reference/i.test(msg);
+    if (first.error && (/stock/i.test(msg) || /allowoffers/i.test(msg) || unknownColumn)) {
+      // Fallback: relax columns; omit stock and allowoffers to be safe across envs
+      noStockColumn = /stock/i.test(msg);
+      const fallback = await supabase
+        .from("listings")
+        .select("id,title,description,price,images,main_photo,created_at,views,category_id,subcategory_id,categories,state,location,status", { count: "exact" })
+        .eq("seller_id", sellerId);
+      data = (fallback.data as unknown as ListingRow[]) ?? [];
+      count = fallback.count ?? 0;
+    } else {
+      data = (first.data as unknown as ListingRow[]) ?? [];
+      count = first.count ?? 0;
+      if (first.error) {
+        return NextResponse.json(
+          { items: [], page, limit, total: 0, error: first.error.message },
+          { headers: { "Cache-Control": "no-store" } },
+        );
+      }
+    }
   }
 
   // Verzamel unieke categorie & subcategorie ids
@@ -148,6 +192,7 @@ export async function GET(req: Request) {
       title: l.title ?? "",
       description: l.description ?? "",
       price: Number(l.price ?? 0),
+      stock: noStockColumn ? null : (typeof (l as { stock?: number | null }).stock === 'number' ? (l as { stock?: number | null }).stock! : null),
       imageUrl: l.main_photo ?? (Array.isArray(l.images) && l.images[0] ? l.images[0] : null),
       images: l.images ?? [],
       main_photo: l.main_photo ?? null,

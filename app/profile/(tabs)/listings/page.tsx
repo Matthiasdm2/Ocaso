@@ -15,6 +15,7 @@ type Listing = {
   title: string;
   price?: number | null;
   currency?: string | null;
+  stock?: number | null;
   category?: string | null;
   condition?: string | null;
   created_at?: string | null;
@@ -82,7 +83,7 @@ export default function ListingsPage() {
       setLoading(true);
       setErr(null);
       try {
-  const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
           setLoading(false);
           setErr('Je bent niet aangemeld.');
@@ -90,7 +91,13 @@ export default function ListingsPage() {
         }
 
         const url = `/api/profile/listings?seller_id=${encodeURIComponent(user.id)}&include=metrics=1`;
-        const r = await fetch(url, { cache: "no-store" });
+        // Voeg bearer token toe zodat API route kan authenticeren wanneer cookies ontbreken
+        let token: string | null = null;
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          token = session?.access_token || null;
+        } catch { /* noop */ }
+        const r = await fetch(url, { cache: "no-store", headers: token ? { Authorization: `Bearer ${token}` } : {} });
         if (!r.ok) throw new Error(`Server ${r.status}`);
         const d = await r.json();
 
@@ -100,6 +107,8 @@ export default function ListingsPage() {
           title?: string;
           price?: number | null;
           currency?: string | null;
+          stock?: number | null;
+          quantity?: number | null;
           imageUrl?: string | null;
           images?: string[] | null;
           main_photo?: string | null;
@@ -134,6 +143,7 @@ export default function ListingsPage() {
           title: x.title ?? '—',
           price: x.price ?? null,
           currency: x.currency ?? 'EUR',
+          stock: x.stock ?? x.quantity ?? null,
           imageUrl: x.imageUrl ?? null, // <- hier
           images: x.images ?? null,
           main_photo: x.main_photo ?? null,
@@ -339,6 +349,34 @@ export default function ListingsPage() {
       alert('Verwijderen mislukt. Probeer opnieuw.');
     } finally {
       setBusyIds((m) => ({ ...m, [id]: false }));
+    }
+  }
+
+  // Update stock helpers
+  function setLocalStock(id: string, value: number | null) {
+    setItems(prev => prev.map(l => l.id === id ? { ...l, stock: value } : l));
+  }
+  async function saveStock(id: string, value: number | null) {
+    setBusyIds(m => ({ ...m, [id]: true }));
+    try {
+      const res = await fetch(`/api/listings/${encodeURIComponent(id)}`, {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ stock: value == null || Number.isNaN(value) ? null : Number(value) }),
+      });
+      if (!res.ok) throw new Error('Stock opslaan mislukt');
+      // Optionally sync with returned value
+      try {
+        const data = await res.json();
+        const v = typeof data?.stock === 'number' ? data.stock : value;
+        setLocalStock(id, v);
+      } catch {
+        // keep local
+      }
+    } catch (e) {
+      alert('Stock opslaan mislukt');
+    } finally {
+      setBusyIds(m => ({ ...m, [id]: false }));
     }
   }
 
@@ -603,6 +641,7 @@ export default function ListingsPage() {
                         <th className="px-3 py-3 text-left w-[72px]">Foto</th>
                         <th className="px-3 py-3 text-left">Titel</th>
                         <th className="px-3 py-3 text-right w-28">Prijs</th>
+                        <th className="px-3 py-3 text-center w-24">Voorraad</th>
                         <th className="px-3 py-3 text-center w-24">Bezoekers</th>
                         <th className="px-3 py-3 text-center w-24">Opgeslagen</th>
                         <th className="px-3 py-3 text-center w-32">Biedingen</th>
@@ -644,6 +683,34 @@ export default function ListingsPage() {
                           </td>
                           <td className="px-3 py-3 text-right text-sm tabular-nums">
                             {formatCurrency(it.price ?? null, it.currency || 'EUR')}
+                          </td>
+                          <td className="px-3 py-3 text-center text-sm tabular-nums">
+                            <input
+                              type="number"
+                              min={0}
+                              inputMode="numeric"
+                              pattern="[0-9]*"
+                              className="w-20 rounded border border-neutral-200 bg-white px-2 py-1 text-sm text-center disabled:opacity-50"
+                              value={typeof it.stock === 'number' ? String(it.stock) : ''}
+                              placeholder="—"
+                              disabled={!!busyIds[it.id]}
+                              onChange={(e) => {
+                                const v = e.target.value === '' ? null : Math.max(0, Number(e.target.value));
+                                setLocalStock(it.id, v);
+                              }}
+                              onBlur={(e) => {
+                                const v = e.target.value === '' ? null : Math.max(0, Number(e.target.value));
+                                saveStock(it.id, v);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  const target = e.target as HTMLInputElement;
+                                  const v = target.value === '' ? null : Math.max(0, Number(target.value));
+                                  (e.currentTarget as HTMLInputElement).blur();
+                                  saveStock(it.id, v);
+                                }
+                              }}
+                            />
                           </td>
                           <td className="px-3 py-3 text-center text-sm tabular-nums">{it.views ?? 0}</td>
                           <td className="px-3 py-3 text-center text-sm tabular-nums">{it.saves ?? 0}</td>

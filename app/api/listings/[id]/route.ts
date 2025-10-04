@@ -62,6 +62,7 @@ export async function PUT(req: Request, { params }: Ctx) {
       title?: string;
       description?: string;
       price?: number;
+  stock?: number | null;
       state?: string;
       location?: string;
       allowoffers?: boolean;
@@ -74,6 +75,7 @@ export async function PUT(req: Request, { params }: Ctx) {
     if (body.title !== undefined) updateData.title = body.title;
     if (body.description !== undefined) updateData.description = body.description;
     if (body.price !== undefined) updateData.price = body.price;
+  if (body.stock !== undefined) updateData.stock = (body.stock == null || Number.isNaN(Number(body.stock))) ? null : Number(body.stock);
     if (body.condition !== undefined) updateData.state = body.condition;
     if (body.location !== undefined) updateData.location = body.location;
     if (body.allow_offers !== undefined) updateData.allowoffers = body.allow_offers;

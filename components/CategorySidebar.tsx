@@ -15,22 +15,29 @@ export default function CategorySidebar({ categories }: { categories: CategorySi
   const pathname = usePathname();
 
   // Ondersteun ook legacy ?cat= uit oudere links / home
-  const activeCategorySlug = params.get("category") || params.get("cat") || undefined;
-  const activeSubSlug = params.get("sub") || params.get("subcategory") || undefined; // legacy 'subcategory'
+  const activeCategoryParam = params.get("category") || params.get("cat") || undefined; // kan slug of id zijn
+  const activeSubParam = params.get("sub") || params.get("subcategory") || undefined; // kan slug of id zijn
 
   // Bepaal initieel open category (als een sub actief is, open zijn parent)
   const activeCategoryId = useMemo(() => {
-    if (activeCategorySlug) {
-      const c = categories.find(c => c.slug === activeCategorySlug);
-      if (c) return c.id;
+    // 1) Probeer category param als slug of id
+    if (activeCategoryParam) {
+      const isNum = /^\d+$/.test(activeCategoryParam);
+      const byCat = isNum
+        ? categories.find(c => String(c.id) === activeCategoryParam)
+        : categories.find(c => c.slug === activeCategoryParam);
+      if (byCat) return byCat.id;
     }
-    if (activeSubSlug) {
+    // 2) Afleiden via sub param (slug of id)
+    if (activeSubParam) {
+      const isNum = /^\d+$/.test(activeSubParam);
       for (const c of categories) {
-        if (c.subcategories.some(s => s.slug === activeSubSlug)) return c.id;
+        const match = c.subcategories.some(s => isNum ? String(s.id) === activeSubParam : s.slug === activeSubParam);
+        if (match) return c.id;
       }
     }
     return null;
-  }, [activeCategorySlug, activeSubSlug, categories]);
+  }, [activeCategoryParam, activeSubParam, categories]);
 
   const [openId, setOpenId] = useState<number | null>(activeCategoryId);
   const [isPending, startTransition] = useTransition();
@@ -45,12 +52,12 @@ export default function CategorySidebar({ categories }: { categories: CategorySi
   }, [activeCategoryId, openId]);
 
   // Helper: bouw nieuwe URL met behoud van andere filters
-  const buildAndNavigate = useCallback((catSlug?: string, subSlug?: string) => {
+  const buildAndNavigate = useCallback((catSlugOrId?: string, subSlugOrId?: string) => {
     const newParams = new URLSearchParams(params.toString());
     newParams.delete("page");
-    if (catSlug) newParams.set("category", catSlug); else newParams.delete("category");
-    if (subSlug) {
-      newParams.set("sub", subSlug);
+    if (catSlugOrId) newParams.set("category", catSlugOrId); else newParams.delete("category");
+    if (subSlugOrId) {
+      newParams.set("sub", subSlugOrId);
       newParams.delete("subcategory");
     } else {
       newParams.delete("sub");
@@ -75,11 +82,13 @@ export default function CategorySidebar({ categories }: { categories: CategorySi
   const handleCategoryClick = (cat: CategorySidebarCategory) => {
     // Toggle open; bij click ook navigeren naar alleen category (zonder sub)
     setOpenId(openId === cat.id ? null : cat.id);
-    buildAndNavigate(cat.slug, undefined);
+    // Fallback naar id wanneer slug ontbreekt
+    buildAndNavigate(cat.slug || String(cat.id), undefined);
   };
 
   const handleSubcategoryClick = (cat: CategorySidebarCategory, sub: { id: number; name: string; slug: string }) => {
-    buildAndNavigate(cat.slug, sub.slug);
+    // Fallback naar id wanneer slug ontbreekt
+    buildAndNavigate(cat.slug || String(cat.id), sub.slug || String(sub.id));
   };
   return (
   <aside ref={asideRef} className="bg-white border border-gray-200 rounded-xl shadow-sm p-5 h-fit relative">
@@ -97,11 +106,11 @@ export default function CategorySidebar({ categories }: { categories: CategorySi
             <li key={cat.id}>
               <button
                 className={`w-full text-left px-4 py-1.5 rounded-lg transition-colors duration-150 cursor-pointer text-base font-medium flex items-center focus:outline-none focus:ring-2 focus:ring-primary truncate ${
-                  cat.slug === activeCategorySlug ? "bg-primary text-white shadow" : "text-gray-800 hover:bg-primary/10"
+                  (cat.slug && cat.slug === activeCategoryParam) || String(cat.id) === activeCategoryParam ? "bg-primary text-white shadow" : "text-gray-800 hover:bg-primary/10"
                 }`}
                 onClick={() => handleCategoryClick(cat)}
                 aria-expanded={openId === cat.id}
-                aria-current={cat.slug === activeCategorySlug ? "true" : undefined}
+                aria-current={(cat.slug && cat.slug === activeCategoryParam) || String(cat.id) === activeCategoryParam ? "true" : undefined}
               >
                 <span className="truncate">{cat.name}</span>
               </button>
@@ -111,12 +120,12 @@ export default function CategorySidebar({ categories }: { categories: CategorySi
                     <li key={sub.id}>
                       <button
                         className={`block w-full text-left px-3 py-1 rounded-lg text-sm cursor-pointer transition-colors duration-150 truncate ${
-                          sub.slug === activeSubSlug
+                          (sub.slug && sub.slug === activeSubParam) || String(sub.id) === activeSubParam
                             ? "bg-primary/20 text-primary font-medium"
                             : "text-gray-700 hover:bg-primary/20"
                         }`}
                         onClick={() => handleSubcategoryClick(cat, sub)}
-                        aria-current={sub.slug === activeSubSlug ? "true" : undefined}
+                        aria-current={(sub.slug && sub.slug === activeSubParam) || String(sub.id) === activeSubParam ? "true" : undefined}
                       >
                         <span className="truncate">{sub.name}</span>
                       </button>

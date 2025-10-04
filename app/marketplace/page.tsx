@@ -366,6 +366,42 @@ export default async function MarketplacePage({ searchParams }: { searchParams?:
     }
   }
 
+  // Tweede fallback: als er nog steeds geen subcategories aanwezig zijn, haal ze uit de aparte subcategories tabel op basis van category_id
+  if (!categoriesData || (Array.isArray(categoriesData) && categoriesData.length > 0 && categoriesData.every((c: FlatCategoryRow) => !Array.isArray(c.subcategories) || c.subcategories.length === 0))) {
+    // Ouders ophalen
+    const { data: parentCats } = await supabase
+      .from("categories")
+      .select("id, name, slug, sort_order, is_active")
+      .order("name", { ascending: true });
+    // Subcategorieën ophalen uit aparte tabel
+    const { data: subsRows } = await supabase
+      .from("subcategories")
+      .select("id, name, slug, sort_order, is_active, category_id")
+      .order("sort_order", { ascending: true });
+    type SubRow = { id: number; name: string; slug: string; sort_order?: number | null; is_active?: boolean | null; category_id: number };
+    const byCat: Record<number, SubRow[]> = {};
+    (subsRows as SubRow[] | null | undefined || []).forEach((s) => {
+      if (typeof s.category_id === 'number') {
+        if (!byCat[s.category_id]) byCat[s.category_id] = [];
+        byCat[s.category_id].push(s);
+      }
+    });
+    categoriesData = (parentCats as FlatCategoryRow[] | null | undefined || []).map((p) => ({
+      id: p.id,
+      name: p.name,
+      slug: p.slug,
+      sort_order: p.sort_order ?? null,
+      is_active: p.is_active ?? null,
+      subcategories: (byCat[p.id] || []).map((s) => ({
+        id: s.id,
+        name: s.name,
+        slug: s.slug,
+        sort_order: s.sort_order ?? null,
+        is_active: s.is_active ?? null,
+      })),
+    }));
+  }
+
   type SupabaseCategory = {
     id: number;
     name: string;

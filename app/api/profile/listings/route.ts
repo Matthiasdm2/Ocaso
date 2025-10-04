@@ -29,6 +29,14 @@ interface ListingRow {
   location?: string | null;
   allowoffers?: boolean | null;
   status?: string | null;
+  metrics?: {
+    stock?: number | null;
+    views?: number | null;
+    saves?: number | null;
+    bids?: number | null;
+    highest_bid?: number | null;
+    last_bid_at?: string | null;
+  } | null;
 }
 
 
@@ -62,10 +70,48 @@ export async function GET(req: Request) {
     );
   }
 
-  const { data, count, error } = await supabase
-    .from("listings")
-    .select("id,title,description,price,images,main_photo,created_at,views,category_id,subcategory_id,categories,state,location,allowoffers,status", { count: "exact" })
-    .eq("seller_id", sellerId);
+  const colsBase = "id,title,description,price,images,main_photo,created_at,views,category_id,subcategory_id,categories,state,location,allowoffers,status";
+  const colsWithMetrics = `${colsBase},metrics`;
+  let data: ListingRow[] | null = null;
+  let count: number | null = null;
+  let error: { message: string } | null = null;
+  // Try with metrics first
+  {
+    const res = await supabase
+      .from("listings")
+      .select(colsWithMetrics, { count: "exact" })
+      .eq("seller_id", sellerId);
+    data = res.data as unknown as ListingRow[] | null;
+    count = res.count ?? null;
+    error = res.error as unknown as { message: string } | null;
+    // Fallback if metrics column doesn't exist
+  if (error && /column\s+"?metrics"?\s+does not exist/i.test(error.message || "")) {
+      const res2 = await supabase
+        .from("listings")
+        .select(colsBase, { count: "exact" })
+        .eq("seller_id", sellerId);
+      data = res2.data as unknown as ListingRow[] | null;
+      count = res2.count ?? null;
+      error = res2.error as unknown as { message: string } | null;
+    }
+  }
+
+  // Legacy fallback: some databases may still store owner in user_id
+  if (!error && (!data || data.length === 0)) {
+    try {
+      const resLegacy = await supabase
+        .from("listings")
+  .select(colsWithMetrics, { count: "exact" })
+  .eq("user_id", sellerId as string);
+      if (!resLegacy.error && Array.isArray(resLegacy.data) && resLegacy.data.length > 0) {
+        data = resLegacy.data as unknown as ListingRow[];
+        count = resLegacy.count ?? data.length;
+        error = null;
+      }
+    } catch {
+      // ignore if column doesn't exist or any other postgrest error
+    }
+  }
 
   if (error) {
     return NextResponse.json(
@@ -161,6 +207,10 @@ export async function GET(req: Request) {
       location: l.location ?? null,
       allow_offers: l.allowoffers ?? false,
       status: mapStatus(l.status),
+      stock: ((): number | null => {
+        const s = l.metrics?.stock;
+        return typeof s === 'number' ? s : null;
+      })(),
     });
   }
 

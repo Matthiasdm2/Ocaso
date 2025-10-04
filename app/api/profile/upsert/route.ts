@@ -5,6 +5,8 @@ import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabaseServer";
 import { supabaseServiceRole } from "@/lib/supabaseServiceRole";
 
+export const dynamic = 'force-dynamic';
+
 type UpsertPayload = Partial<{
   email: string | null;
   phone: string | null;
@@ -60,6 +62,9 @@ export async function PUT(req: Request) {
   allowed.id = user.id;
 
   try {
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return NextResponse.json({ error: 'service_role_missing' }, { status: 503 });
+    }
     const service = supabaseServiceRole();
     const { data: upserted, error } = await service
       .from("profiles")

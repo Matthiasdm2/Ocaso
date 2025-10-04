@@ -12,6 +12,9 @@ export async function POST(req: Request) {
     const stripe = new Stripe(stripeSecret, { apiVersion: '2025-08-27.basil' });
 
     // Expect authenticated user via Supabase cookie in server environment
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return NextResponse.json({ error: 'service_role_missing' }, { status: 503 });
+    }
     const supabase = supabaseServiceRole();
     const auth = req.headers.get('authorization') || '';
     const token = auth.replace(/^Bearer\s+/i, '') || null;

@@ -24,6 +24,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return NextResponse.json({ error: 'service_role_missing' }, { status: 503 });
+  }
   const supabase = supabaseServiceRole();
 
   try {

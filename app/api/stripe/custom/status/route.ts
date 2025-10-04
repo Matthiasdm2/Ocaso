@@ -11,6 +11,9 @@ export async function GET(req: Request) {
     if (!stripeSecret) return NextResponse.json({ error: 'Missing STRIPE_SECRET_KEY' }, { status: 500 });
     const stripe = new Stripe(stripeSecret, { apiVersion: '2025-08-27.basil' });
 
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return NextResponse.json({ error: 'service_role_missing' }, { status: 503 });
+    }
     const supabase = supabaseServiceRole();
     const auth = req.headers.get('authorization') || '';
     const token = auth.replace(/^Bearer\s+/i, '') || null;

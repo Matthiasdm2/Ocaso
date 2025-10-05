@@ -2,7 +2,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense,useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 
 import HighlightedSlider from "../../components/HighlightedSlider";
 import ListingRow from "../../components/ListingRow";
@@ -251,7 +251,12 @@ function CategoriesContent() {
     (location ? `&location=${encodeURIComponent(location || "")}` : "") +
     (sort && sort !== "relevance" ? `&sort=${sort}` : "");
 
-  const [openCat, setOpenCat] = useState<string | null>(null);
+  const [openCat, setOpenCat] = useState<string | null>(catSlug);
+
+  // Update openCat wanneer catSlug verandert (bijv. via browser navigation)
+  useEffect(() => {
+    setOpenCat(catSlug);
+  }, [catSlug]);
 
   return (
     <div className="container py-8 grid lg:grid-cols-4 gap-8">
@@ -269,7 +274,11 @@ function CategoriesContent() {
             return (
               <div key={c.slug}>
                 <button
-                  onClick={() => setOpenCat(isOpen ? null : c.slug)}
+                  onClick={() => {
+                    setOpenCat(c.slug); // Altijd openen wanneer geklikt
+                    setParam("cat", c.slug);
+                    setParam("sub", undefined); // Reset subcategorie bij categorie klik
+                  }}
                   className="font-medium"
                   aria-expanded={isOpen}
                 >

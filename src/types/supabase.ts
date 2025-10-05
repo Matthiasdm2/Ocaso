@@ -201,6 +201,7 @@ export type Database = {
           main_photo: string | null;
           price: number;
           seller_id: string;
+          stock: number | null;
           title: string;
         };
         Insert: {
@@ -211,6 +212,7 @@ export type Database = {
           main_photo?: string | null;
           price: number;
           seller_id: string;
+          stock?: number | null;
           title: string;
         };
         Update: {
@@ -221,6 +223,7 @@ export type Database = {
           main_photo?: string | null;
           price?: number;
           seller_id?: string;
+          stock?: number | null;
           title?: string;
         };
         Relationships: [

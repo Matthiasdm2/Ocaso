@@ -1,2 +1,6 @@
 # Ignore legacy frontend folder used for pre-app routes
 frontend/
+
+# Ignore utility scripts
+count-subs.js
+test-import.js

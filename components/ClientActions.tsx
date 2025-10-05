@@ -11,7 +11,7 @@ interface Props {
   sellerKycCompleted?: boolean;
   allowOffers?: boolean;
   min_bid?: number;
-  stock?: number | null;
+  stock?: number;
 }
 
 export default function ClientActions({
@@ -21,7 +21,7 @@ export default function ClientActions({
   sellerKycCompleted,
   allowOffers,
   min_bid,
-  stock,
+  stock = 1,
 }: Props) {
   // Zorg dat allowOffers altijd als boolean werkt
   const offersAllowed = !!allowOffers && (allowOffers === true || String(allowOffers).toLowerCase() === "true" || String(allowOffers) === "1" || String(allowOffers).toLowerCase() === "yes");
@@ -33,6 +33,7 @@ export default function ClientActions({
   const [contactLoading, setContactLoading] = useState(false);
   const [payBusy, setPayBusy] = useState(false);
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
+  const [quantity, setQuantity] = useState(1);
   const [shippingMode, setShippingMode] = useState<"pickup" | "ship">("pickup");
   const [contactName, setContactName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
@@ -41,8 +42,6 @@ export default function ClientActions({
   const [addrPostal, setAddrPostal] = useState("");
   const [addrCity, setAddrCity] = useState("");
   const [addrCountry, setAddrCountry] = useState("BE");
-  const [quantity, setQuantity] = useState<number>(1);
-  const total = typeof price === 'number' ? Math.max(1, quantity) * price : null;
 
   type ShippingPayload = {
     mode: "pickup" | "ship";
@@ -52,6 +51,13 @@ export default function ClientActions({
 
   const proceedToPayment = useCallback(async () => {
     if (!listingId) return;
+    
+    // Check stock availability
+    if (quantity > stock) {
+      alert(`Er zijn slechts ${stock} stuks beschikbaar. Pas de hoeveelheid aan.`);
+      return;
+    }
+    
     if (shippingMode === "ship") {
       if (!contactName || !contactEmail || !addrLine1 || !addrPostal || !addrCity || !addrCountry) {
         alert("Vul alle verzendgegevens in (naam, e-mail, adres, postcode, stad, land)");
@@ -60,10 +66,10 @@ export default function ClientActions({
     }
     try {
       setPayBusy(true);
-      const payload: { listingId: string; shipping: ShippingPayload; quantity: number } = {
+      const payload: { listingId: string; quantity: number; shipping: ShippingPayload } = {
         listingId: String(listingId),
+        quantity,
         shipping: { mode: shippingMode },
-        quantity: Math.max(1, Number(quantity || 1)),
       };
       if (shippingMode === "ship") {
         payload.shipping.contact = { name: contactName, email: contactEmail, phone: contactPhone };
@@ -87,7 +93,7 @@ export default function ClientActions({
     } finally {
       setPayBusy(false);
     }
-  }, [listingId, shippingMode, contactName, contactEmail, contactPhone, addrLine1, addrPostal, addrCity, addrCountry, quantity]);
+  }, [listingId, shippingMode, contactName, contactEmail, contactPhone, addrLine1, addrPostal, addrCity, addrCountry, quantity, stock]);
 
   // Vraag betaalverzoek via chat als er geen Stripe is
   const requestPaymentViaChat = useCallback(async () => {
@@ -136,6 +142,44 @@ export default function ClientActions({
   }
   return (
     <>
+      {/* Quantity selector */}
+      {stock > 1 && (
+        <div className="mb-3">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Aantal: <span className="text-xs text-gray-500">(Max {stock} beschikbaar)</span>
+          </label>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setQuantity(Math.max(1, quantity - 1))}
+              disabled={quantity <= 1}
+              className="w-8 h-8 rounded-full border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-sm font-medium"
+            >
+              −
+            </button>
+            <input
+              type="number"
+              min="1"
+              max={stock}
+              value={quantity}
+              onChange={(e) => {
+                const val = parseInt(e.target.value) || 1;
+                setQuantity(Math.max(1, Math.min(stock, val)));
+              }}
+              className="w-16 text-center rounded-md border border-gray-300 bg-white px-2 py-1 text-sm"
+            />
+            <button
+              type="button"
+              onClick={() => setQuantity(Math.min(stock, quantity + 1))}
+              disabled={quantity >= stock}
+              className="w-8 h-8 rounded-full border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-sm font-medium"
+            >
+              +
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row gap-2">
         <button
           type="button"
@@ -144,7 +188,7 @@ export default function ClientActions({
           className="flex-1 rounded-full bg-primary text-black px-3 py-1.5 text-sm font-semibold text-center border border-primary/30 hover:bg-primary/80 transition disabled:opacity-60 disabled:cursor-not-allowed"
           aria-label="Koop nu"
         >
-          {payBusy ? "Bezig…" : `Koop nu — ${typeof total === "number" ? new Intl.NumberFormat("nl-BE", { style: "currency", currency: "EUR" }).format(total) : "—"}`}
+          {payBusy ? "Bezig…" : `Koop nu — ${typeof price === "number" ? new Intl.NumberFormat("nl-BE", { style: "currency", currency: "EUR" }).format(price * quantity) : "—"}`}
         </button>
 
         <button
@@ -320,29 +364,6 @@ export default function ClientActions({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-lg rounded-2xl bg-white p-5 shadow-xl">
             <h4 className="text-lg font-semibold">Kies leveringsmethode</h4>
-            {/* Quantity selector */}
-            <div className="mt-3 flex items-center gap-3">
-              <label htmlFor="qty" className="text-sm text-gray-700">Aantal</label>
-              <input
-                id="qty"
-                type="number"
-                min={1}
-                max={typeof stock === 'number' && stock > 0 ? stock : undefined}
-                inputMode="numeric"
-                pattern="[0-9]*"
-                className="w-20 rounded border border-neutral-300 bg-white px-2 py-1 text-sm text-center"
-                value={quantity}
-                onChange={(e) => {
-                  const raw = Number(e.target.value || 1);
-                  const min1 = Math.max(1, raw);
-                  const capped = typeof stock === 'number' && stock > 0 ? Math.min(min1, stock) : min1;
-                  setQuantity(capped);
-                }}
-              />
-              <div className="ml-auto text-sm text-gray-700">
-                Totaal: {typeof total === 'number' ? new Intl.NumberFormat('nl-BE', { style: 'currency', currency: 'EUR' }).format(total) : '—'}
-              </div>
-            </div>
             <div className="mt-4 space-y-2">
               <label className="flex items-center gap-3">
                 <input

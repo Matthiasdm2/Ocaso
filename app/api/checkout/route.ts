@@ -11,7 +11,7 @@ export async function POST(req: Request) {
   const obj = (body && typeof body === "object") ? body as Record<string, unknown> : {};
   const listingId = typeof obj.listingId === "string" ? obj.listingId : undefined;
   const messageId = typeof obj.messageId === "string" ? obj.messageId : undefined;
-  const quantity = Math.max(1, Number((obj as { quantity?: number | string }).quantity ?? 1));
+  const quantity = typeof obj.quantity === "number" ? obj.quantity : 1;
   const shipping = obj.shipping as
       | {
           mode: "pickup" | "ship";
@@ -28,12 +28,18 @@ export async function POST(req: Request) {
     // Fetch listing from DB to trust server-side price/title/seller
     const { data: listing, error: listErr } = await supabase
       .from("listings")
-    .select("id,title,price,seller_id,stock")
+      .select("id,title,price,seller_id,stock")
       .eq("id", listingId)
       .maybeSingle();
     if (listErr) return NextResponse.json({ error: listErr.message }, { status: 500 });
     if (!listing) return NextResponse.json({ error: "Listing not found" }, { status: 404 });
     if (listing.seller_id === user.id) return NextResponse.json({ error: "Je kan je eigen listing niet kopen" }, { status: 400 });
+
+    // Check stock availability
+    const availableStock = listing.stock ?? 1;
+    if (quantity > availableStock) {
+      return NextResponse.json({ error: `Er zijn slechts ${availableStock} stuks beschikbaar` }, { status: 400 });
+    }
 
     // Determine the price: if messageId is provided, check if it's an acceptance message and use the bid amount
     let finalPrice = listing.price;
@@ -79,11 +85,6 @@ export async function POST(req: Request) {
     const stripe = new Stripe(stripeSecret, { apiVersion: "2025-08-27.basil" });
 
     const origin = req.headers.get("origin") || req.headers.get("referer") || process.env.NEXT_PUBLIC_SITE_URL || "";
-    // Validate quantity against stock if stock set
-    const available = typeof (listing as { stock?: number | null }).stock === 'number' ? (listing as { stock?: number | null }).stock : null;
-    if (available != null && quantity > available) {
-      return NextResponse.json({ error: "Niet genoeg voorraad" }, { status: 409 });
-    }
     const unit_amount = Math.round(Number(finalPrice) * 100);
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
@@ -91,7 +92,7 @@ export async function POST(req: Request) {
         {
           price_data: {
             currency: "eur",
-            product_data: { name: listing.title },
+            product_data: { name: `${listing.title}${quantity > 1 ? ` (${quantity}x)` : ''}` },
             unit_amount,
           },
           quantity,
@@ -122,7 +123,6 @@ export async function POST(req: Request) {
         listingId: String(listing.id),
         buyerId: user.id,
         sellerId: listing.seller_id,
-        quantity: String(quantity),
         shipMode: shipping?.mode ?? "pickup",
       },
       success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
@@ -142,13 +142,13 @@ export async function POST(req: Request) {
         listing_id: listing.id,
         buyer_id: user.id,
         seller_id: listing.seller_id,
-        price_cents: unit_amount,
+        price_cents: unit_amount * quantity,
+        quantity,
         currency: "eur",
         stripe_checkout_session_id: session.id,
         stripe_payment_intent_id: piId ?? null,
         capture_after: twoDaysFromNow,
         state: "created",
-  quantity,
         shipping_details: shipping ? {
           mode: shipping.mode,
           contact: shipping.contact ?? null,

@@ -22,7 +22,6 @@ interface ListingRow {
   title: string | null;
   description: string | null;
   price: number | string | null;
-  stock?: number | null;
   images: string[] | null;
   main_photo: string | null;
   created_at: string | null;
@@ -34,6 +33,7 @@ interface ListingRow {
   location?: string | null;
   allowoffers?: boolean | null;
   status?: string | null;
+  stock?: number | null;
 }
 
 
@@ -86,36 +86,16 @@ export async function GET(req: Request) {
     );
   }
 
-  // Try selecting with stock; if the column doesn't exist in this environment, retry without it.
-  let noStockColumn = false;
-  let data: ListingRow[] | null = null;
-  let count: number | null = null;
-  {
-    const first = await supabase
-      .from("listings")
-      .select("id,title,description,price,stock,images,main_photo,created_at,views,category_id,subcategory_id,categories,state,location,allowoffers,status", { count: "exact" })
-      .eq("seller_id", sellerId);
-    const msg = first.error?.message || "";
-    const unknownColumn = /column|does not exist|unknown|invalid reference/i.test(msg);
-    if (first.error && (/stock/i.test(msg) || /allowoffers/i.test(msg) || unknownColumn)) {
-      // Fallback: relax columns; omit stock and allowoffers to be safe across envs
-      noStockColumn = /stock/i.test(msg);
-      const fallback = await supabase
-        .from("listings")
-        .select("id,title,description,price,images,main_photo,created_at,views,category_id,subcategory_id,categories,state,location,status", { count: "exact" })
-        .eq("seller_id", sellerId);
-      data = (fallback.data as unknown as ListingRow[]) ?? [];
-      count = fallback.count ?? 0;
-    } else {
-      data = (first.data as unknown as ListingRow[]) ?? [];
-      count = first.count ?? 0;
-      if (first.error) {
-        return NextResponse.json(
-          { items: [], page, limit, total: 0, error: first.error.message },
-          { headers: { "Cache-Control": "no-store" } },
-        );
-      }
-    }
+  const { data, count, error } = await supabase
+    .from("listings")
+    .select("id,title,description,price,images,main_photo,created_at,views,category_id,subcategory_id,categories,state,location,allowoffers,status,stock", { count: "exact" })
+    .eq("seller_id", sellerId);
+
+  if (error) {
+    return NextResponse.json(
+      { items: [], page, limit, total: 0, error: error.message },
+      { headers: { "Cache-Control": "no-store" } },
+    );
   }
 
   // Verzamel unieke categorie & subcategorie ids
@@ -192,7 +172,6 @@ export async function GET(req: Request) {
       title: l.title ?? "",
       description: l.description ?? "",
       price: Number(l.price ?? 0),
-      stock: noStockColumn ? null : (typeof (l as { stock?: number | null }).stock === 'number' ? (l as { stock?: number | null }).stock! : null),
       imageUrl: l.main_photo ?? (Array.isArray(l.images) && l.images[0] ? l.images[0] : null),
       images: l.images ?? [],
       main_photo: l.main_photo ?? null,
@@ -206,6 +185,7 @@ export async function GET(req: Request) {
       location: l.location ?? null,
       allow_offers: l.allowoffers ?? false,
       status: mapStatus(l.status),
+      stock: l.stock ?? null,
     });
   }
 

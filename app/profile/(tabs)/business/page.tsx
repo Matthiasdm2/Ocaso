@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import KycForm from '@/components/KycForm';
 import type { BillingCycle, Profile } from '@/lib/profiletypes';
 import { createClient } from '@/lib/supabaseClient';
 // Nieuwe API integratie voor business update
@@ -76,6 +77,12 @@ export default function BusinessProfilePage() {
   const [showPreview, setShowPreview] = useState(false);
   // Abonnement: keuze maand/jaar (jaarlijks = 20% korting)
   const [billingCycle, setBillingCycle] = useState<BillingCycle>('monthly');
+
+  // Stripe KYC status
+  const [stripeStatus, setStripeStatus] = useState<{
+    status: 'not_onboarded' | 'incomplete' | 'pending' | 'approved' | 'rejected';
+    message: string;
+  } | null>(null);
 
   // Houd profiel's billingCycle in sync wanneer profiel geladen wordt
   useEffect(() => {
@@ -175,6 +182,26 @@ export default function BusinessProfilePage() {
 
       setProfile(ui);
       setLoading(false);
+    })();
+  }, [supabase]);
+
+  // Load Stripe KYC status
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.access_token) return;
+
+        const res = await fetch('/api/stripe/custom/status', {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setStripeStatus(data);
+        }
+      } catch (e) {
+        console.error('Stripe status laden mislukt:', e);
+      }
     })();
   }, [supabase]);
 
@@ -359,6 +386,23 @@ export default function BusinessProfilePage() {
       setVatVerificationMessage('');
     }
   }, [profile.business.vatNumber, verifyVatNumber]);
+
+  const refreshStripeStatus = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) return;
+
+      const res = await fetch('/api/stripe/custom/status', {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setStripeStatus(data);
+      }
+    } catch (e) {
+      console.error('Stripe status refresh mislukt:', e);
+    }
+  };
 
   /* ---------------------------------- UI ---------------------------------- */
   return (
@@ -657,6 +701,43 @@ export default function BusinessProfilePage() {
                     placeholder="Beschrijf je winkel, specialisaties en service…"
                   />
                 </Field>
+              </div>
+            </Section>
+
+            {/* Eigen betaalterminal (Stripe onboarding) */}
+            <Section
+              overline="Betalingen"
+              title="Eigen betaalterminal"
+              subtitle="Registreer je als verkoper om betalingen veilig via je eigen betaalterminal te ontvangen."
+            >
+              <div className="rounded-lg border bg-white p-4">
+                <p className="text-sm text-neutral-700 mb-3">Wil je dat kopers via je eigen betaalterminal kunnen betalen? Registreer je verkopersaccount bij onze betalingsprovider.</p>
+                <div className="flex items-center gap-3">
+                                    <span className="text-sm text-neutral-600">Betalen via je eigen betaalterminal betekent veilig betalen voor je klant. Door je gegevens aan te leveren ontvang je de badge &apos;geverifieerde gebruiker&apos;. Betalingen lopen rechtstreeks via onze betaalprovider en klanten kunnen uit verschillende betaalwijzen kiezen. Dit verhoogt het vertrouwen van kopers aanzienlijk.</span>
+                </div>
+                {stripeStatus && (
+                  <div className="mt-4">
+                    <div className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${
+                      stripeStatus.status === 'approved' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' :
+                      stripeStatus.status === 'pending' ? 'bg-yellow-50 text-yellow-800 border border-yellow-200' :
+                      stripeStatus.status === 'rejected' ? 'bg-red-50 text-red-800 border border-red-200' :
+                      'bg-gray-50 text-gray-800 border border-gray-200'
+                    }`}>
+                      <div className={`w-2 h-2 rounded-full ${
+                        stripeStatus.status === 'approved' ? 'bg-emerald-500' :
+                        stripeStatus.status === 'pending' ? 'bg-yellow-500' :
+                        stripeStatus.status === 'rejected' ? 'bg-red-500' :
+                        'bg-gray-500'
+                      }`} />
+                      {stripeStatus.message}
+                    </div>
+                  </div>
+                )}
+                <div className="mt-6">
+                  <h4 className="text-sm font-semibold mb-3">Registratie</h4>
+                  <p className="text-sm text-neutral-700 mb-3">Vul hieronder je gegevens en upload identiteitsdocumenten. Ocaso verwerkt dit namens jou en stuurt de gegevens naar onze betalingsprovider.</p>
+                  <KycForm onSuccess={refreshStripeStatus} />
+                </div>
               </div>
             </Section>
 

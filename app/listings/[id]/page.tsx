@@ -30,6 +30,10 @@ export default async function ListingPage({ params }: { params: { id: string } }
     .eq("id", params.id)
     .maybeSingle();
 
+  // Haal huidige gebruiker op om te controleren of deze de verkoper is
+  const { data: { user: currentUser } } = await supabase.auth.getUser();
+  const isSeller = currentUser && listing && currentUser.id === listing.seller_id;
+
   // Haal KYC status op voor de verkoper
   const sellerStripeAccountId = (listing as { seller?: { stripe_account_id?: string | null } })?.seller?.stripe_account_id ?? null;
   const sellerKycCompleted = await getSellerKycCompleted(sellerStripeAccountId);
@@ -149,8 +153,8 @@ export default async function ListingPage({ params }: { params: { id: string } }
   let subcategory: Subcategory | null = null;
   if (Array.isArray(listing.categories) && listing.categories.length > 0) {
     // listing.categories kan een array van category/subcategory ids zijn
-    const catId = listing.categories[0];
-    const subcatId = listing.categories[1];
+    const catId = Number(listing.categories[0]);
+    const subcatId = Number(listing.categories[1]);
     // Haal de categorie op
     const { data: cat } = await supabase.from("categories").select("*").eq("id", catId).maybeSingle();
     category = cat ?? null;
@@ -262,6 +266,27 @@ export default async function ListingPage({ params }: { params: { id: string } }
               )}
               {!category?.name && !subcategory?.name && <span>—</span>}
             </div>
+            {/* Voorraad indicator */}
+            {(listing.stock ?? 1) > 1 && (
+              <div className="flex items-center gap-2 mb-4">
+                <span className="text-sm text-gray-600">Voorraad:</span>
+                {isSeller ? (
+                  <span className={`text-sm font-medium px-2 py-1 rounded-full ${
+                    (listing.stock ?? 1) > 5 
+                      ? 'bg-emerald-100 text-emerald-700' 
+                      : (listing.stock ?? 1) > 0 
+                        ? 'bg-amber-100 text-amber-700' 
+                        : 'bg-red-100 text-red-700'
+                  }`}>
+                    {listing.stock ?? 1} {(listing.stock ?? 1) === 1 ? 'stuk' : 'stuks'} beschikbaar
+                  </span>
+                ) : (
+                  <span className="text-sm font-medium px-2 py-1 rounded-full bg-emerald-100 text-emerald-700">
+                    Op voorraad
+                  </span>
+                )}
+              </div>
+            )}
             {/* Datum verplaatst naar biedingen/hoogste bod rij */}
             {/* Beschrijving */}
             <div className="border-b pb-6 mb-6">
@@ -288,8 +313,7 @@ export default async function ListingPage({ params }: { params: { id: string } }
                 sellerKycCompleted={sellerKycCompleted}
                 allowOffers={listing.allowOffers}
                 min_bid={listing.min_bid}
-                // pass stock for capping of qty
-                stock={(listing as { stock?: number | null }).stock ?? null}
+                stock={listing.stock ?? 1}
               />
             </div>
           </section>

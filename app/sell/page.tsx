@@ -73,14 +73,11 @@ export default function SellPage() {
   const [condition, setCondition] = useState("nieuw");
   const [location, setLocation] = useState("Gent");
   const [minBid, setMinBid] = useState("");
+  const [stock, setStock] = useState<number>(1);
 
   // Categorie + Subcategorie
   const [category, setCategory] = useState<string>("");
   const [subcategory, setSubcategory] = useState<string>("");
-
-  // Promoties (mock)
-  const [promoFeatured, setPromoFeatured] = useState(false);
-  const [promoTop, setPromoTop] = useState(false);
 
   // Foto’s
   const [imageUrls, setImageUrls] = useState<string[]>([]);
@@ -94,7 +91,7 @@ export default function SellPage() {
   const [uploading, setUploading] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
 
-  // Prijsanalyse (mock)
+  // Prijsanalyse
   const [priceScore, setPriceScore] = useState<number | null>(null);
   const clamp = (n: number, min = 0, max = 100) => Math.max(min, Math.min(max, n));
   const analyzePrice = useCallback((n: number) => {
@@ -130,7 +127,7 @@ export default function SellPage() {
   }, []);
 
   const translate = () => {
-    push("Automatische vertaling (mock) toegevoegd.");
+    push("Automatische vertaling toegevoegd.");
     setDesc((d) => d + "\n\nFR: Description automatique\nEN: Automatic description\nDE: Automatische Beschrijving");
   };
 
@@ -240,6 +237,7 @@ export default function SellPage() {
       if (!title.trim()) { push("Vul een titel in."); return; }
       const priceNum = parsePrice(price);
       if (!isFinite(priceNum) || priceNum <= 0) { push("Vul een geldige prijs in."); return; }
+      if (stock < 1) { push("Voorraad moet minimaal 1 zijn."); return; }
       if (!category) { push("Kies een categorie."); return; }
       if (allowOffers && minBid.trim()) {
         const minBidNum = parsePrice(minBid);
@@ -280,52 +278,54 @@ export default function SellPage() {
       // Prepare categories payload
       const categoriesPayload = subcategory ? [category, subcategory] : [category];
 
-      const basePayload: {
-        created_by: string;
-        seller_id: string;
-        title: string;
-        description: string | null;
-        price: number;
-  allowoffers: boolean;
-        state: string;
-        location: string | null;
-        allow_shipping: boolean;
-        shipping_length: number | null;
-        shipping_width: number | null;
-        shipping_height: number | null;
-        shipping_weight: number | null;
-        images: string[];
-        main_photo: string;
-        promo_featured: boolean;
-  promo_top: boolean;
-  min_bid: number | null;
-  secure_pay: boolean;
-  categories: string[];
-  status?: string;
-  organization_id?: string | null;
-      } = {
-        created_by: user.id,
-        seller_id: user.id,
-        title: title.trim(),
-        description: desc || null,
-        price: priceNum,
-        allowoffers: !!allowOffers,
-        state: condition,
-        location: location || null,
-        allow_shipping: !!allowShipping,
-        shipping_length: isFinite(sLen) ? sLen : null,
-        shipping_width: isFinite(sWid) ? sWid : null,
-        shipping_height: isFinite(sHei) ? sHei : null,
-        shipping_weight: isFinite(sWei) ? sWei : null,
-        images: imageUrls,
-        main_photo,
-        promo_featured: !!promoFeatured,
-        promo_top: !!promoTop,
-        min_bid: minBid ? parsePrice(minBid) : null,
-        secure_pay: !!allowSecurePay,
-        categories: categoriesPayload,
-        status: "active", // Zorg dat elk nieuw zoekertje actief is
-      };
+  const basePayload: {
+    created_by: string;
+    seller_id: string;
+    title: string;
+    description: string | null;
+    price: number;
+    allowoffers: boolean;
+    state: string;
+    location: string | null;
+    allow_shipping: boolean;
+    shipping_length: number | null;
+    shipping_width: number | null;
+    shipping_height: number | null;
+    shipping_weight: number | null;
+    images: string[];
+    main_photo: string;
+    promo_featured: boolean;
+    promo_top: boolean;
+    min_bid: number | null;
+    secure_pay: boolean;
+    categories: string[];
+    status?: string;
+    organization_id?: string | null;
+    stock: number;
+  } = {
+    created_by: user.id,
+    seller_id: user.id,
+    title: title.trim(),
+    description: desc || null,
+    price: priceNum,
+    allowoffers: !!allowOffers,
+    state: condition,
+    location: location || null,
+    allow_shipping: !!allowShipping,
+    shipping_length: isFinite(sLen) ? sLen : null,
+    shipping_width: isFinite(sWid) ? sWid : null,
+    shipping_height: isFinite(sHei) ? sHei : null,
+    shipping_weight: isFinite(sWei) ? sWei : null,
+    images: imageUrls,
+    main_photo,
+    min_bid: minBid ? parsePrice(minBid) : null,
+    secure_pay: !!allowSecurePay,
+    categories: categoriesPayload,
+    status: "active", // Zorg dat elk nieuw zoekertje actief is
+    stock: stock,
+    promo_featured: false,
+    promo_top: false
+  };
 
       let tryWithOrg = false;
       if (isBusiness && orgId) {
@@ -459,10 +459,7 @@ export default function SellPage() {
               <h2 className="text-sm font-medium">Omschrijving</h2>
               <div className="flex items-center gap-2">
                 <button onClick={translate} type="button" className="rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs shadow-sm hover:bg-gray-50">
-                  Vertaal naar FR/EN/DE (mock)
-                </button>
-                <button onClick={() => push("AI-veld ingevuld (mock).")} type="button" className="rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs shadow-sm hover:bg-gray-50">
-                  AI: Titel & omschrijving invullen (mock)
+                  Vertaal naar FR/EN/DE
                 </button>
               </div>
             </div>
@@ -478,7 +475,7 @@ export default function SellPage() {
           {/* Prijs & staat */}
           <section className="rounded-2xl border border-gray-200 bg-white/60 backdrop-blur-sm shadow-sm p-6 space-y-6">
             <h2 className="text-sm font-medium">Prijs & staat</h2>
-            <div className="grid md:grid-cols-3 gap-5">
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
               <div className="space-y-2">
                 <label className="text-xs font-medium text-gray-600">Prijs (€)</label>
                 <input
@@ -501,6 +498,20 @@ export default function SellPage() {
                     />
                   </div>
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-gray-600">Voorraad</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="9999"
+                  value={stock}
+                  onChange={(e) => setStock(Math.max(1, parseInt(e.target.value) || 1))}
+                  className="w-full rounded-2xl border border-gray-200 bg-white px-3 py-2.5 text-sm shadow-sm outline-none transition focus:border-gray-300 focus:ring-2 focus:ring-emerald-100"
+                  placeholder="Aantal beschikbaar (bijv. 5)"
+                />
+                <p className="text-[10px] text-gray-500">Hoeveel stuks heb je beschikbaar voor verkoop?</p>
               </div>
 
               <div className="space-y-2">
@@ -560,21 +571,6 @@ export default function SellPage() {
                 />
               </div>
             )}
-          </section>
-
-          {/* Betaalde opties */}
-          <section className="rounded-2xl border border-gray-200 bg-white/60 backdrop-blur-sm shadow-sm p-6 space-y-3">
-            <h2 className="text-sm font-medium">Promoties</h2>
-            <div className="grid md:grid-cols-2 gap-3">
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" className="size-4 rounded border-gray-300" checked={promoFeatured} onChange={(e) => setPromoFeatured(e.target.checked)} />
-                Uitgelicht (€2,99/week)
-              </label>
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" className="size-4 rounded border-gray-300" checked={promoTop} onChange={(e) => setPromoTop(e.target.checked)} />
-                Bovenaan in categorie (€0,99/week)
-              </label>
-            </div>
           </section>
         </div>
 

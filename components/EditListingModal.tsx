@@ -27,6 +27,7 @@ type Listing = {
   main_photo?: string | null;
   category_id?: number | null;
   subcategory_id?: number | null;
+  stock?: number | null;
   // Add other fields as needed
 };
 
@@ -125,6 +126,7 @@ export default function EditListingModal({ listing, open, onClose, onSave }: Pro
         dimensions_length: listing.dimensions_length || undefined,
         dimensions_width: listing.dimensions_width || undefined,
         dimensions_height: listing.dimensions_height || undefined,
+        stock: listing.stock || 1,
       });
 
       // Initialize images
@@ -449,6 +451,23 @@ export default function EditListingModal({ listing, open, onClose, onSave }: Pro
                     placeholder="0.00"
                     min="0"
                     step="0.01"
+                  />
+                </div>
+              </div>
+
+              {/* Stock */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Voorraad *
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    value={formData.stock ?? 1}
+                    onChange={(e) => setFormData({ ...formData, stock: e.target.value ? parseInt(e.target.value) : 1 })}
+                    className="w-full rounded-xl border border-gray-200 bg-white pl-4 pr-4 py-3 text-sm shadow-sm outline-none transition focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100"
+                    placeholder="1"
+                    min="0"
                   />
                 </div>
               </div>

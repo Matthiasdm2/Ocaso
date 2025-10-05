@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabaseClient";
 import {
   createCategory,
   createSubcategory,
+  importCategoriesFromJsonAction,
   reorderCategory,
   reorderSubcategory,
   toggleCategory,
@@ -55,7 +56,21 @@ export default function AdminCategoriesPage() {
 
   return (
     <div className="container py-8 space-y-6">
-      <h1 className="text-2xl font-semibold">Categorieën beheren</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">Categorieën beheren</h1>
+        <form action={importCategoriesFromJsonAction}>
+          <button
+            className="btn-primary"
+            onClick={(e) => {
+              if (!confirm("Weet je zeker dat je subcategorieën wilt importeren uit categories.json? Dit kan bestaande subcategorieën overschrijven.")) {
+                e.preventDefault();
+              }
+            }}
+          >
+            Importeer subcategorieën
+          </button>
+        </form>
+      </div>
 
       {/* Nieuwe categorie */}
       <form

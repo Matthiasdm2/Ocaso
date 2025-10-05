@@ -1,4 +1,3 @@
-import FilterTabs from "@/components/FilterTabs";
 import HeroSearch from "@/components/HeroSearch";
 import HomeCategoryRibbons from "@/components/HomeCategoryRibbons";
 import InfiniteGrid from "@/components/InfiniteGrid";
@@ -85,10 +84,7 @@ export default async function HomePage() {
 
       {/* Aanbevolen met filters + infinite scroll */}
       <section className="container space-y-4 pb-12">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold">Aanbevolen voor jou</h2>
-          <FilterTabs />
-        </div>
+        <h2 className="text-xl font-semibold">Aanbevolen voor jou</h2>
         <InfiniteGrid />
       </section>
 

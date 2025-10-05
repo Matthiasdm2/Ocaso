@@ -9,14 +9,14 @@ export default function ListingImageSlider({ images, title, link }: { images: st
   const next = () => setActive((a) => (a === imgs.length - 1 ? 0 : a + 1));
 
   return (
-    <div className="relative w-full aspect-[4/3] md:w-48 md:h-48 md:aspect-auto flex items-center justify-center">
+    <div className="relative w-full aspect-[4/3] lg:w-48 lg:h-48 lg:aspect-auto flex items-center justify-center">
       <a href={link} className="block w-full h-full relative">
         <Image
           src={imgs[active]}
           alt={title}
           fill
           className="rounded-xl object-cover border bg-white hover:scale-[1.02] transition"
-          sizes="(max-width: 768px) 100vw, 192px"
+          sizes="(max-width: 1024px) 100vw, 192px"
         />
       </a>
       {imgs.length > 1 && (

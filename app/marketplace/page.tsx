@@ -556,9 +556,9 @@ export default async function MarketplacePage({ searchParams }: { searchParams?:
               <ul className="space-y-3 md:space-y-4">
                 {listingsDisplay.map((item) => (
                   <li key={item.id}>
-                    <article className="card p-4 md:p-5 flex flex-col md:flex-row gap-3 md:gap-5 transition hover:shadow-lg border border-gray-200 bg-white rounded-2xl">
+                    <article className="card p-4 md:p-5 flex flex-col lg:flex-row gap-3 md:gap-5 transition hover:shadow-lg border border-gray-200 bg-white rounded-2xl">
                       <div className="flex items-start gap-3 md:gap-5 w-full">
-                        <div className="shrink-0 w-full md:w-48">
+                        <div className="shrink-0 w-full lg:w-48">
                           <ListingImageSlider
                             images={item.images && item.images.length > 0 ? item.images : ["/placeholder.png"]}
                             title={item.title}

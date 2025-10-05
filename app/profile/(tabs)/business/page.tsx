@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import KycForm from '@/components/KycForm';
 import type { BillingCycle, Profile } from '@/lib/profiletypes';
+import { CATEGORIES } from '@/lib/categories';
 import { createClient } from '@/lib/supabaseClient';
 // Nieuwe API integratie voor business update
 
@@ -51,6 +52,7 @@ const emptyProfile: Profile = {
     description: '',
     socials: { instagram: '', facebook: '', tiktok: '' },
     public: { showEmail: false, showPhone: false },
+    categories: [],
   },
 };
 
@@ -61,7 +63,6 @@ export default function BusinessProfilePage() {
   const [saving, setSaving] = useState(false);
   const [checkingSlug, setCheckingSlug] = useState<null | 'ok' | 'taken' | 'err'>(null);
   const [profile, setProfile] = useState<Profile>(emptyProfile);
-  const [catInput, setCatInput] = useState('');
   const [logoUploading, setLogoUploading] = useState(false);
   const [bannerUploading, setBannerUploading] = useState(false);
   const [logoError, setLogoError] = useState<string | null>(null);
@@ -625,28 +626,30 @@ export default function BusinessProfilePage() {
             <Section overline="Categorieën" title="Kies categorieën" subtitle="Max 8 relevante categorieën voor vindbaarheid.">
               <div className="space-y-3">
                 <div className="flex gap-2">
-                  <input
-                    value={catInput}
-                    onChange={(e) => setCatInput(e.target.value)}
-                    placeholder="Nieuwe categorie"
-                    className="flex-1 rounded-xl border border-neutral-200 px-3 py-2 text-sm"
-                  />
-                  <button
-                    type="button"
-                    className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm disabled:opacity-50"
-                    disabled={!catInput.trim() || (Array.isArray((profile.business as unknown as { categories?: string[] }).categories) && (profile.business as unknown as { categories?: string[] }).categories!.length >= 8)}
-                    onClick={() => {
-                      const val = catInput.trim();
+                  <select
+                    value=""
+                    onChange={(e) => {
+                      const val = e.target.value;
                       if (!val) return;
                       setProfile(p => {
                         const existing = (p.business as unknown as { categories?: string[] }).categories || [];
+                        if (existing.includes(val)) return p; // already selected
                         const next = Array.from(new Set([...existing, val])).slice(0, 8);
                         const biz = p.business as unknown as Profile['business'] & { categories?: string[] };
                         return { ...p, business: { ...biz, categories: next } };
                       });
-                      setCatInput('');
+                      e.target.value = ''; // reset select
                     }}
-                  >Toevoegen</button>
+                    className="flex-1 rounded-xl border border-neutral-200 px-3 py-2 text-sm"
+                  >
+                    <option value="">Kies een categorie...</option>
+                    {CATEGORIES.flatMap(cat => [
+                      { name: cat.name, value: cat.name },
+                      ...cat.subs.map(sub => ({ name: `${cat.name} › ${sub.name}`, value: sub.name }))
+                    ]).map((opt, i) => (
+                      <option key={i} value={opt.value}>{opt.name}</option>
+                    ))}
+                  </select>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {Array.isArray((profile.business as unknown as { categories?: string[] }).categories) && (profile.business as unknown as { categories?: string[] }).categories!.map((c: string) => (
@@ -661,7 +664,7 @@ export default function BusinessProfilePage() {
                     </span>
                   ))}
                 </div>
-                <p className="text-xs text-neutral-500">Categorieën worden later bij opslaan naar de database geschreven (vergt kolom &#39;categories&#39; in &#39;profiles&#39;).</p>
+                <p className="text-xs text-neutral-500">Selecteer categorieën uit de lijst voor betere vindbaarheid.</p>
               </div>
             </Section>
 

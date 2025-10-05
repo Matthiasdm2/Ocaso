@@ -8,7 +8,6 @@ type Listing = {
   id: string;
   title: string;
   price: number | string;
-  description?: string | null;
   images?: string[] | null;
   created_at?: string | null;
   views?: number | null;
@@ -44,10 +43,7 @@ export default function ListingCard({ listing, item, reviewAvg, reviewCount, com
           Pro
         </div>
       )}
-      <div className={[
-        "w-full overflow-hidden bg-neutral-100",
-        compact ? "aspect-square rounded-t-xl" : "aspect-[3/2] md:aspect-[4/3] rounded-t-2xl"
-      ].join(" ") }>
+      <div className={["w-full overflow-hidden bg-neutral-100", compact ? "aspect-square rounded-t-xl" : "aspect-[4/3] rounded-t-2xl"].join(" ") }>
         {firstImage ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -65,15 +61,8 @@ export default function ListingCard({ listing, item, reviewAvg, reviewCount, com
           </div>
         )}
       </div>
-      {/* Mobile / tablet: show price and short description under the image */}
-      <div className="px-4 pb-3 md:hidden">
-        <div className="mb-1 text-lg font-semibold text-neutral-900">{toCurrency(listingData.price)}</div>
-        {listingData.description ? (
-          <p className="text-sm text-neutral-600 line-clamp-2">{listingData.description}</p>
-        ) : null}
-      </div>
       <div className={[
-        "flex flex-col md:flex-row items-start justify-between gap-3",
+        "flex items-start justify-between gap-3",
         compact ? "p-2.5" : "p-4 md:p-3"
       ].join(" ")}>
         <div className="min-w-0 flex-1">
@@ -99,8 +88,7 @@ export default function ListingCard({ listing, item, reviewAvg, reviewCount, com
         </div>
         <div className={[
           "shrink-0 rounded-lg bg-neutral-900 font-semibold text-white text-center",
-          compact ? "px-1.5 py-0.5 text-[10px]" : "px-2 py-1 text-xs",
-          "hidden md:inline-flex"
+          compact ? "px-1.5 py-0.5 text-[10px]" : "px-2 py-1 text-xs"
         ].join(" ")}>{toCurrency(listingData.price)}</div>
       </div>
     </Link>

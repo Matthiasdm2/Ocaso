@@ -493,8 +493,9 @@ export default async function MarketplacePage({ searchParams }: { searchParams?:
     <div className="container max-w-6xl xl:max-w-7xl py-4">{/* Narrower max width for better left/right balance */}
       <HeroSearch noContainer />
 
-  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">{/* Grid stays inside same container for alignment */}
+  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6">{/* Grid stays inside same container for alignment */}
         {/* Categorieën links */}
+        <div className="hidden md:block">
         <CategorySidebar
           categories={categories.map((cat) => ({
             id: cat.id,
@@ -507,6 +508,7 @@ export default async function MarketplacePage({ searchParams }: { searchParams?:
             })),
           }))}
         />
+        </div>
 
         {/* Listings rechts */}
   <main className="md:col-span-3 space-y-4 pt-[2px]">{/* Tighter vertical spacing */}
@@ -551,29 +553,29 @@ export default async function MarketplacePage({ searchParams }: { searchParams?:
             <div className="card p-10 text-center text-sm text-gray-600 bg-white">Geen zoekertjes gevonden.</div>
           ) : (
             <>
-              <ul className="space-y-4">
+              <ul className="space-y-3 md:space-y-4">
                 {listingsDisplay.map((item) => (
                   <li key={item.id}>
-                    <article className="card p-4 md:p-5 flex flex-col md:flex-row gap-4 md:gap-5 transition hover:shadow-lg border border-gray-200 bg-white rounded-2xl">
-                      <div className="flex items-start gap-4 md:gap-5 w-full">
-                        <div className="shrink-0 w-40 md:w-48">
+                    <article className="card p-4 md:p-5 flex flex-col md:flex-row gap-3 md:gap-5 transition hover:shadow-lg border border-gray-200 bg-white rounded-2xl">
+                      <div className="flex items-start gap-3 md:gap-5 w-full">
+                        <div className="shrink-0 w-full md:w-48">
                           <ListingImageSlider
                             images={item.images && item.images.length > 0 ? item.images : ["/placeholder.png"]}
                             title={item.title}
                             link={`/listings/${item.id}`}
                           />
                         </div>
-                        <div className="flex-1 min-w-0 flex flex-col gap-3">
-                          <div className="flex flex-wrap items-start justify-between gap-3 mb-2">
+                        <div className="flex-1 min-w-0 flex flex-col gap-2 md:gap-3">
+                          <div className="flex flex-wrap items-start justify-between gap-2 md:gap-3 mb-1 md:mb-2">
                             <div className="flex-1 min-w-0">
-                              <a href={`/listings/${item.id}`} className="font-bold text-xl md:text-2xl truncate text-primary hover:underline max-w-[70%] leading-tight block mb-1">
+                              <a href={`/listings/${item.id}`} className="font-bold text-xl md:text-2xl truncate text-primary hover:underline max-w-full md:max-w-[70%] leading-tight block mb-1">
                                 {item.title}
                               </a>
                               {/* Views and favorites stats next to title */}
                               <ListingCardStats id={item.id} initViews={item.views ?? 0} initFavorites={item.favorites_count ?? 0} />
                             </div>
                             <div className="flex flex-col items-end gap-1">
-                              <div className="font-bold text-primary text-2xl md:text-3xl leading-none">€ {item.price}</div>
+                              <div className="font-bold text-primary text-xl md:text-3xl leading-none">€ {item.price}</div>
                               {item.allowOffers && (
                                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-xs text-emerald-700 border border-emerald-200">
                                   Bieden mogelijk
@@ -586,7 +588,7 @@ export default async function MarketplacePage({ searchParams }: { searchParams?:
                               )}
                             </div>
                           </div>
-                          <div className="text-sm text-gray-700 line-clamp-2 leading-relaxed mb-2">{item.description}</div>
+                          <div className="text-sm text-gray-700 line-clamp-2 leading-relaxed mb-1 md:mb-2">{item.description}</div>
                           <div className="flex flex-wrap items-center gap-2 mb-3">
                             <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-gray-50 text-xs text-gray-700 border border-gray-200">
                               <span className="text-gray-500">📍</span>
@@ -665,7 +667,7 @@ export default async function MarketplacePage({ searchParams }: { searchParams?:
                             </div>
                             <a
                               href={`/listings/${item.id}`}
-                              className="inline-block rounded-full bg-primary text-white px-5 py-2 text-sm font-semibold shadow transition hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                              className="inline-block rounded-full bg-primary text-white px-6 py-3 text-base font-semibold shadow transition hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 w-full md:w-auto text-center"
                             >
                               Bekijk
                             </a>

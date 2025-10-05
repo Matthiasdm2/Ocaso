@@ -196,7 +196,7 @@ export default async function ListingPage({ params }: { params: { id: string } }
   // Vervang de bestaande ListingPage implementatie door de opgehaalde data
   // Je bestaande UI hieronder, met extra categorie/subcategorie info:
   return (
-    <div className="container py-12 max-w-5xl mx-auto">
+    <div className="container py-12 pb-28 md:pb-12 max-w-5xl mx-auto">{/* pb-28 to make room for sticky mobile bar */}
       {/* Markeer biedingen voor deze listing als gezien in client storage */}
       <script
         dangerouslySetInnerHTML={{
@@ -305,7 +305,7 @@ export default async function ListingPage({ params }: { params: { id: string } }
               </div>
             </div>
             {/* Acties */}
-            <div className="mb-6">
+            <div className="mb-6 hidden md:block">{/* hide inline on mobile, use sticky bar */}
               <ClientActions
                 listingId={listing.id}
                 price={listing.price}
@@ -361,6 +361,28 @@ export default async function ListingPage({ params }: { params: { id: string } }
               />
             );
           })()}
+        </div>
+      </div>
+      {/* Sticky mobile action bar */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t shadow-lg">
+        <div className="mx-auto max-w-5xl px-4 py-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <div className="text-xs text-gray-500">Prijs</div>
+              <div className="text-lg font-semibold text-emerald-700">€ {listing.price}</div>
+            </div>
+            <div className="flex-1">
+              <ClientActions
+                listingId={listing.id}
+                price={listing.price}
+                sellerId={listing.seller?.id ?? null}
+                sellerKycCompleted={sellerKycCompleted}
+                allowOffers={listing.allowOffers}
+                min_bid={listing.min_bid}
+                stock={listing.stock ?? 1}
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>

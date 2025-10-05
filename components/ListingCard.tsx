@@ -63,10 +63,10 @@ export default function ListingCard({ listing, item, reviewAvg, reviewCount, com
       </div>
       <div className={[
         "flex items-start justify-between gap-3",
-        compact ? "p-2.5" : "p-3"
+        compact ? "p-2.5" : "p-4 md:p-3"
       ].join(" ")}>
         <div className="min-w-0 flex-1">
-          <h3 className={["font-medium text-neutral-900 mb-1 line-clamp-2", compact ? "text-[11px] leading-tight" : "text-sm leading-tight"].join(" ") }>
+          <h3 className={["font-medium text-neutral-900 mb-1 line-clamp-2", compact ? "text-[11px] leading-tight" : "text-base md:text-sm leading-tight"].join(" ") }>
             {listingData.title}
           </h3>
           {!compact && typeof reviewAvg === 'number' && reviewCount && reviewCount > 0 && (

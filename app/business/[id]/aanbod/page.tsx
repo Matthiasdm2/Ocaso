@@ -7,7 +7,7 @@ import { supabaseServer } from '@/lib/supabaseServer';
 import BusinessAanbodFilters from '../../../../components/BusinessAanbodFilters';
 
 interface ListingRow { id: string; title?: string | null; price?: number | null; images?: string[] | null; created_at?: string | null; views?: number | null; favorites?: number | null; favorites_count?: number | null; seller_id?: string | null; status?: string | null; category_id?: number | null }
-interface ProfileRow { id: string; shop_name?: string | null; display_name?: string | null; full_name?: string | null; business_banner_url?: string | null; business_logo_url?: string | null; avatar_url?: string | null }
+interface ProfileRow { id: string; shop_name?: string | null; display_name?: string | null; full_name?: string | null; business_banner_url?: string | null; business_logo_url?: string | null; avatar_url?: string | null; categories?: string[] | null }
 
 export const dynamic = 'force-dynamic';
 
@@ -18,10 +18,10 @@ export default async function BusinessFullAanbodPage({ params, searchParams }: {
   // Resolve profile (accept id or slug)
   let profile: ProfileRow | null = null;
   {
-  const byId = await supabase.from('profiles').select('id,shop_name,display_name,full_name,business_banner_url,business_logo_url,avatar_url').eq('id', businessId).maybeSingle();
+  const byId = await supabase.from('profiles').select('id,shop_name,display_name,full_name,business_banner_url,business_logo_url,avatar_url,categories').eq('id', businessId).maybeSingle();
     profile = byId.data;
     if (!profile) {
-  const bySlug = await supabase.from('profiles').select('id,shop_name,display_name,full_name,business_banner_url,business_logo_url,avatar_url').eq('shop_slug', params.id).maybeSingle();
+  const bySlug = await supabase.from('profiles').select('id,shop_name,display_name,full_name,business_banner_url,business_logo_url,avatar_url,categories').eq('shop_slug', params.id).maybeSingle();
       if (bySlug.data) { profile = bySlug.data; businessId = bySlug.data.id; }
     }
   }
@@ -38,8 +38,25 @@ export default async function BusinessFullAanbodPage({ params, searchParams }: {
   const activeCatId = catParam && !Number.isNaN(Number(catParam)) ? Number(catParam) : undefined;
 
   let listings: ListingRow[] = [];
-  let categories: { id: number; name: string; count: number }[] = [];
+  let categories: { id: number; name: string; count: number; sort_order: number }[] = [];
   try {
+    // First, get all categories and build name-to-id map
+    const allCatsRes = await supabase
+      .from('categories')
+      .select('id, name, sort_order');
+    const nameToId = new Map<string, number>();
+    const nameToSort = new Map<string, number>();
+    if (allCatsRes.data) {
+      for (const c of allCatsRes.data as { id: number; name: string; sort_order?: number }[]) {
+        nameToId.set(c.name, c.id);
+        nameToSort.set(c.name, c.sort_order ?? 0);
+      }
+    }
+
+    // Get seller's selected categories (names) and convert to ids
+    const selectedCatNames = Array.isArray(profile.categories) ? profile.categories : [];
+    const selectedCatIds = selectedCatNames.map(name => nameToId.get(name)).filter(id => id != null) as number[];
+
     let query = supabase
   .from('listings')
 	.select('id,title,price,images,created_at,views,favorites_count,status,seller_id,category_id')
@@ -60,49 +77,34 @@ export default async function BusinessFullAanbodPage({ params, searchParams }: {
         favorites: l.favorites_count != null ? l.favorites_count : 0,
         status: l.status === 'actief' ? 'active' : l.status,
       }));
-      // Haal categorie counts op (zonder category filter maar met overige filters)
-      // include subcategory_id and legacy categories[] so we can resolve a category even if
-      // listings were not normalized to the category_id column yet
-      let catQuery = supabase
-        .from('listings')
-        .select('category_id,subcategory_id,categories', { count: 'exact', head: false })
-        .eq('seller_id', businessId);
-      if (qText) catQuery = catQuery.ilike('title', `%${qText}%`);
-      if (minPrice != null && !Number.isNaN(minPrice)) catQuery = catQuery.gte('price', minPrice);
-      if (maxPrice != null && !Number.isNaN(maxPrice)) catQuery = catQuery.lte('price', maxPrice);
-      const catRes = await catQuery;
+      // Calculate counts for selected categories
       const countMap = new Map<number, number>();
-      if (catRes.data) {
-        type Row = { category_id: number | null; subcategory_id?: number | null; categories?: (number|string)[] | null };
-        for (const r of catRes.data as unknown as Row[]) {
-          // Prefer explicit category_id, then subcategory_id, then legacy categories array
-          let resolved: number | undefined = undefined;
-          if (r.category_id != null) resolved = r.category_id;
-          else if (r.subcategory_id != null) resolved = r.subcategory_id;
-          else if (Array.isArray(r.categories) && r.categories.length > 0) {
-            const legacy = (r.categories as (string|number)[])
-              .map(v => (typeof v === 'number' ? v : Number(v)))
-              .filter(n => typeof n === 'number' && !Number.isNaN(n)) as number[];
-            if (legacy.length) resolved = legacy[0];
+      if (selectedCatIds.length) {
+        // Count listings per selected category
+        let catQuery = supabase
+          .from('listings')
+          .select('category_id', { count: 'exact', head: false })
+          .eq('seller_id', businessId)
+          .in('category_id', selectedCatIds);
+        if (qText) catQuery = catQuery.ilike('title', `%${qText}%`);
+        if (minPrice != null && !Number.isNaN(minPrice)) catQuery = catQuery.gte('price', minPrice);
+        if (maxPrice != null && !Number.isNaN(maxPrice)) catQuery = catQuery.lte('price', maxPrice);
+        const catRes = await catQuery;
+        if (catRes.data) {
+          type Row = { category_id: number | null };
+          for (const r of catRes.data as unknown as Row[]) {
+            if (r.category_id != null && selectedCatIds.includes(r.category_id)) {
+              countMap.set(r.category_id, (countMap.get(r.category_id) || 0) + 1);
+            }
           }
-          if (resolved == null) continue;
-          countMap.set(resolved, (countMap.get(resolved) || 0) + 1);
         }
       }
-      if (countMap.size) {
-        // fetch names
-        const ids = Array.from(countMap.keys());
-        const namesRes = await supabase
-          .from('categories')
-          .select('id,name')
-          .in('id', ids);
-        const nameMap = new Map<number, string>();
-        if (namesRes.data) {
-          for (const c of namesRes.data as { id: number; name: string }[]) nameMap.set(c.id, c.name);
-        }
-        categories = ids.map(id => ({ id, name: nameMap.get(id) || `Cat ${id}`, count: countMap.get(id)! }))
-          .sort((a,b) => a.name.localeCompare(b.name));
-      }
+
+      // Build categories list from selected ones
+      categories = selectedCatNames.map(name => {
+        const id = nameToId.get(name);
+        return id ? { id, name, count: countMap.get(id) || 0, sort_order: nameToSort.get(name) ?? 0 } : null;
+      }).filter(Boolean).sort((a, b) => (a!.sort_order ?? 0) - (b!.sort_order ?? 0)) as { id: number; name: string; count: number; sort_order: number }[];
     }
   } catch (e) {
     // ignore
@@ -136,7 +138,7 @@ export default async function BusinessFullAanbodPage({ params, searchParams }: {
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Volledig aanbod van {displayName}</h1>
             <p className="text-sm text-gray-600">{listings.length} resultaten{activeCatId && categories.length ? (() => { const c = categories.find(c=>c.id===activeCatId); return c ? <> in <span className="font-medium">{c.name}</span></> : null; })() : null}</p>
           </header>
-          <BusinessAanbodFilters initial={{ q: qText, min: minPrice, max: maxPrice, sort }} />
+          <BusinessAanbodFilters initial={{ q: qText, min: minPrice, max: maxPrice, sort, cat: activeCatId }} categories={categories} />
           <div className="md:grid md:grid-cols-12 md:gap-8 lg:gap-10">
             <aside className="hidden md:block md:col-span-3 lg:col-span-2">
               <div className="sticky top-28 space-y-3">

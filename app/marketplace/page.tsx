@@ -8,7 +8,7 @@ import MarketplaceFilters from "@/components/MarketplaceFilters";
 import MarketplaceMapModal from "@/components/MarketplaceMapModal";
 import RatingStars from "@/components/RatingStars";
 import { supabaseServer } from "@/lib/supabaseServer";
-import type { Category, Listing as BaseListing, Subcategory } from "@/lib/types";
+import type { Listing as BaseListing, Category, Subcategory } from "@/lib/types";
 
 export const dynamic = 'force-dynamic';
 

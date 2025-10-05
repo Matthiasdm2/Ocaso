@@ -7,15 +7,17 @@ interface Initial {
   min?: number;
   max?: number;
   sort: string;
+  cat?: number;
 }
 
-export default function BusinessAanbodFilters({ initial }: { initial: Initial }) {
+export default function BusinessAanbodFilters({ initial, categories }: { initial: Initial; categories: { id: number; name: string }[] }) {
   const router = useRouter();
   const sp = useSearchParams();
   const [q, setQ] = useState(initial.q || "");
   const [min, setMin] = useState(initial.min?.toString() || "");
   const [max, setMax] = useState(initial.max?.toString() || "");
   const [sort, setSort] = useState(initial.sort || "nieuwste");
+  const [cat, setCat] = useState(initial.cat?.toString() || "");
 
   // Sync when URL changes externally
   useEffect(() => {
@@ -23,6 +25,7 @@ export default function BusinessAanbodFilters({ initial }: { initial: Initial })
     setMin(sp.get('min') || "");
     setMax(sp.get('max') || "");
     setSort(sp.get('sort') || "nieuwste");
+    setCat(sp.get('cat') || "");
   }, [sp]);
 
   const apply = useCallback(() => {
@@ -31,11 +34,12 @@ export default function BusinessAanbodFilters({ initial }: { initial: Initial })
     if (min && !Number.isNaN(Number(min))) params.set('min', min);
     if (max && !Number.isNaN(Number(max))) params.set('max', max);
     if (sort && sort !== 'nieuwste') params.set('sort', sort);
+    if (cat && cat !== '') params.set('cat', cat);
   router.push('?' + params.toString(), { scroll: false });
-  }, [q, min, max, sort, router]);
+  }, [q, min, max, sort, cat, router]);
 
   const reset = () => {
-  setQ(""); setMin(""); setMax(""); setSort("nieuwste"); router.push('?', { scroll: false });
+  setQ(""); setMin(""); setMax(""); setSort("nieuwste"); setCat(""); router.push('?', { scroll: false });
   };
 
   return (
@@ -60,6 +64,15 @@ export default function BusinessAanbodFilters({ initial }: { initial: Initial })
             <option value="prijs_laag">Prijs laag - hoog</option>
             <option value="prijs_hoog">Prijs hoog - laag</option>
             <option value="meest_bekeken">Meest bekeken</option>
+          </select>
+        </div>
+        <div className="min-w-[160px]">
+          <label className="block text-xs font-medium text-gray-600 mb-1">Categorie</label>
+          <select value={cat} onChange={e => setCat(e.target.value)} className="w-full rounded-lg border px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            <option value="">Alle categorieën</option>
+            {categories.map(c => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
           </select>
         </div>
         <div className="flex gap-2 md:ml-auto">

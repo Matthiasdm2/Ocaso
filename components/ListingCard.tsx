@@ -8,6 +8,7 @@ type Listing = {
   id: string;
   title: string;
   price: number | string;
+  description?: string | null;
   images?: string[] | null;
   created_at?: string | null;
   views?: number | null;
@@ -61,6 +62,13 @@ export default function ListingCard({ listing, item, reviewAvg, reviewCount, com
           </div>
         )}
       </div>
+      {/* Mobile / tablet: show price and short description under the image */}
+      <div className="px-4 pb-3 md:hidden">
+        <div className="mb-1 text-lg font-semibold text-neutral-900">{toCurrency(listingData.price)}</div>
+        {listingData.description ? (
+          <p className="text-sm text-neutral-600 line-clamp-2">{listingData.description}</p>
+        ) : null}
+      </div>
       <div className={[
         "flex items-start justify-between gap-3",
         compact ? "p-2.5" : "p-4 md:p-3"
@@ -88,7 +96,8 @@ export default function ListingCard({ listing, item, reviewAvg, reviewCount, com
         </div>
         <div className={[
           "shrink-0 rounded-lg bg-neutral-900 font-semibold text-white text-center",
-          compact ? "px-1.5 py-0.5 text-[10px]" : "px-2 py-1 text-xs"
+          compact ? "px-1.5 py-0.5 text-[10px]" : "px-2 py-1 text-xs",
+          "hidden md:inline-flex"
         ].join(" ")}>{toCurrency(listingData.price)}</div>
       </div>
     </Link>

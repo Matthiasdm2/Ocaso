@@ -154,12 +154,12 @@ export default function ProfileChatPage({ params }: { params: { id: string } }) 
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 md:space-y-3">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Chat</h2>
         <Link href="/profile/chats" className="text-sm text-gray-600 hover:underline">Alle chats</Link>
       </div>
-      <div ref={boxRef} className="card p-4 max-h-[50vh] overflow-y-auto space-y-2">
+      <div ref={boxRef} className="card p-3 md:p-4 max-h-[50vh] md:max-h-[60vh] overflow-y-auto space-y-2 md:space-y-2">
         {hasMore && (
           <button onClick={loadOlder} disabled={loadingOlder} className="mx-auto mb-2 text-sm text-gray-500 hover:underline disabled:opacity-50">
             {loadingOlder ? 'Meer laden…' : 'Oudere berichten laden'}
@@ -175,7 +175,7 @@ export default function ProfileChatPage({ params }: { params: { id: string } }) 
               {!mine && (
                 <Avatar src={peer?.avatar_url || null} name={peer?.full_name || 'Gebruiker'} size={20} />
               )}
-              <div className={`group relative max-w-[80%] rounded-2xl px-3 py-2 text-sm shadow-sm ${mine ? 'bg-primary text-black rounded-br-sm' : 'bg-gray-100 rounded-bl-sm'}`}>
+              <div className={`group relative max-w-[85%] md:max-w-[80%] rounded-2xl px-3 py-2 text-sm shadow-sm ${mine ? 'bg-primary text-black rounded-br-sm' : 'bg-gray-100 rounded-bl-sm'}`}>
                 {editingId === m.id ? (
                   <div className="flex flex-col gap-1">
                     <textarea value={editingText} onChange={e => setEditingText(e.target.value)} className="w-full rounded-md border border-gray-300 px-2 py-1 text-sm bg-white text-gray-800" rows={2} />
@@ -205,8 +205,8 @@ export default function ProfileChatPage({ params }: { params: { id: string } }) 
         })}
       </div>
       <div className="card p-3 flex items-center gap-2">
-        <input value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }} placeholder="Schrijf een bericht…" className="flex-1 rounded-xl border border-gray-200 px-3 py-2" />
-        <button onClick={send} className="rounded-xl bg-primary text-black px-4 py-2 font-medium">Verstuur</button>
+        <input value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }} placeholder="Schrijf een bericht…" className="flex-1 rounded-xl border border-gray-200 px-3 py-2 text-sm" />
+        <button onClick={send} className="rounded-xl bg-primary text-black px-3 md:px-4 py-2 font-medium text-sm">Verstuur</button>
       </div>
     </div>
   );

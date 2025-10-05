@@ -243,10 +243,10 @@ export default function ChatsTabPage() {
   const totalUnread = useMemo(() => items.reduce((sum, c) => sum + (c.unread || 0), 0), [items]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <h2 className="text-xl font-semibold leading-none">Chats</h2>
+          <h2 className="text-lg md:text-xl font-semibold leading-none">Chats</h2>
           {totalUnread > 0 && (
             <span
               className="inline-flex items-center justify-center rounded-full bg-emerald-600/90 text-white text-[10px] font-semibold h-5 w-5 shadow-sm"
@@ -256,7 +256,7 @@ export default function ChatsTabPage() {
             </span>
           )}
         </div>
-        <Link href="/messages" className="text-sm text-gray-500 hover:underline">Volledig scherm</Link>
+        <Link href="/messages" className="text-sm text-gray-500 hover:underline hidden md:inline">Volledig scherm</Link>
       </div>
       {loading && <div className="text-sm text-gray-500">Laden…</div>}
       {!loading && error && (
@@ -290,39 +290,40 @@ export default function ChatsTabPage() {
                     // Optionally still navigate to detail page (comment out if not wanted)
                     // router.push(`/profile/chats/${c.id}`);
                   }}
-                  className="flex items-center gap-4 p-4 w-full text-left"
+                  className="flex items-center gap-3 md:gap-4 p-3 md:p-4 w-full text-left"
                 >
-                  <div className="relative w-14 h-14 shrink-0">
+                  <div className="relative w-12 h-12 md:w-14 md:h-14 shrink-0">
                     {c.listing?.image ? (
-                      <Image src={c.listing.image} alt={c.listing.title} width={56} height={56} className="w-14 h-14 rounded object-cover border" />
+                      <Image src={c.listing.image} alt={c.listing.title} width={56} height={56} className="w-12 h-12 md:w-14 md:h-14 rounded object-cover border" />
                     ) : (
-                      <div className="w-14 h-14 rounded bg-gray-100 border flex items-center justify-center text-[10px] text-gray-400">IMG</div>
+                      <div className="w-12 h-12 md:w-14 md:h-14 rounded bg-gray-100 border flex items-center justify-center text-[10px] text-gray-400">IMG</div>
                     )}
                     <div className="absolute -bottom-1 -right-1">
-                      <Avatar src={other?.avatar_url || null} name={other?.full_name || 'Gebruiker'} size={20} />
+                      <Avatar src={other?.avatar_url || null} name={other?.full_name || 'Gebruiker'} size={18} />
                     </div>
                   </div>
                   <div className="flex-1 min-w-0 flex flex-col gap-1">
                     <div className="flex flex-wrap items-center gap-2 text-sm">
-                      <span className="font-medium truncate max-w-[150px]" title={c.listing?.title || c.listing_id || 'Listing'}>{c.listing?.title || 'Zoekertje'}</span>
-                      <span className="text-gray-400">|</span>
-                      <span className="truncate max-w-[120px]" title={title}>{title}</span>
+                      <span className="font-medium truncate max-w-[120px] md:max-w-[150px]" title={c.listing?.title || c.listing_id || 'Listing'}>{c.listing?.title || 'Zoekertje'}</span>
+                      <span className="text-gray-400 hidden md:inline">|</span>
+                      <span className="truncate max-w-[100px] md:max-w-[120px]" title={title}>{title}</span>
                       {c.unread > 0 && (
                         <span
-                          className="ml-1 inline-flex items-center justify-center rounded-full bg-emerald-600 text-white text-[10px] font-semibold h-5 w-5"
+                          className="ml-1 inline-flex items-center justify-center rounded-full bg-emerald-600 text-white text-[10px] font-semibold h-4 w-4 md:h-5 md:w-5"
                           title={`${c.unread} ongelezen`}
                         >
                           {c.unread > 9 ? '9+' : c.unread}
                         </span>
                       )}
-                      {last && <span className="ml-auto text-[11px] text-gray-500">{new Date(last.created_at).toLocaleTimeString()}</span>}
+                      {last && <span className="ml-auto text-[11px] text-gray-500 hidden md:inline">{new Date(last.created_at).toLocaleTimeString()}</span>}
                     </div>
                     <div className="text-sm text-gray-600 line-clamp-1">
                       {last ? last.body : 'Geen berichten'}
                     </div>
+                    {last && <span className="text-[11px] text-gray-500 md:hidden">{new Date(last.created_at).toLocaleTimeString()}</span>}
                   </div>
-                  <div className="flex flex-col gap-1 ml-auto pl-4 border-l border-transparent group-hover:border-gray-100">
-                  <div className="flex gap-2">
+                  <div className="flex flex-col gap-1 ml-auto pl-2 md:pl-4 border-l border-transparent group-hover:border-gray-100">
+                  <div className="flex gap-1 md:gap-2">
                       <button
                         type="button"
                         onClick={(e) => {
@@ -339,7 +340,7 @@ export default function ChatsTabPage() {
                           e.stopPropagation();
                           router.push(`/profile/chats/${c.id}`);
                         }}
-                        className="px-2 py-1 rounded text-[11px] bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100"
+                        className="px-2 py-1 rounded text-[11px] bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100 hidden md:inline"
                       >Volledig</button>
                       <button
                         type="button"
@@ -348,7 +349,7 @@ export default function ChatsTabPage() {
                           setConversationToDelete(c.id);
                           setShowDeleteModal(true);
                         }}
-                        className="px-2 py-1 rounded text-[11px] bg-red-50 text-red-700 border border-red-200 hover:bg-red-100"
+                        className="px-2 py-1 rounded text-[11px] bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 hidden md:inline"
                       >Verwijder</button>
                     </div>
                   </div>

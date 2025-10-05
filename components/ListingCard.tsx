@@ -44,7 +44,10 @@ export default function ListingCard({ listing, item, reviewAvg, reviewCount, com
           Pro
         </div>
       )}
-      <div className={["w-full overflow-hidden bg-neutral-100", compact ? "aspect-square rounded-t-xl" : "aspect-[4/3] rounded-t-2xl"].join(" ") }>
+      <div className={[
+        "w-full overflow-hidden bg-neutral-100",
+        compact ? "aspect-square rounded-t-xl" : "aspect-[3/2] md:aspect-[4/3] rounded-t-2xl"
+      ].join(" ") }>
         {firstImage ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -70,7 +73,7 @@ export default function ListingCard({ listing, item, reviewAvg, reviewCount, com
         ) : null}
       </div>
       <div className={[
-        "flex items-start justify-between gap-3",
+        "flex flex-col md:flex-row items-start justify-between gap-3",
         compact ? "p-2.5" : "p-4 md:p-3"
       ].join(" ")}>
         <div className="min-w-0 flex-1">

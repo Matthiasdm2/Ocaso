@@ -38,18 +38,16 @@ export default async function BusinessFullAanbodPage({ params, searchParams }: {
   const activeCatId = catParam && !Number.isNaN(Number(catParam)) ? Number(catParam) : undefined;
 
   let listings: ListingRow[] = [];
-  let categories: { id: number; name: string; count: number; sort_order: number }[] = [];
+  let categories: { id: number; name: string; count: number }[] = [];
   try {
     // First, get all categories and build name-to-id map
     const allCatsRes = await supabase
       .from('categories')
-      .select('id, name, sort_order');
+      .select('id, name');
     const nameToId = new Map<string, number>();
-    const nameToSort = new Map<string, number>();
     if (allCatsRes.data) {
-      for (const c of allCatsRes.data as { id: number; name: string; sort_order?: number }[]) {
+      for (const c of allCatsRes.data as { id: number; name: string }[]) {
         nameToId.set(c.name, c.id);
-        nameToSort.set(c.name, c.sort_order ?? 0);
       }
     }
 
@@ -103,8 +101,8 @@ export default async function BusinessFullAanbodPage({ params, searchParams }: {
       // Build categories list from selected ones
       categories = selectedCatNames.map(name => {
         const id = nameToId.get(name);
-        return id ? { id, name, count: countMap.get(id) || 0, sort_order: nameToSort.get(name) ?? 0 } : null;
-      }).filter(Boolean).sort((a, b) => (a!.sort_order ?? 0) - (b!.sort_order ?? 0)) as { id: number; name: string; count: number; sort_order: number }[];
+        return id ? { id, name, count: countMap.get(id) || 0 } : null;
+      }).filter(Boolean).sort((a, b) => a!.name.localeCompare(b!.name)) as { id: number; name: string; count: number }[];
     }
   } catch (e) {
     // ignore
@@ -141,13 +139,13 @@ export default async function BusinessFullAanbodPage({ params, searchParams }: {
           <BusinessAanbodFilters initial={{ q: qText, min: minPrice, max: maxPrice, sort, cat: activeCatId }} categories={categories} />
           <div className="md:grid md:grid-cols-12 md:gap-8 lg:gap-10">
             <aside className="hidden md:block md:col-span-3 lg:col-span-2">
-              <div className="sticky top-28 space-y-3">
-                <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-500">Categorieën</h2>
+              <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5 h-fit sticky top-28">
+                <h2 className="text-xl font-bold mb-4 text-primary">Categorieën</h2>
                 {categories.length > 0 ? (
                   <ul className="space-y-1">
                     <li>
                       {(() => { const p = new URLSearchParams(); Object.entries(searchParams).forEach(([k,v])=> { if (typeof v==='string') p.set(k,v); }); p.delete('cat'); const href='?' + p.toString(); return (
-                        <Link scroll={false} href={href} className={!activeCatId ? 'block px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-sm font-medium' : 'block px-3 py-1.5 rounded-lg text-sm text-gray-700 hover:bg-neutral-100'}>
+                        <Link scroll={false} href={href} className={!activeCatId ? 'block px-4 py-1.5 rounded-lg bg-primary text-white text-base font-medium shadow transition-colors duration-150' : 'block px-4 py-1.5 rounded-lg text-base text-gray-800 hover:bg-primary/10 transition-colors duration-150 font-medium'}>
                           Alle ({Array.from(categories).reduce((s,c)=> s + c.count, 0)})
                         </Link>
                       ); })()}
@@ -157,7 +155,7 @@ export default async function BusinessFullAanbodPage({ params, searchParams }: {
                       const active = c.id === activeCatId;
                       return (
                         <li key={c.id}>
-                          <Link scroll={false} href={href} className={active ? 'flex items-center justify-between px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-sm font-medium border border-emerald-200' : 'flex items-center justify-between px-3 py-1.5 rounded-lg text-sm text-gray-700 hover:bg-neutral-100'}>
+                          <Link scroll={false} href={href} className={active ? 'flex items-center justify-between px-4 py-1.5 rounded-lg bg-primary/20 text-primary text-base font-medium border border-primary/20 transition-colors duration-150' : 'flex items-center justify-between px-4 py-1.5 rounded-lg text-base text-gray-800 hover:bg-primary/10 transition-colors duration-150 font-medium'}>
                             <span className="truncate">{c.name}</span>
                             <span className="ml-2 text-[11px] px-1.5 py-0.5 rounded bg-neutral-200/60 text-neutral-700 font-medium">{c.count}</span>
                           </Link>

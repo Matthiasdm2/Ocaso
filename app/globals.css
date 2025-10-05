@@ -10,15 +10,57 @@ html,
 body {
   @apply bg-gray-50 text-gray-900;
 }
+
+/* Mobile-first responsive container */
 .container {
   @apply mx-auto px-4 sm:px-6 lg:px-8;
 }
+
+/* Mobile-friendly card styling */
 .card {
   @apply bg-white rounded-2xl shadow-smooth;
 }
-.badge {
-  @apply inline-flex items-center rounded-full px-3 py-1 text-xs font-medium bg-gray-100;
+
+/* Mobile-optimized touch targets */
+.btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-full font-semibold transition-colors;
+  min-height: 44px; /* iOS/Android minimum touch target */
 }
+
+.btn-primary {
+  /* primary filled button */
+  @apply bg-primary text-black border border-primary/30 shadow px-4 py-2 hover:bg-primary/80;
+}
+
+.btn-secondary {
+  @apply bg-secondary text-black border border-secondary/30 px-4 py-2 hover:bg-secondary/80;
+}
+
+.btn-outline {
+  @apply bg-white text-gray-800 border border-gray-200 px-3 py-1 hover:bg-gray-50;
+}
+
+.btn-sm {
+  @apply px-3 py-1 text-sm rounded-md;
+  min-height: 36px;
+}
+
+.btn-xs {
+  @apply px-2 py-0.5 text-xs rounded;
+  min-height: 32px;
+}
+
+/* Mobile-friendly form elements */
+input, textarea, select {
+  min-height: 44px; /* Better touch targets on mobile */
+}
+
+input[type="checkbox"], input[type="radio"] {
+  min-width: 20px;
+  min-height: 20px;
+}
+
+/* Mobile scroll behavior */
 .hidden-scroll::-webkit-scrollbar {
   display: none;
 }
@@ -27,6 +69,7 @@ body {
   scrollbar-width: none;
 }
 
+/* Mobile-optimized spacing */
 .section-title {
   @apply text-xl font-semibold;
 }
@@ -35,27 +78,16 @@ body {
 .filter-select,
 .filter-input {
   @apply w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary;
+  min-height: 44px;
 }
 
-/* Ocaso button primitives (used across the app via `btn` helpers) */
-@layer components {
-  .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-full font-semibold transition-colors;
-  }
-  .btn-primary {
-    /* primary filled button */
-    @apply bg-primary text-black border border-primary/30 shadow px-4 py-2 hover:bg-primary/80;
-  }
-  .btn-secondary {
-    @apply bg-secondary text-black border border-secondary/30 px-4 py-2 hover:bg-secondary/80;
-  }
-  .btn-outline {
-    @apply bg-white text-gray-800 border border-gray-200 px-3 py-1 hover:bg-gray-50;
-  }
-  .btn-sm {
-    @apply px-3 py-1 text-sm rounded-md;
-  }
-  .btn-xs {
-    @apply px-2 py-0.5 text-xs rounded;
+/* Mobile-friendly grid gaps */
+.grid {
+  gap: 0.75rem; /* 12px instead of default 8px for better mobile spacing */
+}
+
+@media (min-width: 640px) {
+  .grid {
+    gap: 1rem; /* 16px on larger screens */
   }
 }

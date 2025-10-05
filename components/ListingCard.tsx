@@ -32,7 +32,7 @@ export default function ListingCard({ listing, item, reviewAvg, reviewCount, com
   <Link
 	href={`/listings/${listingData.id}`}
       className={[
-        "group relative block rounded-2xl border bg-white shadow-sm transition hover:shadow-md",
+        "group relative block rounded-2xl border bg-white shadow-sm transition hover:shadow-md active:scale-[0.98]",
         compact && "rounded-xl",
         businessHighlight ? "border-amber-400 shadow-md ring-1 ring-amber-300/40" : "border-neutral-200"
       ].filter(Boolean).join(" ")}
@@ -66,7 +66,7 @@ export default function ListingCard({ listing, item, reviewAvg, reviewCount, com
         compact ? "p-2.5" : "p-3"
       ].join(" ")}>
         <div className="min-w-0 flex-1">
-          <h3 className={["font-medium text-neutral-900 mb-1 line-clamp-2", compact ? "text-[11px] leading-tight" : "text-sm"].join(" ") }>
+          <h3 className={["font-medium text-neutral-900 mb-1 line-clamp-2", compact ? "text-[11px] leading-tight" : "text-sm leading-tight"].join(" ") }>
             {listingData.title}
           </h3>
           {!compact && typeof reviewAvg === 'number' && reviewCount && reviewCount > 0 && (
@@ -87,7 +87,7 @@ export default function ListingCard({ listing, item, reviewAvg, reviewCount, com
           </div>
         </div>
         <div className={[
-          "shrink-0 rounded-lg bg-neutral-900 font-semibold text-white",
+          "shrink-0 rounded-lg bg-neutral-900 font-semibold text-white text-center",
           compact ? "px-1.5 py-0.5 text-[10px]" : "px-2 py-1 text-xs"
         ].join(" ")}>{toCurrency(listingData.price)}</div>
       </div>

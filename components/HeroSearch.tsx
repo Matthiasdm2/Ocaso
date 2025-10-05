@@ -34,12 +34,12 @@ export default function HeroSearch({ noContainer = false }: { noContainer?: bool
   }, []);
 
   return (
-    <section id="hero-observe" className={noContainer ? "py-10" : "container py-10"}>
-      <div className="card p-6 md:p-10">
-        <h1 className="text-2xl md:text-4xl font-bold mb-6">
+    <section id="hero-observe" className={noContainer ? "py-6 md:py-10" : "container py-6 md:py-10"}>
+      <div className="card p-4 md:p-6 lg:p-10">
+        <h1 className="text-xl md:text-2xl lg:text-4xl font-bold mb-4 md:mb-6">
           Zoek nieuw of tweedehands. Slim, snel en veilig.
         </h1>
-        <div className="relative flex flex-col md:flex-row gap-3">
+        <div className="relative flex flex-col sm:flex-row gap-3">
           <form
             className="relative flex-1"
             onSubmit={(e) => {
@@ -65,7 +65,7 @@ export default function HeroSearch({ noContainer = false }: { noContainer?: bool
                 }}
                 onFocus={() => setShow(true)}
                 placeholder="Waar ben je naar op zoek?"
-                className="w-full rounded-xl border border-gray-200 pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full rounded-xl border border-gray-200 pl-10 pr-4 py-3 md:py-3 focus:outline-none focus:ring-2 focus:ring-primary min-h-[44px] text-base"
                 type="search"
                 name="q"
                 autoComplete="off"
@@ -74,13 +74,13 @@ export default function HeroSearch({ noContainer = false }: { noContainer?: bool
           </form>
           <button
             onClick={() => push("Foto-zoek (AI) demo — nog te koppelen.")}
-            className="rounded-xl border border-gray-200 px-4 py-3 flex items-center gap-2 hover:bg-gray-50"
+            className="rounded-xl border border-gray-200 px-4 py-3 flex items-center justify-center gap-2 hover:bg-gray-50 min-h-[44px] text-base font-medium"
           >
             <Camera className="size-5" /> Zoek op foto (AI)
           </button>
 
           {show && q && (
-            <div className="absolute top-full mt-2 left-0 right-0 md:right-auto md:w-[60%] bg-white rounded-xl border shadow-smooth overflow-hidden z-10">
+            <div className="absolute top-full mt-2 left-0 right-0 sm:right-auto sm:w-[60%] bg-white rounded-xl border shadow-smooth overflow-hidden z-10 max-h-60 overflow-y-auto">
               {results.length === 0 && (
                 <div className="px-4 py-3 text-sm text-gray-600">
                   Geen suggesties
@@ -94,7 +94,7 @@ export default function HeroSearch({ noContainer = false }: { noContainer?: bool
                     router.push(`/search?q=${encodeURIComponent(r)}`);
                     setShow(false);
                   }}
-                  className="w-full text-left px-4 py-3 hover:bg-gray-50 text-sm"
+                  className="w-full text-left px-4 py-3 hover:bg-gray-50 text-sm min-h-[44px] flex items-center"
                 >
                   {r}
                 </button>

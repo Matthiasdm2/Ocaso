@@ -15,6 +15,7 @@ const ChatDockManager = dynamic(() => import('@/components/ChatDockManager'), { 
 export const metadata: Metadata = {
   title: "OCASO — Slim tweedehands kopen en verkopen",
   description: "Marktplaats met AI-zoek en prijscontrole",
+  viewport: "width=device-width, initial-scale=1, maximum-scale=5",
 };
 
 // Use default export of ConsentBootstrap (dynamic client component) via relative path to avoid TS path alias issue

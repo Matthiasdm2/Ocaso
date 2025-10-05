@@ -23,9 +23,9 @@ export default async function HomePage() {
       <HeroSearch />
 
       {/* Categorieën (zelfde breedte als HeroSearch: één enkele container, geen geneste container) */}
-      <section className="container space-y-4">
+      <section className="container space-y-3 md:space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold">Categorieën</h2>
+          <h2 className="text-lg md:text-xl font-semibold">Categorieën</h2>
           <a
             href="/categories"
             className="text-sm text-gray-600 hover:underline"
@@ -36,7 +36,7 @@ export default async function HomePage() {
         <div className="card p-4 md:p-6">
           <div className="flex items-center justify-between mb-2">
             <div>
-              <h3 className="text-lg font-semibold">Hoofdcategorieën</h3>
+              <h3 className="text-base md:text-lg font-semibold">Hoofdcategorieën</h3>
             </div>
             <a
               href="/marketplace"
@@ -83,23 +83,23 @@ export default async function HomePage() {
       </section>
 
       {/* Aanbevolen met filters + infinite scroll */}
-      <section className="container space-y-4 pb-12">
-        <h2 className="text-xl font-semibold">Aanbevolen voor jou</h2>
+      <section className="container space-y-3 md:space-y-4 pb-8 md:pb-12">
+        <h2 className="text-lg md:text-xl font-semibold">Aanbevolen voor jou</h2>
         <InfiniteGrid />
       </section>
 
       {/* Tips & Veiligheid */}
       <section className="container">
-        <div className="card p-6 md:p-8">
-          <h3 className="text-lg font-semibold mb-3">Tips & Veilig handelen</h3>
-          <div className="grid md:grid-cols-3 gap-4 text-sm text-gray-700">
+        <div className="card p-4 md:p-6 lg:p-8">
+          <h3 className="text-base md:text-lg font-semibold mb-3">Tips & Veilig handelen</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-700">
             <div className="card p-4">
               <div className="font-medium mb-1">1. Controleer het profiel</div>
-              <p>Bekijk reviews en activiteit van de verkoper of koper.</p>
+              <p className="text-xs md:text-sm">Bekijk reviews en activiteit van de verkoper of koper.</p>
             </div>
             <div className="card p-4">
               <div className="font-medium mb-1">2. Betaal veilig</div>
-              <p>
+              <p className="text-xs md:text-sm">
                 Gebruik betrouwbare betaalmethodes en betaal nooit buiten het
                 platform.
               </p>
@@ -108,7 +108,7 @@ export default async function HomePage() {
               <div className="font-medium mb-1">
                 3. Spreek af op een veilige plek
               </div>
-              <p>
+              <p className="text-xs md:text-sm">
                 Kies drukke, publieke locaties of maak gebruik van
                 verzendservice.
               </p>

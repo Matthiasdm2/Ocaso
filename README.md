@@ -4,7 +4,13 @@ Een moderne, full-stack marketplace platform gebouwd met Next.js en Supabase.
 
 ## ✨ Features
 
-### 🛒 Marketplace
+### � Mobile-First Design
+
+- **Responsive Design**: Geoptimaliseerd voor alle apparaten
+- **Touch-Friendly**: 44px minimum touch targets voor iOS/Android
+- **Progressive Web App**: Native app-achtige ervaring in de browser
+
+### �🛒 Marketplace
 
 - **Product Listings**: Uitgebreide productpagina's met fotogalerij
 - **Geavanceerd Zoeken**: Zoeken op categorie, locatie, prijs en meer

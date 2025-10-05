@@ -16,7 +16,7 @@ export default function ContactPage() {
       <section className="px-6 pt-16 pb-8 md:pt-20 md:pb-10">
         <div className="mx-auto max-w-5xl">
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs text-emerald-700">
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-sm text-emerald-700">
               <MessageSquare className="h-4 w-4" /> Contact
             </div>
             <h1 className="mt-3 text-4xl font-semibold tracking-tight md:text-5xl">Neem contact op met Ocaso</h1>
@@ -57,7 +57,7 @@ export default function ContactPage() {
           <div className="rounded-2xl border border-neutral-200 bg-white p-6">
             <div className="flex items-center gap-2 text-emerald-700"><MapPin className="h-5 w-5" /> Ons adres</div>
             <p className="mt-2 text-sm text-neutral-700">[Straatnaam 123]<br />[9000 Gent, België]</p>
-            <div className="mt-4 text-xs text-neutral-500">Bezoek enkel op afspraak.</div>
+            <div className="mt-4 text-sm text-neutral-500">Bezoek enkel op afspraak.</div>
           </div>
           <div className="rounded-2xl border border-neutral-200 bg-white p-6">
             <div className="flex items-center gap-2 text-emerald-700"><Clock className="h-5 w-5" /> Openingstijden</div>

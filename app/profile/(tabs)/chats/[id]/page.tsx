@@ -157,11 +157,11 @@ export default function ProfileChatPage({ params }: { params: { id: string } }) 
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Chat</h2>
-        <Link href="/profile/chats" className="text-xs text-gray-600 hover:underline">Alle chats</Link>
+        <Link href="/profile/chats" className="text-sm text-gray-600 hover:underline">Alle chats</Link>
       </div>
       <div ref={boxRef} className="card p-4 max-h-[50vh] overflow-y-auto space-y-2">
         {hasMore && (
-          <button onClick={loadOlder} disabled={loadingOlder} className="mx-auto mb-2 text-xs text-gray-500 hover:underline disabled:opacity-50">
+          <button onClick={loadOlder} disabled={loadingOlder} className="mx-auto mb-2 text-sm text-gray-500 hover:underline disabled:opacity-50">
             {loadingOlder ? 'Meer laden…' : 'Oudere berichten laden'}
           </button>
         )}
@@ -178,7 +178,7 @@ export default function ProfileChatPage({ params }: { params: { id: string } }) 
               <div className={`group relative max-w-[80%] rounded-2xl px-3 py-2 text-sm shadow-sm ${mine ? 'bg-primary text-black rounded-br-sm' : 'bg-gray-100 rounded-bl-sm'}`}>
                 {editingId === m.id ? (
                   <div className="flex flex-col gap-1">
-                    <textarea value={editingText} onChange={e => setEditingText(e.target.value)} className="w-full rounded-md border border-gray-300 px-2 py-1 text-xs bg-white text-gray-800" rows={2} />
+                    <textarea value={editingText} onChange={e => setEditingText(e.target.value)} className="w-full rounded-md border border-gray-300 px-2 py-1 text-sm bg-white text-gray-800" rows={2} />
                     <div className="flex gap-2 justify-end">
                       <button onClick={() => { setEditingId(null); }} className="text-[11px] text-gray-600 hover:underline">Annuleer</button>
                       <button onClick={submitEdit} className="text-[11px] text-emerald-700 font-semibold hover:underline">Opslaan</button>

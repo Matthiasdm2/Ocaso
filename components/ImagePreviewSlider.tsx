@@ -37,7 +37,7 @@ export default function ImagePreviewSlider({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <div className="text-xs text-gray-600">
+        <div className="text-sm text-gray-600">
           {imageUrls.length} foto{imageUrls.length > 1 ? "’s" : ""} — kies hoofdafbeelding
         </div>
         <div className="flex gap-2">
@@ -106,7 +106,7 @@ export default function ImagePreviewSlider({
                     e.stopPropagation();
                     onRemove(i);
                   }}
-                  className="bg-white/80 rounded-full p-1 text-xs hover:bg-white"
+                  className="bg-white/80 rounded-full p-1 text-sm hover:bg-white"
                   aria-label={`Verwijder foto ${i + 1}`}
                 >
                   ✕

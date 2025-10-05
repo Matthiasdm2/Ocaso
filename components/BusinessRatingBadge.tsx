@@ -29,7 +29,7 @@ export default function BusinessRatingBadge({ initialAvg, initialCount }: Props)
       <RatingStars rating={avg} />
       <span className="font-semibold tabular-nums">{avg.toFixed(1)}</span>
       <span className="text-gray-400">/5</span>
-      <span className="ml-1 text-xs text-gray-500">({count})</span>
+      <span className="ml-1 text-sm text-gray-500">({count})</span>
     </div>
   );
 }

@@ -45,7 +45,7 @@ export default function CollapsibleContainer({
         onClick={() => setOpen((v) => !v)}
         className="w-full flex items-center justify-between gap-3 px-4 py-3 lg:px-5 lg:py-4"
       >
-        <span className="text-sm lg:text-base font-semibold">{title}</span>
+        <span className="text-base lg:text-base font-semibold">{title}</span>
         {/* Gebruik w/h i.p.v. size-* voor maximale compatibiliteit */}
         <ChevronIcon className={`w-5 h-5 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>

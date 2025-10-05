@@ -202,7 +202,7 @@ export default function HelpPage() {
       <section className="px-6 pt-16 pb-8 md:pt-20 md:pb-10">
         <div className="mx-auto max-w-6xl">
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs text-emerald-700">
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-sm text-emerald-700">
               <HelpCircle className="h-4 w-4" />
               Help & Q&A
             </div>
@@ -218,7 +218,7 @@ export default function HelpPage() {
                 placeholder="Zoek op onderwerp, bv. ‘escrow’, ‘verzending’, ‘betalingen’..."
                 className="w-full rounded-xl bg-transparent px-2 py-3 text-sm outline-none placeholder:text-neutral-400"
               />
-              <Link href="#popular" className="inline-flex items-center gap-1 rounded-lg bg-neutral-100 px-3 py-2 text-xs text-neutral-700 hover:bg-neutral-200">
+              <Link href="#popular" className="inline-flex items-center gap-1 rounded-lg bg-neutral-100 px-3 py-2 text-sm text-neutral-700 hover:bg-neutral-200">
                 Populair
                 <ArrowRight className="h-4 w-4" />
               </Link>
@@ -279,7 +279,7 @@ export default function HelpPage() {
                 <a href="tel:+3200000000" className="flex items-center gap-2 text-neutral-800 hover:underline"><Phone className="h-4 w-4" /> +32 000 00 00</a>
                 <Link href="/support/new" className="flex items-center gap-2 text-neutral-800 hover:underline"><MessageSquare className="h-4 w-4" /> Start supportaanvraag</Link>
               </div>
-              <Link href="/status" className="mt-4 inline-flex items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs text-neutral-800 hover:bg-neutral-50">
+              <Link href="/status" className="mt-4 inline-flex items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-800 hover:bg-neutral-50">
                 Systeemstatus
                 <ChevronDown className="h-4 w-4 rotate-[-90deg]" />
               </Link>
@@ -391,7 +391,7 @@ function FAQItem({ faq }: { faq: FAQ }) {
       <div className={`grid transition-all duration-300 ease-out ${open ? "mt-2 grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}>
         <div className="overflow-hidden">
           <p className="text-sm leading-relaxed text-neutral-700">{faq.a}</p>
-          <div className="mt-2 flex items-center gap-2 text-xs text-neutral-500">
+          <div className="mt-2 flex items-center gap-2 text-sm text-neutral-500">
             Was dit nuttig?
             <button className="rounded-md border border-neutral-200 bg-white px-2 py-1 hover:bg-neutral-50">Ja</button>
             <button className="rounded-md border border-neutral-200 bg-white px-2 py-1 hover:bg-neutral-50">Nee</button>

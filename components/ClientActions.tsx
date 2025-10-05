@@ -146,7 +146,7 @@ export default function ClientActions({
       {stock > 1 && (
         <div className="mb-3">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Aantal: <span className="text-xs text-gray-500">(Max {stock} beschikbaar)</span>
+            Aantal: <span className="text-sm text-gray-500">(Max {stock} beschikbaar)</span>
           </label>
           <div className="flex items-center gap-2">
             <button
@@ -280,7 +280,7 @@ export default function ClientActions({
                     placeholder={typeof min_bid === "number" ? `Min. bod: €${min_bid}` : "Voer uw bod in"}
                   />
                   {typeof min_bid === "number" && (
-                    <div className="text-xs text-gray-500 mt-1">Minimumbod: <span className="font-semibold">€ {min_bid}</span></div>
+                    <div className="text-sm text-gray-500 mt-1">Minimumbod: <span className="font-semibold">€ {min_bid}</span></div>
                   )}
                 </div>
                 <div className="flex gap-2 mt-4">

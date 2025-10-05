@@ -52,7 +52,7 @@ export default function Avatar({ src, name, email, size = 64, rounded = "full", 
       )}
       style={{ width: size, height: size }}
     >
-      <span className="select-none text-xs font-semibold tracking-wide">
+      <span className="select-none text-sm font-semibold tracking-wide">
         {initials}
       </span>
     </div>

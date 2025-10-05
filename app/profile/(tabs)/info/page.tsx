@@ -425,11 +425,11 @@ export default function InfoPage() {
             </div>
 
             <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-wider text-emerald-700">Profiel</p>
+              <p className="text-sm font-semibold uppercase tracking-wider text-emerald-700">Profiel</p>
               <h1 className="mt-1 text-2xl font-bold tracking-tight md:text-3xl">Mijn gegevens</h1>
               {profile.business?.verified && (
                 <div className="mt-2 inline-flex items-center gap-2">
-                  <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 text-emerald-800 px-3 py-1 text-xs font-semibold border border-emerald-100">
+                  <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 text-emerald-800 px-3 py-1 text-sm font-semibold border border-emerald-100">
                     <svg viewBox="0 0 24 24" className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
                     Geverifieerde gebruiker
                   </span>
@@ -439,7 +439,7 @@ export default function InfoPage() {
                 Alles wat je bij de registratie invulde, overzichtelijk in één plaats. Werk je gegevens bij en sla op.
               </p>
               {uploadError && (
-                <p className="mt-2 text-xs text-red-600">{uploadError}</p>
+                <p className="mt-2 text-sm text-red-600">{uploadError}</p>
               )}
             </div>
 
@@ -557,7 +557,7 @@ export default function InfoPage() {
                     onToggle={(v) => setCookiePrefs(updateCookiePrefs({ marketing: v }))}
                   />
                 </div>
-                <p className="text-xs text-neutral-500">* Bepaalde essentiële cookies kunnen langer bewaard blijven voor beveiliging en fraudepreventie.</p>
+                <p className="text-sm text-neutral-500">* Bepaalde essentiële cookies kunnen langer bewaard blijven voor beveiliging en fraudepreventie.</p>
                 <div className="flex flex-wrap gap-3 pt-2">
                   <button
                     type="button"
@@ -937,7 +937,7 @@ function NotificationToggle({
       <span className="block">
         <span className="block text-sm font-medium leading-snug">{label}</span>
         {description ? (
-          <span className="mt-0.5 block text-xs text-neutral-600">{description}</span>
+          <span className="mt-0.5 block text-sm text-neutral-600">{description}</span>
         ) : null}
       </span>
     </label>
@@ -972,8 +972,8 @@ function CookieCategory({
             {locked && <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-neutral-600">vast</span>}
           </div>
           <p className="mt-1 text-neutral-600 leading-snug">{purpose}</p>
-          <p className="mt-2 text-xs text-neutral-500"><span className="font-medium">Voorbeelden:</span> {examples}</p>
-          <p className="mt-1 text-xs text-neutral-500"><span className="font-medium">Bewaartermijn:</span> {retention}</p>
+          <p className="mt-2 text-sm text-neutral-500"><span className="font-medium">Voorbeelden:</span> {examples}</p>
+          <p className="mt-1 text-sm text-neutral-500"><span className="font-medium">Bewaartermijn:</span> {retention}</p>
         </div>
         {togglable && !locked && (
           <label className="ms-auto inline-flex cursor-pointer items-center gap-2">

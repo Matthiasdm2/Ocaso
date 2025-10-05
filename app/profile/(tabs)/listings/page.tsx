@@ -607,7 +607,7 @@ export default function ListingsPage() {
               <section className="overflow-hidden rounded-2xl border bg-white shadow-sm">
                 <div className="hidden w-full min-w-[960px] md:block">
                   <table className="w-full table-fixed">
-                    <thead className="bg-neutral-50 text-xs uppercase tracking-wide text-neutral-600">
+                    <thead className="bg-neutral-50 text-sm uppercase tracking-wide text-neutral-600">
                       <tr>
                         <th className="px-3 py-3 text-left w-[72px]">Foto</th>
                         <th className="px-3 py-3 text-left">Titel</th>
@@ -648,7 +648,7 @@ export default function ListingsPage() {
                             <Link href={`/listings/${it.id}`} passHref legacyBehavior>
                               <a className="truncate text-sm font-medium hover:underline block">{it.title}</a>
                             </Link>
-                            <div className="mt-0.5 text-xs text-neutral-500">
+                            <div className="mt-0.5 text-sm text-neutral-500">
                               {it.category || '—'} • {it.condition || '—'}
                             </div>
                           </td>
@@ -670,7 +670,7 @@ export default function ListingsPage() {
                                 </span>
                               )}
                             </div>
-                            <div className="text-xs text-neutral-500">
+                            <div className="text-sm text-neutral-500">
                               Hoogste: <button
                                 className="font-semibold text-emerald-700 underline cursor-pointer"
                                 disabled={it.bids === 0}
@@ -685,7 +685,7 @@ export default function ListingsPage() {
                           </td>
                           <td className="px-3 py-3 align-middle">
                             <div className="flex flex-col items-center justify-center gap-2 w-36 h-full">
-                              <label className="flex items-center gap-2 px-3 py-1 rounded-full bg-gray-50 text-xs">
+                              <label className="flex items-center gap-2 px-3 py-1 rounded-full bg-gray-50 text-sm">
                                 <input
                                   type="checkbox"
                                   checked={!!it.sold}
@@ -695,7 +695,7 @@ export default function ListingsPage() {
                                 />
                                 <span className="ml-1 select-none">Verkocht</span>
                               </label>
-                              <label className="flex items-center gap-2 px-3 py-1 rounded-full bg-gray-50 text-xs">
+                              <label className="flex items-center gap-2 px-3 py-1 rounded-full bg-gray-50 text-sm">
                                 <input
                                   type="checkbox"
                                   checked={!!it.sold_via_ocaso}
@@ -761,14 +761,14 @@ export default function ListingsPage() {
                           <Link href={`/listings/${it.id}`} passHref legacyBehavior>
                             <a className="truncate text-sm font-medium hover:underline block">{it.title}</a>
                           </Link>
-                          <div className="text-xs text-neutral-500">
+                          <div className="text-sm text-neutral-500">
                             {formatCurrency(it.price ?? null, it.currency || 'EUR')}
                           </div>
                         </div>
                         <StatusBadge status={(it.status || '').toLowerCase()} className="ms-auto" />
                       </div>
 
-                      <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
+                      <div className="mt-3 grid grid-cols-3 gap-2 text-center text-sm">
                         <Metric label="Bezoekers" value={it.views ?? 0} />
                         <Metric label="Opgeslagen" value={it.saves ?? 0} />
                         <Metric
@@ -809,7 +809,7 @@ export default function ListingsPage() {
                         >
                           Verwijderen
                         </button>
-                        <label className="flex items-center gap-2 px-3 py-1 rounded-full bg-gray-50 text-xs">
+                        <label className="flex items-center gap-2 px-3 py-1 rounded-full bg-gray-50 text-sm">
                           <input
                             type="checkbox"
                             checked={!!it.sold}
@@ -819,7 +819,7 @@ export default function ListingsPage() {
                           />
                           <span className="ml-1">Verkocht</span>
                         </label>
-                        <label className="flex items-center gap-2 px-3 py-1 rounded-full bg-gray-50 text-xs">
+                        <label className="flex items-center gap-2 px-3 py-1 rounded-full bg-gray-50 text-sm">
                           <input
                             type="checkbox"
                             checked={!!it.sold_via_ocaso}
@@ -880,20 +880,20 @@ export default function ListingsPage() {
                         <li key={idx} className="flex items-center justify-between gap-4 text-sm text-gray-800 py-2 px-2 rounded bg-neutral-50 border border-neutral-100">
                       <div className="flex flex-col gap-1 min-w-0">
                         <span className="font-semibold text-emerald-700">€ {bid.amount}</span>
-                        <span className="text-xs text-gray-500">{bid.created_at ? new Date(bid.created_at).toLocaleString('nl-BE') : ''}</span>
-                        <span className="text-xs text-gray-700 font-medium">{bid.bidder_name ?? 'Onbekende gebruiker'}</span>
+                        <span className="text-sm text-gray-500">{bid.created_at ? new Date(bid.created_at).toLocaleString('nl-BE') : ''}</span>
+                        <span className="text-sm text-gray-700 font-medium">{bid.bidder_name ?? 'Onbekende gebruiker'}</span>
                       </div>
                       <div className="flex gap-2">
                         <button
                           type="button"
-                          className="px-3 py-1 rounded bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700 transition"
+                          className="px-3 py-1 rounded bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition"
                           onClick={() => handleAccept(bid)}
                         >
                           Accepteer
                         </button>
                         <button
                           type="button"
-                          className="px-3 py-1 rounded bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 transition"
+                          className="px-3 py-1 rounded bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition"
                           onClick={() => handleContact(bid)}
                         >
                           Contacteer
@@ -977,7 +977,7 @@ function StatusBadge({ status, className }: { status: string; className?: string
   };
   const cls = map[status] || 'bg-neutral-100 text-neutral-700';
   return (
-    <span className={clsx('inline-flex items-center rounded-full px-2 py-1 text-xs', cls, className)}>
+    <span className={clsx('inline-flex items-center rounded-full px-2 py-1 text-sm', cls, className)}>
       {label[status] || status || '—'}
     </span>
   );

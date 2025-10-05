@@ -42,7 +42,7 @@ export default function BidsModal({ bids }: Props) {
                   {sortedBids.map((bid, idx) => (
                     <li key={idx} className="flex items-center gap-3 text-sm text-gray-800">
                       <span className="font-semibold text-emerald-700">€ {bid.amount}</span>
-                      <span className="text-xs text-gray-500">{bid.created_at ? new Date(bid.created_at).toLocaleString("nl-BE") : ""}</span>
+                      <span className="text-sm text-gray-500">{bid.created_at ? new Date(bid.created_at).toLocaleString("nl-BE") : ""}</span>
                     </li>
                   ))}
                 </ul>

@@ -12,17 +12,19 @@ if (!g.__OCASO_FETCH_PATCHED__) {
 
   g.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     try {
-      let url = typeof input === 'string' ? input : (input instanceof Request ? input.url : '');
-      if (typeof url === 'string' && url.startsWith('/api/')) {
+      let url = typeof input === "string"
+        ? input
+        : (input instanceof Request ? input.url : "");
+      if (typeof url === "string" && url.startsWith("/api/")) {
         const base = getBaseUrl();
         // Avoid double slashes
-        url = base.replace(/\/$/, '') + url;
-        if (process.env.NODE_ENV !== 'production') {
+        url = base.replace(/\/$/, "") + url;
+        if (process.env.NODE_ENV !== "production") {
           // Lightweight debug in dev
           // eslint-disable-next-line no-console
-          console.log('[fetch patch] Rewriting relative API URL ->', url);
+          console.log("[fetch patch] Rewriting relative API URL ->", url);
         }
-        if (typeof input === 'string') {
+        if (typeof input === "string") {
           input = url;
         } else if (input instanceof Request) {
           input = new Request(url, input as RequestInit);
@@ -31,6 +33,6 @@ if (!g.__OCASO_FETCH_PATCHED__) {
     } catch (e) {
       // Silent safeguard; we don't want to break fetch
     }
-  return originalFetch(input as RequestInfo, init);
+    return originalFetch(input as RequestInfo, init);
   }) as typeof fetch;
 }

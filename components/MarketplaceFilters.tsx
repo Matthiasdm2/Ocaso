@@ -68,9 +68,9 @@ export default function MarketplaceFilters() {
   const clearLocation = () => setMulti({ clat: undefined, clng: undefined, radius: undefined, area: undefined });
 
   return (
-    <div className="space-y-3 text-[13px]">
+    <div className="space-y-3 text-sm">
       <div className="flex justify-between items-start gap-4">
-        <div className="flex flex-wrap gap-2 text-[10px] text-gray-500 leading-tight">
+        <div className="flex flex-wrap gap-2 text-sm text-gray-500 leading-tight">
           {priceMin && <span className="px-2 py-0.5 bg-gray-100 rounded-full">min €{priceMin}</span>}
           {priceMax && <span className="px-2 py-0.5 bg-gray-100 rounded-full">max €{priceMax}</span>}
           {state && <span className="px-2 py-0.5 bg-gray-100 rounded-full">{state}</span>}
@@ -80,13 +80,13 @@ export default function MarketplaceFilters() {
             <span className="px-2 py-0.5 bg-primary/10 text-primary rounded-full">≤ {radius} km</span>
           )}
         </div>
-        <button onClick={reset} className="text-[11px] text-primary hover:underline">Reset</button>
+        <button onClick={reset} className="text-sm text-primary hover:underline">Reset</button>
       </div>
 
       {/* Rij 1 */}
       <div className="grid gap-3 md:grid-cols-4 xl:grid-cols-6 items-start">
         <div className="md:col-span-2 xl:col-span-3">
-          <label className="block text-[11px] font-medium text-gray-600 mb-1">Locatie & straal</label>
+          <label className="block text-sm font-medium text-gray-600 mb-1">Locatie & straal</label>
           <div className="flex flex-wrap items-center gap-3">
             <input
               value={location}
@@ -114,12 +114,12 @@ export default function MarketplaceFilters() {
                     onChange={(e) => setParam("radius", e.target.value || undefined)}
                     className="filter-input h-8 w-16 text-center"
                   />
-                  <span className="text-[11px] text-gray-500">km</span>
+                  <span className="text-sm text-gray-500">km</span>
                 </div>
                 <button
                   type="button"
                   onClick={clearLocation}
-                  className="text-[10px] px-2 py-1 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700"
+                  className="text-sm px-2 py-1 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700"
                 >
                   Wis
                 </button>
@@ -129,7 +129,7 @@ export default function MarketplaceFilters() {
                     window.dispatchEvent(new Event('ocaso-open-map'));
                   }}
                   title="Open kaart (popup) en Shift + sleep of 'Selecteer gebied'"
-                  className="text-[10px] px-2 py-1 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition"
+                  className="text-sm px-2 py-1 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition"
                 >
                   Gebied
                 </button>
@@ -138,20 +138,20 @@ export default function MarketplaceFilters() {
               <button
                 type="button"
                 onClick={useMyLocation}
-                className="text-[10px] px-3 py-1.5 rounded-full bg-primary text-white hover:bg-primary/80 shadow-sm"
+                className="text-sm px-3 py-1.5 rounded-full bg-primary text-white hover:bg-primary/80 shadow-sm"
               >
                 Gebruik mijn locatie
               </button>
             )}
           </div>
           {centerLat && (
-            <p className="mt-1 text-[10px] text-gray-500 leading-tight">
+            <p className="mt-1 text-sm text-gray-500 leading-tight">
               Straal filtering actief • centrum gezet via je apparaatlocatie.
             </p>
           )}
         </div>
         <div className="md:col-span-1 xl:col-span-1">
-          <label className="block text-[11px] text-gray-600 mb-1">Staat</label>
+          <label className="block text-sm text-gray-600 mb-1">Staat</label>
           <select
             value={state}
             onChange={(e) => setParam("state", e.target.value || undefined)}
@@ -165,11 +165,11 @@ export default function MarketplaceFilters() {
           </select>
         </div>
         <div className="md:col-span-1 xl:col-span-2">
-          <label className="block text-[11px] text-gray-600 mb-1">Sorteren</label>
+          <label className="block text-sm text-gray-600 mb-1">Sorteren</label>
           <select
             value={sort || "relevance"}
             onChange={(e) => setParam("sort", e.target.value || undefined)}
-            className="filter-select h-8 min-w-[14rem]"
+            className="filter-select h-8 min-w-[12rem] md:min-w-[14rem]"
           >
             <option value="relevance">Relevantie</option>
             <option value="date_desc">Nieuwste eerst</option>
@@ -187,7 +187,7 @@ export default function MarketplaceFilters() {
   {/* Rij 2 */}
   <div className="grid gap-3 md:grid-cols-5 xl:grid-cols-7 items-center">
         <div className="md:col-span-2 xl:col-span-2">
-          <label className="block text-[11px] text-gray-600 mb-1">Prijs min</label>
+          <label className="block text-sm text-gray-600 mb-1">Prijs min</label>
           <input
             type="number"
             value={priceMin}
@@ -198,7 +198,7 @@ export default function MarketplaceFilters() {
           />
         </div>
         <div className="md:col-span-2 xl:col-span-2">
-          <label className="block text-[11px] text-gray-600 mb-1">Prijs max</label>
+          <label className="block text-sm text-gray-600 mb-1">Prijs max</label>
           <input
             type="number"
             value={priceMax}
@@ -212,7 +212,7 @@ export default function MarketplaceFilters() {
           <button
             type="button"
             onClick={() => setParam("business", business ? "0" : "1")}
-            className={`group inline-flex items-center gap-2 text-[11px] select-none ${business ? "text-primary" : "text-gray-600"}`}
+            className={`group inline-flex items-center gap-2 text-sm select-none ${business ? "text-primary" : "text-gray-600"}`}
             aria-pressed={business}
             aria-label="Zakelijke verkopers tonen of verbergen"
           >

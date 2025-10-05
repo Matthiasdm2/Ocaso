@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { supabaseServer } from "../../../../lib/supabaseServer";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   const supabase = supabaseServer();
@@ -29,8 +29,7 @@ export async function GET() {
     .insert({ title: "rls-test", price: 1 });
   results.anon_insert_listings = ins.error ? "blocked (ok)" : "ALLOWED (LEAK)";
 
-  const ok =
-    results.profiles.ok === true &&
+  const ok = results.profiles.ok === true &&
     results.listings.ok === true &&
     results.anon_insert_listings === "blocked (ok)";
 

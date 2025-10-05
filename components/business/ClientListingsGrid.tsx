@@ -174,14 +174,14 @@ export default function ClientListingsGrid({ initial }: { initial: Listing[] }) 
           <button
             type="button"
             onClick={handleReset}
-            className="text-xs text-primary hover:underline"
+            className="text-sm text-primary hover:underline"
           >
             Reset
           </button>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6 items-stretch">
           <div>
-            <label className="block text-xs text-gray-600 mb-1">Zoek</label>
+            <label className="block text-sm text-gray-600 mb-1">Zoek</label>
             <input
               type="text"
               value={query}
@@ -191,7 +191,7 @@ export default function ClientListingsGrid({ initial }: { initial: Listing[] }) 
             />
           </div>
           <div>
-            <label className="block text-xs text-gray-600 mb-1">Categorie</label>
+            <label className="block text-sm text-gray-600 mb-1">Categorie</label>
             <select value={mainCat} onChange={e => { setMainCat(e.target.value); setSubCat(categories.find(opt => opt.name === e.target.value)?.subs[0]?.name || ""); }} className="filter-select" disabled={loadingCats || categories.length === 0}>
               <option value="">Alle categorieën</option>
               {categories.map(opt => (
@@ -200,7 +200,7 @@ export default function ClientListingsGrid({ initial }: { initial: Listing[] }) 
             </select>
           </div>
           <div>
-            <label className="block text-xs text-gray-600 mb-1">Subcategorie</label>
+            <label className="block text-sm text-gray-600 mb-1">Subcategorie</label>
             <select value={subCat} onChange={e => setSubCat(e.target.value)} className="filter-select" disabled={loadingCats || !mainCat}>
               <option value="">Alle subcategorieën</option>
               {categories.find(c => c.name === mainCat)?.subs.map(sub => (
@@ -209,7 +209,7 @@ export default function ClientListingsGrid({ initial }: { initial: Listing[] }) 
             </select>
           </div>
           <div>
-            <label className="block text-xs text-gray-600 mb-1">Prijs min</label>
+            <label className="block text-sm text-gray-600 mb-1">Prijs min</label>
             <input
               type="number"
               value={minPrice}
@@ -219,7 +219,7 @@ export default function ClientListingsGrid({ initial }: { initial: Listing[] }) 
             />
           </div>
           <div>
-            <label className="block text-xs text-gray-600 mb-1">Prijs max</label>
+            <label className="block text-sm text-gray-600 mb-1">Prijs max</label>
             <input
               type="number"
               value={maxPrice}
@@ -229,7 +229,7 @@ export default function ClientListingsGrid({ initial }: { initial: Listing[] }) 
             />
           </div>
           <div>
-            <label className="block text-xs text-gray-600 mb-1">Sorteren</label>
+            <label className="block text-sm text-gray-600 mb-1">Sorteren</label>
             <select value={sort} onChange={e => setSort(e.target.value)} className="filter-select">
               <option value="recent">Recent</option>
               <option value="price-asc">Prijs (laag → hoog)</option>
@@ -259,7 +259,7 @@ export default function ClientListingsGrid({ initial }: { initial: Listing[] }) 
               <Link href={`/listings/${x.id}`} className="font-medium line-clamp-2 min-h-[2.2rem] text-sm hover:underline block">
                 {x.title}
               </Link>
-              <div className="mt-1 text-xs text-gray-600">
+              <div className="mt-1 text-sm text-gray-600">
                 {x.condition ? <span className="capitalize">{x.condition}</span> : <span>—</span>}
                 {x.category ? <span> • {x.category}</span> : null}
               </div>
@@ -272,7 +272,7 @@ export default function ClientListingsGrid({ initial }: { initial: Listing[] }) 
         ))}
       </div>
       {filtered.length === 0 ? (
-        <div className="text-xs text-gray-600">Geen resultaten voor je filters.</div>
+        <div className="text-sm text-gray-600">Geen resultaten voor je filters.</div>
       ) : null}
     </div>
   );

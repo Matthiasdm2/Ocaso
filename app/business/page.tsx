@@ -18,7 +18,7 @@ async function getCategories(): Promise<CategorySidebarCategory[]> {
   const { data: categoriesDataRel, error: categoriesRelError } = await supabase
     .from("categories")
     .select("id, name, slug, sort_order, is_active, subcategories(id, name, slug, sort_order, is_active)")
-    .order("sort_order", { ascending: true });
+    .order("name", { ascending: true });
 
   interface FlatCategoryRow { id: number; name: string; slug: string; parent_id?: number | null; sort_order?: number | null; is_active?: boolean | null; subcategories?: FlatCategoryRow[]; }
   let categoriesData = categoriesDataRel as FlatCategoryRow[] | null;
@@ -28,7 +28,7 @@ async function getCategories(): Promise<CategorySidebarCategory[]> {
     const { data: flatData } = await supabase
       .from("categories")
       .select("id, name, slug, parent_id, sort_order, is_active")
-      .order("sort_order", { ascending: true });
+      .order("name", { ascending: true });
     if (flatData) {
       const parents = flatData.filter((r: FlatCategoryRow) => !r.parent_id);
       const byParent: Record<number, FlatCategoryRow[]> = {};

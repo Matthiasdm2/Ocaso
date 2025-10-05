@@ -256,7 +256,7 @@ export default function ChatsTabPage() {
             </span>
           )}
         </div>
-        <Link href="/messages" className="text-xs text-gray-500 hover:underline">Volledig scherm</Link>
+        <Link href="/messages" className="text-sm text-gray-500 hover:underline">Volledig scherm</Link>
       </div>
       {loading && <div className="text-sm text-gray-500">Laden…</div>}
       {!loading && error && (
@@ -265,7 +265,7 @@ export default function ChatsTabPage() {
           <button
             type="button"
             onClick={retryFetch}
-            className="text-xs px-2 py-1 rounded bg-red-600 text-white hover:bg-red-700"
+            className="text-sm px-2 py-1 rounded bg-red-600 text-white hover:bg-red-700"
           >Opnieuw</button>
         </div>
       )}
@@ -317,7 +317,7 @@ export default function ChatsTabPage() {
                       )}
                       {last && <span className="ml-auto text-[11px] text-gray-500">{new Date(last.created_at).toLocaleTimeString()}</span>}
                     </div>
-                    <div className="text-xs text-gray-600 line-clamp-1">
+                    <div className="text-sm text-gray-600 line-clamp-1">
                       {last ? last.body : 'Geen berichten'}
                     </div>
                   </div>

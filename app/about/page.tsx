@@ -2,14 +2,14 @@
 
 import { motion } from "framer-motion";
 import {
-  ArrowRight,
-  MessageCircle,
-  Shield,
-  ShoppingBag,
-  Sparkles,
-  Store,
-  Truck,
-  Users,
+    ArrowRight,
+    MessageCircle,
+    Shield,
+    ShoppingBag,
+    Sparkles,
+    Store,
+    Truck,
+    Users,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -31,7 +31,7 @@ export default function AboutPage() {
             transition={{ duration: 0.4 }}
             className="max-w-4xl"
           >
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs text-emerald-700">
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-sm text-emerald-700">
               <Sparkles className="h-4 w-4" /> Over Ocaso
             </div>
             <h1 className="mt-3 text-4xl font-semibold tracking-tight md:text-5xl">
@@ -193,7 +193,7 @@ export default function AboutPage() {
                     index % 2 === 0 ? 'md:pr-8 md:text-right' : 'md:pl-8'
                   }`}>
                     <div className="bg-neutral-50 rounded-xl p-4 border border-neutral-200">
-                      <div className="text-xs font-medium text-emerald-700 bg-emerald-100 inline-block px-2 py-1 rounded-full mb-2">
+                      <div className="text-sm font-medium text-emerald-700 bg-emerald-100 inline-block px-2 py-1 rounded-full mb-2">
                         {item.quarter}
                       </div>
                       <h3 className="font-medium text-lg mb-1">{item.title}</h3>

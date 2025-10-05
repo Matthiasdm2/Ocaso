@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 import { supabaseServer } from "@/lib/supabaseServer";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   const supabase = supabaseServer();
@@ -34,14 +34,26 @@ export async function GET(request: Request) {
     .limit(12);
 
   type ImageField = string[] | null | undefined;
-  interface RawListing { id: number; title: string; price: number; location?: string | null; state?: string | null; images?: ImageField; main_photo?: string | null; created_at: string }
-  sponsored = (sponsoredData as RawListing[] | null | undefined ?? []).map((l: RawListing) => ({
+  interface RawListing {
+    id: number;
+    title: string;
+    price: number;
+    location?: string | null;
+    state?: string | null;
+    images?: ImageField;
+    main_photo?: string | null;
+    created_at: string;
+  }
+  sponsored = (sponsoredData as RawListing[] | null | undefined ?? []).map((
+    l: RawListing,
+  ) => ({
     id: l.id,
     title: l.title,
     price: l.price,
     location: l.location ?? undefined,
     state: l.state ?? undefined,
-    main_photo: l.main_photo ?? (Array.isArray(l.images) && l.images.length ? l.images[0] : null),
+    main_photo: l.main_photo ??
+      (Array.isArray(l.images) && l.images.length ? l.images[0] : null),
     images: Array.isArray(l.images) ? l.images : [],
     created_at: l.created_at,
     sponsored: true,
@@ -59,20 +71,29 @@ export async function GET(request: Request) {
     .range(from, to);
 
   if (error) {
-    return NextResponse.json({ sponsored: [], recommended: [], error: error.message }, { status: 400 });
+    return NextResponse.json({
+      sponsored: [],
+      recommended: [],
+      error: error.message,
+    }, { status: 400 });
   }
 
-  const recommended = (data as RawListing[] | null | undefined ?? []).map((l: RawListing) => ({
+  const recommended = (data as RawListing[] | null | undefined ?? []).map((
+    l: RawListing,
+  ) => ({
     id: l.id,
     title: l.title,
     price: l.price,
     location: l.location ?? undefined,
     state: l.state ?? undefined,
-    main_photo: l.main_photo ?? (Array.isArray(l.images) && l.images.length ? l.images[0] : null),
+    main_photo: l.main_photo ??
+      (Array.isArray(l.images) && l.images.length ? l.images[0] : null),
     images: Array.isArray(l.images) ? l.images : [],
     created_at: l.created_at,
     sponsored: false,
   }));
 
-  return NextResponse.json({ sponsored, recommended }, { headers: { "Cache-Control": "no-store" } });
+  return NextResponse.json({ sponsored, recommended }, {
+    headers: { "Cache-Control": "no-store" },
+  });
 }

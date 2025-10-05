@@ -89,9 +89,9 @@ export default function BusinessListingsSection({ listings, title = "Aanbod" }: 
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="space-y-1">
             <h2 className="text-lg font-semibold">{title}</h2>
-            <p className="text-xs text-neutral-500">{filtered.length} zoekertje{filtered.length===1?"":"s"}</p>
+            <p className="text-sm text-neutral-500">{filtered.length} zoekertje{filtered.length===1?"":"s"}</p>
           </div>
-          <div className="flex flex-wrap items-center gap-2 text-xs">
+          <div className="flex flex-wrap items-center gap-2 text-sm">
             {categoryData.categories.length > 0 && (
               <>
                 <label className="flex items-center gap-1">
@@ -99,7 +99,7 @@ export default function BusinessListingsSection({ listings, title = "Aanbod" }: 
                   <select
                     value={cat ?? ""}
                     onChange={e => { const v = e.target.value || null; setCat(v); setSub(null); }}
-                    className="h-8 rounded-md border border-neutral-300 bg-white px-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary min-w-[10rem]"
+                    className="h-8 rounded-md border border-neutral-300 bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary min-w-[10rem]"
                   >
                     <option value="">Alle categorieën ({listings.length})</option>
                     {categoryData.categories.map(c => (
@@ -113,7 +113,7 @@ export default function BusinessListingsSection({ listings, title = "Aanbod" }: 
                     value={sub ?? ""}
                     disabled={!activeCategory || activeCategory.subs.length === 0}
                     onChange={e => setSub(e.target.value || null)}
-                    className="h-8 rounded-md border border-neutral-300 bg-white px-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary min-w-[10rem] disabled:opacity-40"
+                    className="h-8 rounded-md border border-neutral-300 bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary min-w-[10rem] disabled:opacity-40"
                   >
                     <option value="">Alle subcategorieën{activeCategory ? ` (${activeCategory.subs.reduce((a,b)=>a+b.count,0)})` : ''}</option>
                     {activeCategory?.subs.map(s => (
@@ -128,12 +128,12 @@ export default function BusinessListingsSection({ listings, title = "Aanbod" }: 
               value={query}
               onChange={e=>setQuery(e.target.value)}
               placeholder="Zoek..."
-              className="h-8 w-40 rounded-md border border-neutral-300 bg-white pl-2 pr-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
+              className="h-8 w-40 rounded-md border border-neutral-300 bg-white pl-2 pr-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             />
             <select
               value={sort}
               onChange={e=>setSort(e.target.value)}
-              className="h-8 rounded-md border border-neutral-300 bg-white px-2 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
+              className="h-8 rounded-md border border-neutral-300 bg-white px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               aria-label="Sorteer"
             >
               <option value="recent">Recent</option>
@@ -160,7 +160,7 @@ export default function BusinessListingsSection({ listings, title = "Aanbod" }: 
       )}
       {filtered.length > 0 && (
         <div className="text-right">
-          <Link href={`/search?business=${encodeURIComponent('1')}`} className="text-xs text-primary hover:underline">Meer zoeken</Link>
+          <Link href={`/search?business=${encodeURIComponent('1')}`} className="text-sm text-primary hover:underline">Meer zoeken</Link>
         </div>
       )}
     </section>

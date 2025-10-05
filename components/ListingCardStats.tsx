@@ -59,7 +59,7 @@ export default function ListingCardStats({ id, initViews = 0, initFavorites = 0 
   }, [id, supabase]);
 
   return (
-    <div className="mt-2 flex items-center gap-2 text-xs text-neutral-700">
+    <div className="mt-2 flex items-center gap-2 text-sm text-neutral-700">
       <span className="inline-flex items-center gap-1">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-3 h-3">
           <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12c0 4.556 4.694 8.25 9.75 8.25s9.75-3.694 9.75-8.25c0-4.556-4.694-8.25-9.75-8.25S2.25 7.444 2.25 12z" />

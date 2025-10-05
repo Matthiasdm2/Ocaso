@@ -5,7 +5,9 @@ import { supabaseServiceRole } from "@/lib/supabaseServiceRole";
 export async function GET() {
   // Disable this debug endpoint in production to avoid build/export issues
   if (process.env.NODE_ENV === "production") {
-    return NextResponse.json({ message: "Not available in production" }, { status: 404 });
+    return NextResponse.json({ message: "Not available in production" }, {
+      status: 404,
+    });
   }
 
   try {

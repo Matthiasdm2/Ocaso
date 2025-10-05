@@ -110,16 +110,16 @@ export default function BusinessReviewsSection({ businessId, reviews: initialRev
             <RatingStars rating={avg} />
             <span className="font-semibold tabular-nums">{avg.toFixed(1)}</span>
             <span className="text-gray-400">/5</span>
-            <span className="ml-2 text-xs text-gray-500">{count} review{count===1?'':'s'}</span>
+            <span className="ml-2 text-sm text-gray-500">{count} review{count===1?'':'s'}</span>
           </div>
         </div>
   <div className="flex items-center gap-3">
-          <label htmlFor="reviewSort" className="text-xs text-gray-500 font-medium hidden sm:block">Sortering</label>
+          <label htmlFor="reviewSort" className="text-sm text-gray-500 font-medium hidden sm:block">Sortering</label>
           <select
             id="reviewSort"
             value={sort}
             onChange={e => setSort(e.target.value as typeof sort)}
-            className="text-xs sm:text-sm border rounded-md px-2 py-1 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="text-sm sm:text-sm border rounded-md px-2 py-1 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
           >
             <option value="relevant">Relevant</option>
             <option value="newest">Nieuwste</option>
@@ -178,12 +178,12 @@ export default function BusinessReviewsSection({ businessId, reviews: initialRev
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                     <span className="font-medium text-sm">{r.author || 'Anonieme koper'}</span>
-                    <span className="inline-flex items-center gap-1 text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                    <span className="inline-flex items-center gap-1 text-sm text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
                       <RatingStars rating={r.rating} />
                       <span className="font-medium leading-none">{r.rating.toFixed(1)}</span>
                     </span>
                     {r.date && (
-                      <span className="text-xs text-gray-400">{formatDate(r.date)}</span>
+                      <span className="text-sm text-gray-400">{formatDate(r.date)}</span>
                     )}
                   </div>
                   {r.comment && (
@@ -227,9 +227,9 @@ export default function BusinessReviewsSection({ businessId, reviews: initialRev
             </div>
             <div>
               <div className="font-medium text-sm">{selected.author || 'Anonieme koper'}</div>
-              {selected.date && <div className="text-xs text-gray-400">{formatDate(selected.date)}</div>}
+              {selected.date && <div className="text-sm text-gray-400">{formatDate(selected.date)}</div>}
             </div>
-            <span className="ml-auto inline-flex items-center gap-1 text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+            <span className="ml-auto inline-flex items-center gap-1 text-sm text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
               <RatingStars rating={selected.rating} />
               <span className="font-medium leading-none">{selected.rating.toFixed(1)}</span>
             </span>

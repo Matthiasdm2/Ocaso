@@ -232,9 +232,9 @@ export default function SellerPanels({
                   {reviewCount !== null && <span className="text-gray-500">({reviewCount})</span>}
                 </span>
               ) : reviewCount === 0 ? (
-                <span className="text-xs text-gray-500">Nog geen reviews</span>
+                <span className="text-sm text-gray-500">Nog geen reviews</span>
               ) : (
-                <span className="text-xs text-gray-400">Beoordeling volgt</span>
+                <span className="text-sm text-gray-400">Beoordeling volgt</span>
               )}
             </div>
           </div>
@@ -332,7 +332,7 @@ export default function SellerPanels({
                     href={mapsLink}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1 text-xs text-gray-600 hover:text-gray-900"
+                    className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900"
                     aria-label="Open locatie in Google Maps"
                   >
                     Open in Google Maps →

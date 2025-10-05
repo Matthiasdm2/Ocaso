@@ -77,7 +77,7 @@ export default function ListingCard({ listing, item, reviewAvg, reviewCount, com
             </div>
           )}
           {!compact && listingData.created_at ? (
-            <p className="mt-1 text-xs text-neutral-500">
+            <p className="mt-1 text-sm text-neutral-500">
               {new Date(listingData.created_at).toLocaleDateString("nl-BE")}
             </p>
           ) : null}
@@ -88,7 +88,7 @@ export default function ListingCard({ listing, item, reviewAvg, reviewCount, com
         </div>
         <div className={[
           "shrink-0 rounded-lg bg-neutral-900 font-semibold text-white text-center",
-          compact ? "px-1.5 py-0.5 text-[10px]" : "px-2 py-1 text-xs"
+          compact ? "px-1.5 py-0.5 text-sm" : "px-2 py-1 text-sm"
         ].join(" ")}>{toCurrency(listingData.price)}</div>
       </div>
     </Link>

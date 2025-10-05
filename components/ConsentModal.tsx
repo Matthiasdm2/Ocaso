@@ -53,7 +53,7 @@ function ConsentRow({ label, desc, locked, checked, onChange }: { label: string;
           <span className="font-medium">{label}</span>
           {locked && <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-neutral-600">vast</span>}
         </div>
-        <p className="mt-1 text-xs text-neutral-600 leading-snug">{desc}</p>
+        <p className="mt-1 text-sm text-neutral-600 leading-snug">{desc}</p>
       </div>
       {!locked && (
         <label className="inline-flex cursor-pointer items-center gap-2">

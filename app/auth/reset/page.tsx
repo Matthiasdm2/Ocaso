@@ -107,7 +107,7 @@ export default function ResetPasswordPage() {
         {ok && <p className="text-green-600 text-sm">{ok}</p>}
         {err && <p className="text-red-500 text-sm">{err}</p>}
 
-        <p className="text-xs text-gray-500">
+        <p className="text-sm text-gray-500">
           Tip: open deze pagina via de link in je reset-mail. Heb je geen mail?
           Ga terug naar{" "}
           <a href="/login" className="underline">

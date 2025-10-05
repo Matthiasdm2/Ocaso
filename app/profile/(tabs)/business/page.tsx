@@ -3,8 +3,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import KycForm from '@/components/KycForm';
-import type { BillingCycle, Profile } from '@/lib/profiletypes';
 import { CATEGORIES } from '@/lib/categories';
+import type { BillingCycle, Profile } from '@/lib/profiletypes';
 import { createClient } from '@/lib/supabaseClient';
 // Nieuwe API integratie voor business update
 
@@ -491,7 +491,7 @@ export default function BusinessProfilePage() {
                     <li className="flex items-center gap-2 text-base text-neutral-700"><span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100"><svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg></span>Statistieken over je verkopen</li>
                     <li className="flex items-center gap-2 text-base text-neutral-700"><span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100"><svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg></span>Integratie met externe tools</li>
                   </ul>
-                  <div className="mb-4 text-xs text-neutral-500 text-center w-full">{billingCycle === 'monthly' ? 'Maandelijks opzegbaar' : ''}</div>
+                  <div className="mb-4 text-sm text-neutral-500 text-center w-full">{billingCycle === 'monthly' ? 'Maandelijks opzegbaar' : ''}</div>
                   <div className="mt-auto w-full flex justify-center">
                     <button className="rounded-xl bg-emerald-600 px-6 py-3 text-base font-semibold text-white shadow-md transition hover:bg-emerald-700">Activeer</button>
                   </div>
@@ -517,7 +517,7 @@ export default function BusinessProfilePage() {
                     <li className="flex items-center gap-2 text-base text-neutral-700"><span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100"><svg className="w-4 h-4 text-emerald-700" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg></span>Statistieken over je verkopen</li>
                     <li className="flex items-center gap-2 text-base text-neutral-700"><span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100"><svg className="w-4 h-4 text-emerald-700" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg></span>Integratie met externe tools</li>
                   </ul>
-                  <div className="mb-4 text-xs text-neutral-500 text-center w-full">{billingCycle === 'monthly' ? 'Maandelijks opzegbaar' : ''}</div>
+                  <div className="mb-4 text-sm text-neutral-500 text-center w-full">{billingCycle === 'monthly' ? 'Maandelijks opzegbaar' : ''}</div>
                   <div className="mt-auto w-full flex justify-center">
                     <button className="rounded-xl bg-emerald-700 px-6 py-3 text-base font-semibold text-white shadow-md transition hover:bg-emerald-800">Activeer</button>
                   </div>
@@ -565,9 +565,9 @@ export default function BusinessProfilePage() {
                         Verwijderen
                       </button>
                     ) : null}
-                    {logoError && <span className="text-xs text-red-600">{logoError}</span>}
+                    {logoError && <span className="text-sm text-red-600">{logoError}</span>}
                   </div>
-                  <p className="text-xs text-neutral-500">Aanbevolen: vierkant PNG/JPG, min. 256×256, max 2MB.</p>
+                  <p className="text-sm text-neutral-500">Aanbevolen: vierkant PNG/JPG, min. 256×256, max 2MB.</p>
                 </div>
 
                 <div className="space-y-3">
@@ -615,9 +615,9 @@ export default function BusinessProfilePage() {
                         Verwijderen
                       </button>
                     ) : null}
-                    {bannerError && <span className="text-xs text-red-600">{bannerError}</span>}
+                    {bannerError && <span className="text-sm text-red-600">{bannerError}</span>}
                   </div>
-                  <p className="text-xs text-neutral-500">Aanbevolen: 1600×400 landscape JPG/PNG, max 2MB.</p>
+                  <p className="text-sm text-neutral-500">Aanbevolen: 1600×400 landscape JPG/PNG, max 2MB.</p>
                 </div>
               </div>
             </Section>
@@ -653,7 +653,7 @@ export default function BusinessProfilePage() {
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {Array.isArray((profile.business as unknown as { categories?: string[] }).categories) && (profile.business as unknown as { categories?: string[] }).categories!.map((c: string) => (
-                    <span key={c} className="inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-800 px-3 py-1 text-xs">
+                    <span key={c} className="inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-800 px-3 py-1 text-sm">
                       {c}
                       <button type="button" className="ms-1 text-emerald-700 hover:text-red-600" onClick={() => setProfile(p => {
                         const existing = (p.business as unknown as { categories?: string[] }).categories || [];
@@ -664,7 +664,7 @@ export default function BusinessProfilePage() {
                     </span>
                   ))}
                 </div>
-                <p className="text-xs text-neutral-500">Selecteer categorieën uit de lijst voor betere vindbaarheid.</p>
+                <p className="text-sm text-neutral-500">Selecteer categorieën uit de lijst voor betere vindbaarheid.</p>
               </div>
             </Section>
 
@@ -687,7 +687,7 @@ export default function BusinessProfilePage() {
                     />
                     <SlugStatus state={checkingSlug} />
                   </div>
-                  <p className="mt-1 text-xs text-neutral-500">Wordt zichtbaar als /shop/<strong>{profile.business.shopSlug || 'jouw-slug'}</strong></p>
+                  <p className="mt-1 text-sm text-neutral-500">Wordt zichtbaar als /shop/<strong>{profile.business.shopSlug || 'jouw-slug'}</strong></p>
                 </Field>
                 <Field label="Website">
                   <Input
@@ -720,7 +720,7 @@ export default function BusinessProfilePage() {
                 </div>
                 {stripeStatus && (
                   <div className="mt-4">
-                    <div className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${
+                    <div className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-sm font-semibold ${
                       stripeStatus.status === 'approved' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' :
                       stripeStatus.status === 'pending' ? 'bg-yellow-50 text-yellow-800 border border-yellow-200' :
                       stripeStatus.status === 'rejected' ? 'bg-red-50 text-red-800 border border-red-200' :
@@ -831,7 +831,7 @@ export default function BusinessProfilePage() {
                     placeholder="BE0123.456.789"
                   />
                   {vatVerificationMessage && (
-                    <p className={`text-xs mt-1 ${vatVerificationStatus === 'valid' ? 'text-green-600' : vatVerificationStatus === 'invalid' ? 'text-red-600' : 'text-neutral-500'}`}>
+                    <p className={`text-sm mt-1 ${vatVerificationStatus === 'valid' ? 'text-green-600' : vatVerificationStatus === 'invalid' ? 'text-red-600' : 'text-neutral-500'}`}>
                       {vatVerificationMessage}
                     </p>
                   )}
@@ -851,7 +851,7 @@ export default function BusinessProfilePage() {
                       {verified ? 'Geverifieerd (basis)' : vatVerificationStatus === 'valid' ? 'BTW geverifieerd - vul KBO in' : 'Niet geverifieerd'}
                     </span>
                   </div>
-                  <p className="mt-1 text-xs text-neutral-600">
+                  <p className="mt-1 text-sm text-neutral-600">
                     Vul bedrijfsnaam, BTW (moet geldig zijn) en KBO in voor een basis-verificatiebadge.
                   </p>
                 </div>
@@ -1126,11 +1126,11 @@ function ShopPreview({
         <div className="flex flex-wrap items-center gap-2">
           <h3 className="text-xl font-semibold tracking-tight">{name}</h3>
           {verified && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-700">
+            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-sm text-emerald-700">
               ✓ Geverifieerd
             </span>
           )}
-          <span className="ms-auto text-xs text-neutral-500">/shop/{slug}</span>
+          <span className="ms-auto text-sm text-neutral-500">/shop/{slug}</span>
         </div>
 
         {description ? <p className="mt-2 text-sm text-neutral-700">{description}</p> : null}

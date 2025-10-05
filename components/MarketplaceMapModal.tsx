@@ -50,7 +50,7 @@ export default function MarketplaceMapModal({ listings, centerLat, centerLng, ra
               <h2 className="text-sm font-semibold">Zoekertjes op kaart</h2>
               <div className="flex items-center gap-2">
                 <span className="hidden md:inline text-[11px] text-gray-500">Shift + sleep of knop &#39;Selecteer gebied&#39;</span>
-                <button onClick={closeModal} className="text-xs px-2 py-1 rounded bg-white border hover:bg-gray-100">Sluiten</button>
+                <button onClick={closeModal} className="text-sm px-2 py-1 rounded bg-white border hover:bg-gray-100">Sluiten</button>
               </div>
             </div>
             <div className="flex-1">

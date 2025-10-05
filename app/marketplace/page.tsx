@@ -1,14 +1,16 @@
 import dynamicImport from "next/dynamic";
 
+import BackBar from "@/components/BackBar";
 import CategorySidebar from "@/components/CategorySidebar";
 import CollapsibleContainer from "@/components/CollapsibleContainer";
 import FeaturedStrip from "@/components/FeaturedStrip";
 import HeroSearch from "@/components/HeroSearch";
+import ListingCard from "@/components/ListingCard";
 import MarketplaceFilters from "@/components/MarketplaceFilters";
 import MarketplaceMapModal from "@/components/MarketplaceMapModal";
 import RatingStars from "@/components/RatingStars";
 import { supabaseServer } from "@/lib/supabaseServer";
-import type { Listing as BaseListing, Category, Subcategory } from "@/lib/types";
+import type { Category, Listing as BaseListing, Subcategory } from "@/lib/types";
 
 export const dynamic = 'force-dynamic';
 
@@ -396,6 +398,18 @@ export default async function MarketplacePage({ searchParams }: { searchParams?:
       : [],
   }));
 
+  // Centralize sidebar categories mapping for both desktop and mobile
+  const sidebarCategories = categories.map((cat) => ({
+    id: cat.id,
+    name: cat.name,
+    slug: cat.slug,
+    subcategories: cat.subs.map((sub) => ({
+      id: sub.id,
+      name: sub.name,
+      slug: sub.slug,
+    })),
+  }));
+
   // --- Featured (eerst scoped, dan fallback globaal) ---
   // 1) scoped op (sub)categorie
   let featuredQ = supabase
@@ -490,28 +504,41 @@ export default async function MarketplacePage({ searchParams }: { searchParams?:
   const totalPages = Math.ceil(totalListings / PAGE_SIZE);
 
   return (
-    <div className="container max-w-6xl xl:max-w-7xl py-4">{/* Narrower max width for better left/right balance */}
+    <div className="container max-w-6xl xl:max-w-7xl py-4">
       <HeroSearch noContainer />
+
+      {/* Terugkeer button - alleen zichtbaar op mobile/tablet */}
+      <div className="block md:hidden mb-4">
+        <BackBar />
+      </div>
 
   <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6">{/* Grid stays inside same container for alignment */}
         {/* Categorieën links */}
         <div className="hidden md:block">
         <CategorySidebar
-          categories={categories.map((cat) => ({
-            id: cat.id,
-            name: cat.name,
-            slug: cat.slug,
-            subcategories: cat.subs.map((sub) => ({
-              id: sub.id,
-              name: sub.name,
-              slug: sub.slug,
-            })),
-          }))}
+          categories={sidebarCategories}
         />
         </div>
 
         {/* Listings rechts */}
   <main className="md:col-span-3 space-y-4 pt-[2px]">{/* Tighter vertical spacing */}
+
+          {/* Categorieën - alleen zichtbaar op mobile/tablet */}
+          <div className="block md:hidden">
+            <CollapsibleContainer
+              title="Categorieën"
+              defaultOpenDesktop={false}
+              defaultOpenMobile={false}
+              elevation="flat"
+              className="relative"
+            >
+              <div className="-mt-1">
+                <CategorySidebar
+                  categories={sidebarCategories}
+                />
+              </div>
+            </CollapsibleContainer>
+          </div>
 
           {/* Filters */}
           <CollapsibleContainer
@@ -553,154 +580,177 @@ export default async function MarketplacePage({ searchParams }: { searchParams?:
             <div className="card p-10 text-center text-sm text-gray-600 bg-white">Geen zoekertjes gevonden.</div>
           ) : (
             <>
-              <ul className="space-y-3 md:space-y-4">
-                {listingsDisplay.map((item) => (
-                  <li key={item.id}>
-                    <article className="card p-4 md:p-5 flex flex-col lg:flex-row gap-3 md:gap-5 transition hover:shadow-lg border border-gray-200 bg-white rounded-2xl">
-                      <div className="flex items-start gap-3 md:gap-5 w-full">
-                        <div className="shrink-0 w-full lg:w-48">
-                          <ListingImageSlider
-                            images={item.images && item.images.length > 0 ? item.images : ["/placeholder.png"]}
-                            title={item.title}
-                            link={`/listings/${item.id}`}
-                          />
-                        </div>
-                        <div className="flex-1 min-w-0 flex flex-col gap-2 md:gap-3">
-                          <div className="flex flex-wrap items-start justify-between gap-2 md:gap-3 mb-1 md:mb-2">
-                            <div className="flex-1 min-w-0">
-                              <a href={`/listings/${item.id}`} className="font-bold text-xl md:text-2xl truncate text-primary hover:underline max-w-full md:max-w-[70%] leading-tight block mb-1">
-                                {item.title}
-                              </a>
-                              {/* Views and favorites stats next to title */}
-                              <ListingCardStats id={item.id} initViews={item.views ?? 0} initFavorites={item.favorites_count ?? 0} />
-                            </div>
-                            <div className="flex flex-col items-end gap-1">
-                              <div className="font-bold text-primary text-xl md:text-3xl leading-none">€ {item.price}</div>
-                              {item.allowOffers && (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-xs text-emerald-700 border border-emerald-200">
-                                  Bieden mogelijk
-                                </span>
-                              )}
-                              {item.allowOffers && typeof item.highestBid === "number" && (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-yellow-50 text-xs text-yellow-800 border border-yellow-200">
-                                  Hoogste bod: € {item.highestBid}
-                                </span>
-                              )}
-                            </div>
+              {/* Mobile/Tablet: Grid layout zoals homepage */}
+              <div className="block lg:hidden">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+                  {listingsDisplay.map((item) => (
+                    <ListingCard
+                      key={item.id}
+                      listing={{
+                        id: item.id,
+                        title: item.title,
+                        price: item.price,
+                        images: item.images,
+                        created_at: item.created_at,
+                        views: item.views,
+                        favorites_count: item.favorites_count
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Desktop: Lijst layout */}
+              <div className="hidden lg:block">
+                <ul className="space-y-3 md:space-y-4">
+                  {listingsDisplay.map((item) => (
+                    <li key={item.id}>
+                      <article className="card p-4 md:p-5 flex flex-col lg:flex-row gap-3 md:gap-5 transition hover:shadow-lg border border-gray-200 bg-white rounded-2xl">
+                        <div className="flex items-start gap-3 md:gap-5 w-full">
+                          <div className="shrink-0 w-full lg:w-48">
+                            <ListingImageSlider
+                              images={item.images && item.images.length > 0 ? item.images : ["/placeholder.png"]}
+                              title={item.title}
+                              link={`/listings/${item.id}`}
+                            />
                           </div>
-                          <div className="text-sm text-gray-700 line-clamp-2 leading-relaxed mb-1 md:mb-2">{item.description}</div>
-                          <div className="flex flex-wrap items-center gap-2 mb-3">
-                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-gray-50 text-xs text-gray-700 border border-gray-200">
-                              <span className="text-gray-500">📍</span>
-                              {item.location}
-                            </span>
-                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-blue-50 text-xs text-blue-700 border border-blue-200">
-                              <span className="text-blue-500">🏷️</span>
-                              {item.displayCategoryName}{item.displaySubcategoryName ? ` › ${item.displaySubcategoryName}` : ""}
-                            </span>
-                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-green-50 text-xs text-green-700 border border-green-200">
-                              <span className="text-green-500">📅</span>
-                              {item.created_at ? new Date(item.created_at).toLocaleDateString("nl-BE") : "Onbekend"}
-                            </span>
-                            {item.listing_number && (
-                              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-purple-50 text-xs text-purple-700 border border-purple-200">
-                                <span className="text-purple-500">#</span>
-                                {item.listing_number}
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-6">
-                              {/* Seller info with stats below */}
-                              <div className="flex flex-col">
-                                {/* Seller info */}
-                                {(() => {
-                                  const sid = (listingsDataRaw || []).find(l => l.id === item.id)?.seller_id as string | undefined;
-                                  const ratingInfo = sid ? sellerRatings[sid] : undefined;
-                                  const profile = sid ? sellerProfiles[sid] : undefined;
-                                  const avatar = profile?.avatar_url;
-                                  const name = profile?.name || (sid ? `Verkoper ${sid.slice(0,6)}` : 'Verkoper');
-                                  return (
-                                    <span className="inline-flex items-center gap-2 mb-1" data-seller={sid || ''} data-has-rating={!!(ratingInfo && ratingInfo.count)}>
-                                      {avatar ? (
-                                        // eslint-disable-next-line @next/next/no-img-element
-                                        <img src={avatar} alt={name} className="w-8 h-8 rounded-full object-cover bg-gray-200 border-2 border-white shadow-sm" />
-                                      ) : (
-                                        <span className="w-8 h-8 rounded-full bg-gray-200 inline-block border-2 border-white shadow-sm" aria-hidden="true" />
-                                      )}
-                                      <div className="flex flex-col">
-                                        <span className="flex items-center gap-2">
-                                          {sid ? (
-                                            <a
-                                              href={`/business/${sid}`}
-                                              className="font-medium text-sm text-gray-900 hover:text-primary hover:underline truncate max-w-[140px]"
-                                              title={name}
-                                            >
-                                              {name}
-                                            </a>
-                                          ) : (
-                                            <span className="font-medium text-sm text-gray-900 truncate max-w-[140px]" title={name}>{name}</span>
-                                          )}
-                                          {profile?.is_business && (
-                                            <span className="inline-block px-1.5 py-0.5 text-[10px] leading-none rounded bg-blue-50 text-blue-700 border border-blue-200 font-medium">Business</span>
-                                          )}
-                                          {profile?.is_verified && (
-                                            <span className="inline-block px-1.5 py-0.5 text-[10px] leading-none rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium">Vertrouwd</span>
-                                          )}
-                                        </span>
-                                        <span className="inline-flex items-center gap-1 text-xs text-gray-600" aria-label={ratingInfo && ratingInfo.count > 0 ? `Rating ${ratingInfo.rating.toFixed(1)} uit 5` : 'Nog geen reviews'}>
-                                          {ratingInfo && ratingInfo.count > 0 ? (
-                                            <>
-                                              <RatingStars rating={ratingInfo.rating} size={12} />
-                                              <span className="font-medium">{ratingInfo.rating.toFixed(1)}</span>
-                                              <span className="text-gray-400">({ratingInfo.count})</span>
-                                            </>
-                                          ) : (
-                                            <span className="text-gray-400 italic">Geen reviews</span>
-                                          )}
-                                        </span>
-                                      </div>
-                                    </span>
-                                  );
-                                })()}
+                          <div className="flex-1 min-w-0 flex flex-col gap-2 md:gap-3">
+                            <div className="flex flex-wrap items-start justify-between gap-2 md:gap-3 mb-1 md:mb-2">
+                              <div className="flex-1 min-w-0">
+                                <a href={`/listings/${item.id}`} className="font-bold text-xl md:text-2xl truncate text-primary hover:underline max-w-full md:max-w-[70%] leading-tight block mb-1">
+                                  {item.title}
+                                </a>
+                                {/* Views and favorites stats next to title */}
+                                <ListingCardStats id={item.id} initViews={item.views ?? 0} initFavorites={item.favorites_count ?? 0} />
+                              </div>
+                              <div className="flex flex-col items-end gap-1">
+                                <div className="font-bold text-primary text-xl md:text-3xl leading-none">€ {item.price}</div>
+                                {item.allowOffers && (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-sm text-emerald-700 border border-emerald-200">
+                                    Bieden mogelijk
+                                  </span>
+                                )}
+                                {item.allowOffers && typeof item.highestBid === "number" && (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-yellow-50 text-sm text-yellow-800 border border-yellow-200">
+                                    Hoogste bod: € {item.highestBid}
+                                  </span>
+                                )}
                               </div>
                             </div>
-                            <a
-                              href={`/listings/${item.id}`}
-                              className="inline-block rounded-full bg-primary text-white px-6 py-3 text-base font-semibold shadow transition hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 w-full md:w-auto text-center"
-                            >
-                              Bekijk
-                            </a>
+                            <div className="text-sm text-gray-700 line-clamp-2 leading-relaxed mb-1 md:mb-2">{item.description}</div>
+                            <div className="flex flex-wrap items-center gap-2 mb-3">
+                              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-gray-50 text-sm text-gray-700 border border-gray-200">
+                                <span className="text-gray-500">📍</span>
+                                {item.location}
+                              </span>
+                              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-blue-50 text-sm text-blue-700 border border-blue-200">
+                                <span className="text-blue-500">🏷️</span>
+                                {item.displayCategoryName}{item.displaySubcategoryName ? ` › ${item.displaySubcategoryName}` : ""}
+                              </span>
+                              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-green-50 text-sm text-green-700 border border-green-200">
+                                <span className="text-green-500">📅</span>
+                                {item.created_at ? new Date(item.created_at).toLocaleDateString("nl-BE") : "Onbekend"}
+                              </span>
+                              {item.listing_number && (
+                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-purple-50 text-sm text-purple-700 border border-purple-200">
+                                  <span className="text-purple-500">#</span>
+                                  {item.listing_number}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-6">
+                                {/* Seller info with stats below */}
+                                <div className="flex flex-col">
+                                  {/* Seller info */}
+                                  {(() => {
+                                    const sid = (listingsDataRaw || []).find(l => l.id === item.id)?.seller_id as string | undefined;
+                                    const ratingInfo = sid ? sellerRatings[sid] : undefined;
+                                    const profile = sid ? sellerProfiles[sid] : undefined;
+                                    const avatar = profile?.avatar_url;
+                                    const name = profile?.name || (sid ? `Verkoper ${sid.slice(0,6)}` : 'Verkoper');
+                                    return (
+                                      <span className="inline-flex items-center gap-2 mb-1" data-seller={sid || ''} data-has-rating={!!(ratingInfo && ratingInfo.count)}>
+                                        {avatar ? (
+                                          // eslint-disable-next-line @next/next/no-img-element
+                                          <img src={avatar} alt={name} className="w-8 h-8 rounded-full object-cover bg-gray-200 border-2 border-white shadow-sm" />
+                                        ) : (
+                                          <span className="w-8 h-8 rounded-full bg-gray-200 inline-block border-2 border-white shadow-sm" aria-hidden="true" />
+                                        )}
+                                        <div className="flex flex-col">
+                                          <span className="flex items-center gap-2">
+                                            {sid ? (
+                                              <a
+                                                href={`/business/${sid}`}
+                                                className="font-medium text-sm text-gray-900 hover:text-primary hover:underline truncate max-w-[140px]"
+                                                title={name}
+                                              >
+                                                {name}
+                                              </a>
+                                            ) : (
+                                              <span className="font-medium text-sm text-gray-900 truncate max-w-[140px]" title={name}>{name}</span>
+                                            )}
+                                            {profile?.is_business && (
+                                              <span className="inline-block px-1.5 py-0.5 text-[10px] leading-none rounded bg-blue-50 text-blue-700 border border-blue-200 font-medium">Business</span>
+                                            )}
+                                            {profile?.is_verified && (
+                                              <span className="inline-block px-1.5 py-0.5 text-[10px] leading-none rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium">Vertrouwd</span>
+                                            )}
+                                          </span>
+                                          <span className="inline-flex items-center gap-1 text-sm text-gray-600" aria-label={ratingInfo && ratingInfo.count > 0 ? `Rating ${ratingInfo.rating.toFixed(1)} uit 5` : 'Nog geen reviews'}>
+                                            {ratingInfo && ratingInfo.count > 0 ? (
+                                              <>
+                                                <RatingStars rating={ratingInfo.rating} size={12} />
+                                                <span className="font-medium">{ratingInfo.rating.toFixed(1)}</span>
+                                                <span className="text-gray-400">({ratingInfo.count})</span>
+                                              </>
+                                            ) : (
+                                              <span className="text-gray-400 italic">Geen reviews</span>
+                                            )}
+                                          </span>
+                                        </div>
+                                      </span>
+                                    );
+                                  })()}
+                                </div>
+                              </div>
+                              <a
+                                href={`/listings/${item.id}`}
+                                className="inline-block rounded-full bg-primary text-white px-6 py-3 text-base font-semibold shadow transition hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 w-full md:w-auto text-center"
+                              >
+                                Bekijk
+                              </a>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </article>
-                  </li>
-                ))}
-              </ul>
+                      </article>
+                    </li>
+                  ))}
+                </ul>
 
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <nav className="flex justify-center items-center gap-2 mt-8">
-                  <a
-                    href={buildHref(page - 1, searchParams)}
-                    className={`px-5 py-2 rounded-full border border-primary bg-white text-primary text-sm font-semibold shadow transition ${
-                      page <= 1 ? "pointer-events-none opacity-50" : "hover:bg-primary/10 hover:border-primary/80"
-                    } focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2`}
-                  >
-                    Vorige
-                  </a>
-                  <span className="px-3 py-2 text-sm text-gray-700">Pagina {page} van {totalPages}</span>
-                  <a
-                    href={buildHref(page + 1, searchParams)}
-                    className={`px-5 py-2 rounded-full border border-primary bg-white text-primary text-sm font-semibold shadow transition ${
-                      page >= totalPages ? "pointer-events-none opacity-50" : "hover:bg-primary/10 hover:border-primary/80"
-                    } focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2`}
-                  >
-                    Volgende
-                  </a>
-                </nav>
-              )}
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <nav className="flex justify-center items-center gap-2 mt-8">
+                    <a
+                      href={buildHref(page - 1, searchParams)}
+                      className={`px-5 py-2 rounded-full border border-primary bg-white text-primary text-sm font-semibold shadow transition ${
+                        page <= 1 ? "pointer-events-none opacity-50" : "hover:bg-primary/10 hover:border-primary/80"
+                      } focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2`}
+                    >
+                      Vorige
+                    </a>
+                    <span className="px-3 py-2 text-sm text-gray-700">Pagina {page} van {totalPages}</span>
+                    <a
+                      href={buildHref(page + 1, searchParams)}
+                      className={`px-5 py-2 rounded-full border border-primary bg-white text-primary text-sm font-semibold shadow transition ${
+                        page >= totalPages ? "pointer-events-none opacity-50" : "hover:bg-primary/10 hover:border-primary/80"
+                      } focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2`}
+                    >
+                      Volgende
+                    </a>
+                  </nav>
+                )}
+              </div>
             </>
           )}
         </main>

@@ -496,7 +496,7 @@ export default function EditListingModal({ listing, open, onClose, onSave }: Pro
               <div className="flex items-center justify-between">
                 <div>
                   <label className="text-sm font-medium text-gray-700">Biedingen toestaan</label>
-                  <p className="text-xs text-gray-500 mt-1">Laat kopers bieden op je product</p>
+                  <p className="text-sm text-gray-500 mt-1">Laat kopers bieden op je product</p>
                 </div>
                 <button
                   type="button"
@@ -531,7 +531,7 @@ export default function EditListingModal({ listing, open, onClose, onSave }: Pro
                       step="0.01"
                     />
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">Laat leeg voor geen minimum</p>
+                  <p className="text-sm text-gray-500 mt-1">Laat leeg voor geen minimum</p>
                 </div>
               )}
             </div>
@@ -598,7 +598,7 @@ export default function EditListingModal({ listing, open, onClose, onSave }: Pro
                 <div className="flex items-center justify-between">
                   <div>
                     <label className="text-sm font-medium text-gray-700">Verzenden via Ocaso</label>
-                    <p className="text-xs text-gray-500 mt-1">Laat Ocaso je product verzenden</p>
+                    <p className="text-sm text-gray-500 mt-1">Laat Ocaso je product verzenden</p>
                   </div>
                   <button
                     type="button"
@@ -621,7 +621,7 @@ export default function EditListingModal({ listing, open, onClose, onSave }: Pro
                     <h5 className="text-sm font-medium text-gray-700">Afmetingen (cm)</h5>
                     <div className="grid grid-cols-3 gap-3">
                       <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">
+                        <label className="block text-sm font-medium text-gray-600 mb-1">
                           Lengte
                         </label>
                         <input
@@ -635,7 +635,7 @@ export default function EditListingModal({ listing, open, onClose, onSave }: Pro
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">
+                        <label className="block text-sm font-medium text-gray-600 mb-1">
                           Breedte
                         </label>
                         <input
@@ -649,7 +649,7 @@ export default function EditListingModal({ listing, open, onClose, onSave }: Pro
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">
+                        <label className="block text-sm font-medium text-gray-600 mb-1">
                           Hoogte
                         </label>
                         <input
@@ -663,7 +663,7 @@ export default function EditListingModal({ listing, open, onClose, onSave }: Pro
                         />
                       </div>
                     </div>
-                    <p className="text-xs text-gray-500">Vul de afmetingen in voor nauwkeurige verzendkosten</p>
+                    <p className="text-sm text-gray-500">Vul de afmetingen in voor nauwkeurige verzendkosten</p>
                   </div>
                 )}
               </div>

@@ -205,7 +205,7 @@ export default function MarketplaceMap({ listings, centerLat, centerLng, radiusK
         {listings.filter(l => typeof l.latitude === 'number' && typeof l.longitude === 'number').map(l => (
           <LeafletMarker key={l.id} position={[l.latitude as number, l.longitude as number]} icon={simpleDivIcon('#dc2626')}>
             <LeafletPopup>
-              <div className="space-y-1 text-xs">
+              <div className="space-y-1 text-sm">
                 <a href={`/listings/${l.id}`} className="font-semibold text-primary hover:underline line-clamp-2 block max-w-[160px]">{l.title}</a>
                 {typeof l.price === 'number' && <div className="text-gray-700 font-medium">€ {l.price}</div>}
                 {l.location && <div className="text-gray-500">{l.location}</div>}

@@ -64,7 +64,7 @@ export default function HighlightedSlider({
           Uitgelicht in {catName}
           {subName ? ` › ${subName}` : ""}
         </h3>
-        <div className="text-xs text-gray-500">Horizontaal scrollen</div>
+        <div className="text-sm text-gray-500">Horizontaal scrollen</div>
       </div>
       <div
         className="overflow-x-auto hidden-scroll"

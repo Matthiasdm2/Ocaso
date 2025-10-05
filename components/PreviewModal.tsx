@@ -178,7 +178,7 @@ export default function PreviewModal({
                 <div className="mt-1 text-sm">
                   {shippingEnabled ? "Ja" : "Nee"}
                   {shippingEnabled && shipping && (
-                    <div className="mt-1 text-xs text-neutral-500">
+                    <div className="mt-1 text-sm text-neutral-500">
                       {shipping.service ? `Dienst: ${shipping.service} · ` : ""}
                       {shipping.price
                         ? `+/- € ${Number(shipping.price).toLocaleString("nl-BE")}`

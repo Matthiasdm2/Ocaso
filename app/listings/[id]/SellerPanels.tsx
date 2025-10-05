@@ -75,12 +75,12 @@ export default function SellerPanels({
                 <p className="font-medium truncate">{s.name ?? "Onbekend"}</p>
               )}
               {s.isBusiness ? (
-                <span className="rounded-md bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700">
+                <span className="rounded-md bg-blue-50 px-2 py-0.5 text-sm font-semibold text-blue-700">
                   Zakelijk
                 </span>
               ) : null}
               {s.isVerified ? (
-                <span className="rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                <span className="rounded-md bg-emerald-50 px-2 py-0.5 text-sm font-semibold text-emerald-700">
                   Vertrouwd
                 </span>
               ) : null}
@@ -174,7 +174,7 @@ function Row({ k, v }: { k: string; v: string }) {
 function InfoPill({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl border px-3 py-2">
-      <div className="text-xs text-neutral-500">{label}</div>
+      <div className="text-sm text-neutral-500">{label}</div>
       <div className="font-medium">{value}</div>
     </div>
   );

@@ -3,21 +3,27 @@ import Stripe from "stripe";
 
 import { supabaseServiceRole } from "@/lib/supabaseServiceRole";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   // Protect with a simple token to prevent abuse. Configure in your scheduler.
   const token = process.env.CRON_TOKEN;
   if (token) {
     const provided = req.headers.get("x-cron-token");
-    if (!provided || provided !== token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!provided || provided !== token) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
   }
 
   const stripeSecret = process.env.STRIPE_SECRET_KEY;
-  if (!stripeSecret) return NextResponse.json({ error: "Missing Stripe key" }, { status: 500 });
+  if (!stripeSecret) {
+    return NextResponse.json({ error: "Missing Stripe key" }, { status: 500 });
+  }
 
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return NextResponse.json({ error: 'service_role_missing' }, { status: 503 });
+    return NextResponse.json({ error: "service_role_missing" }, {
+      status: 503,
+    });
   }
 
   const supabase = supabaseServiceRole();
@@ -32,7 +38,9 @@ export async function POST(req: Request) {
     .lte("capture_after", now)
     .limit(20); // batch size
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 
   const stripe = new Stripe(stripeSecret, { apiVersion: "2025-08-27.basil" });
   let captured = 0;

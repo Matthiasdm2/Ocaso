@@ -252,7 +252,7 @@ export default function FavoritesPage() {
                       {item.title}
                     </Link>
                     <div className="text-sm text-gray-600 truncate mb-1">{item.location ?? ""}</div>
-                    <div className="text-xs text-gray-500 mb-1">
+                    <div className="text-sm text-gray-500 mb-1">
                       Geplaatst op: {item.created_at ? new Date(item.created_at).toLocaleDateString("nl-BE") : "Onbekend"}
                     </div>
                     <div className="flex gap-2 mb-1">

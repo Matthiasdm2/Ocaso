@@ -4,89 +4,156 @@ import { NextResponse } from "next/server";
 import { CATEGORIES } from "@/lib/categories";
 import { supabaseServer } from "@/lib/supabaseServer";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   const supabase = supabaseServer();
   const { searchParams } = new URL(request.url);
 
   const qRaw = (searchParams.get("q") || "").trim();
-  const normalize = (s: string) => s.toLowerCase().replace(/[-_]/g, " ").replace(/\s+/g, " ").trim();
+  const normalize = (s: string) =>
+    s.toLowerCase().replace(/[-_]/g, " ").replace(/\s+/g, " ").trim();
   const qLower = normalize(qRaw);
   const q = qRaw;
   const catId = (searchParams.get("catId") || "").trim();
   const subId = (searchParams.get("subId") || "").trim();
 
   const page = Math.max(1, Number(searchParams.get("page") || "1"));
-  const limit = Math.min(50, Math.max(1, Number(searchParams.get("limit") || "24")));
+  const limit = Math.min(
+    50,
+    Math.max(1, Number(searchParams.get("limit") || "24")),
+  );
 
   const priceMin = Number(searchParams.get("priceMin") || "0");
   const priceMax = Number(searchParams.get("priceMax") || "0");
   const state = (searchParams.get("state") || "").trim();
   const location = (searchParams.get("location") || "").trim();
   const sortRaw = searchParams.get("sort") || "date_desc";
-  const sort = sortRaw as "relevance" | "date_desc" | "date_asc" | "price_asc" | "price_desc";
+  const sort = sortRaw as
+    | "relevance"
+    | "date_desc"
+    | "date_asc"
+    | "price_asc"
+    | "price_desc";
   const businessParam = searchParams.get("business"); // '0' betekent zakelijke uitsluiten, anders tonen
-  const businessOnly = searchParams.get("businessOnly") === '1'; // Alleen zakelijke resultaten (voor suggesties onderaan)
-  const debug = searchParams.get("debug") === '1';
-  const showAll = searchParams.get("showAll") === '1';
-  const mode = searchParams.get("mode") || 'normal';
-  const diag = searchParams.get("diag") === '1';
+  const businessOnly = searchParams.get("businessOnly") === "1"; // Alleen zakelijke resultaten (voor suggesties onderaan)
+  const debug = searchParams.get("debug") === "1";
+  const showAll = searchParams.get("showAll") === "1";
+  const mode = searchParams.get("mode") || "normal";
+  const diag = searchParams.get("diag") === "1";
   // Eenvoudige modus: negeer alle heuristieken en geef laatste listings terug met optionele q filter
-  if (mode === 'simple') {
+  if (mode === "simple") {
     let base = supabase
-      .from('listings')
-      .select('id,title,price,location,state,images,main_photo,created_at,status,isBusinessSeller', { count: 'exact' });
-    if (!showAll) base = base.eq('status','actief');
+      .from("listings")
+      .select(
+        "id,title,price,location,state,images,main_photo,created_at,status,isBusinessSeller",
+        { count: "exact" },
+      );
+    if (!showAll) base = base.eq("status", "actief");
     if (qLower) {
       base = base.or(`title.ilike.%${qLower}%,description.ilike.%${qLower}%`);
     }
-    base = base.order('created_at', { ascending: false }).range(0, limit - 1);
+    base = base.order("created_at", { ascending: false }).range(0, limit - 1);
     const { data, error, count } = await base;
     if (error) {
-      return NextResponse.json({ items: [], page:1, limit, total:0, error: error.message }, { headers: { 'Cache-Control': 'no-store' } });
+      return NextResponse.json({
+        items: [],
+        page: 1,
+        limit,
+        total: 0,
+        error: error.message,
+      }, { headers: { "Cache-Control": "no-store" } });
     }
-  interface SimpleListingRow { id: number; title: string; price: number; location?: string | null; state?: string | null; images?: string[] | null; main_photo?: string | null; created_at: string; status?: string; isBusinessSeller?: boolean | null }
-  const items = (data as SimpleListingRow[] | null | undefined ?? []).map((l: SimpleListingRow) => ({
+    interface SimpleListingRow {
+      id: number;
+      title: string;
+      price: number;
+      location?: string | null;
+      state?: string | null;
+      images?: string[] | null;
+      main_photo?: string | null;
+      created_at: string;
+      status?: string;
+      isBusinessSeller?: boolean | null;
+    }
+    const items = (data as SimpleListingRow[] | null | undefined ?? []).map((
+      l: SimpleListingRow,
+    ) => ({
       id: l.id,
       title: l.title,
       price: l.price,
       location: l.location ?? undefined,
       state: l.state ?? undefined,
-      main_photo: l.main_photo ?? (Array.isArray(l.images)&&l.images.length? l.images[0]: null),
-      images: Array.isArray(l.images)? l.images: [],
+      main_photo: l.main_photo ??
+        (Array.isArray(l.images) && l.images.length ? l.images[0] : null),
+      images: Array.isArray(l.images) ? l.images : [],
       created_at: l.created_at,
       isBusinessSeller: l.isBusinessSeller ?? null,
     }));
     if (diag) {
       // haal totaal zonder filters + sample
-      const totalAllQ = await supabase.from('listings').select('id', { count: 'exact', head: true });
-      const sampleQ = await supabase.from('listings').select('id,title,status,created_at').limit(3);
-      return NextResponse.json({ items, page:1, limit, total: count ?? 0, mode: 'simple', diag: {
-        q: qLower, showAll, totalAll: totalAllQ.count ?? null, sample: sampleQ.data ?? [],
-      } }, { headers: { 'Cache-Control': 'no-store' } });
+      const totalAllQ = await supabase.from("listings").select("id", {
+        count: "exact",
+        head: true,
+      });
+      const sampleQ = await supabase.from("listings").select(
+        "id,title,status,created_at",
+      ).limit(3);
+      return NextResponse.json({
+        items,
+        page: 1,
+        limit,
+        total: count ?? 0,
+        mode: "simple",
+        diag: {
+          q: qLower,
+          showAll,
+          totalAll: totalAllQ.count ?? null,
+          sample: sampleQ.data ?? [],
+        },
+      }, { headers: { "Cache-Control": "no-store" } });
     }
-    return NextResponse.json({ items, page:1, limit, total: count ?? 0, mode: 'simple' }, { headers: { 'Cache-Control': 'no-store' } });
+    return NextResponse.json({
+      items,
+      page: 1,
+      limit,
+      total: count ?? 0,
+      mode: "simple",
+    }, { headers: { "Cache-Control": "no-store" } });
   }
 
   let query = supabase
     .from("listings")
-    .select("id,title,price,location,state,images,main_photo,created_at,categories,status,isBusinessSeller", { count: "exact" });
+    .select(
+      "id,title,price,location,state,images,main_photo,created_at,categories,status,isBusinessSeller",
+      { count: "exact" },
+    );
   if (!showAll) {
     query = query.eq("status", "actief");
   }
 
   // Heuristische categoriedetectie alleen indien expliciet aangevraagd (?heuristics=1)
-  const heuristicsEnabled = searchParams.get("heuristics") === '1';
+  const heuristicsEnabled = searchParams.get("heuristics") === "1";
   const matchedCategoryIds: number[] = [];
   let categoryFiltered = false;
   if (heuristicsEnabled && qLower) {
-    const fietsTerms = ["fiets", "fietsen", "racefiets", "racefietsen", "mountainbike", "mtb", "e-bike", "ebike", "elektrische fiets", "elektrische fietsen"];
-    const isFiets = fietsTerms.some(t => qLower.includes(t));
+    const fietsTerms = [
+      "fiets",
+      "fietsen",
+      "racefiets",
+      "racefietsen",
+      "mountainbike",
+      "mtb",
+      "e-bike",
+      "ebike",
+      "elektrische fiets",
+      "elektrische fietsen",
+    ];
+    const isFiets = fietsTerms.some((t) => qLower.includes(t));
     if (isFiets) {
-      const catIdx = CATEGORIES.findIndex(c => c.name.startsWith("Fietsen"));
+      const catIdx = CATEGORIES.findIndex((c) => c.name.startsWith("Fietsen"));
       if (catIdx !== -1) matchedCategoryIds.push(catIdx + 1);
-      const sportIdx = CATEGORIES.findIndex(c => c.name.startsWith("Sport"));
+      const sportIdx = CATEGORIES.findIndex((c) => c.name.startsWith("Sport"));
       if (sportIdx !== -1) matchedCategoryIds.push(sportIdx + 1);
     }
     if (matchedCategoryIds.length > 0) {
@@ -101,27 +168,42 @@ export async function GET(request: Request) {
     const tNorm = term.toLowerCase();
     const terms = new Set<string>();
     terms.add(tNorm);
-    tNorm.split(" ").forEach(t => t && terms.add(t));
+    tNorm.split(" ").forEach((t) => t && terms.add(t));
     const bicycleSynonyms: Record<string, string[]> = {
-      racefiets: ["racefiets", "racefietsen", "koersfiets", "koersfietsen", "road bike", "roadbike"],
+      racefiets: [
+        "racefiets",
+        "racefietsen",
+        "koersfiets",
+        "koersfietsen",
+        "road bike",
+        "roadbike",
+      ],
       koersfiets: ["koersfiets", "koersfietsen", "racefiets", "racefietsen"],
       mountainbike: ["mountainbike", "mountainbikes", "mtb"],
       mtb: ["mtb", "mountainbike", "mountainbikes"],
-      e: ["e-bike", "ebike", "e bike", "elektrische fiets", "elektrische fietsen", "e-bike", "e-bikes"],
+      e: [
+        "e-bike",
+        "ebike",
+        "e bike",
+        "elektrische fiets",
+        "elektrische fietsen",
+        "e-bike",
+        "e-bikes",
+      ],
       fiets: ["fiets", "fietsen"],
     };
     Object.entries(bicycleSynonyms).forEach(([key, arr]) => {
-      if (tNorm.includes(key)) arr.forEach(a => terms.add(a));
+      if (tNorm.includes(key)) arr.forEach((a) => terms.add(a));
     });
-    const termList = Array.from(terms).filter(x => x.length > 1).slice(0, 14);
+    const termList = Array.from(terms).filter((x) => x.length > 1).slice(0, 14);
     if (!termList.length) return undefined;
     const orParts: string[] = [];
-    termList.forEach(t => {
+    termList.forEach((t) => {
       const esc = t.replace(/%/g, "");
       orParts.push(`title.ilike.%${esc}%`);
       orParts.push(`description.ilike.%${esc}%`);
     });
-    return orParts.join(',');
+    return orParts.join(",");
   };
 
   // --- Synoniemen & uitbreidingen voor gerichtere matches ---
@@ -136,16 +218,18 @@ export async function GET(request: Request) {
   if (state) query = query.eq("state", state);
   if (location) query = query.ilike("location", `%${location}%`);
   if (businessOnly) {
-    query = query.eq('isBusinessSeller', true);
-  } else if (businessParam === '0') {
+    query = query.eq("isBusinessSeller", true);
+  } else if (businessParam === "0") {
     // verberg zakelijke
-    query = query.neq('isBusinessSeller', true);
+    query = query.neq("isBusinessSeller", true);
   }
 
   if (sort === "price_asc") query = query.order("price", { ascending: true });
-  else if (sort === "price_desc") query = query.order("price", { ascending: false });
-  else if (sort === "date_asc") query = query.order("created_at", { ascending: true });
-  else query = query.order("created_at", { ascending: false });
+  else if (sort === "price_desc") {
+    query = query.order("price", { ascending: false });
+  } else if (sort === "date_asc") {
+    query = query.order("created_at", { ascending: true });
+  } else query = query.order("created_at", { ascending: false });
 
   const from = (page - 1) * limit;
   const to = from + limit - 1;
@@ -159,10 +243,14 @@ export async function GET(request: Request) {
   // Fallback: als pure categorie filter geen resultaten geeft, alsnog tekst-based query
   if (!error && categoryFiltered && (data?.length ?? 0) === 0 && qLower) {
     // Breder fallback met synoniem OR keten
-    const orString = buildOrFilter(qLower) || `title.ilike.%${qLower}%,description.ilike.%${qLower}%`;
+    const orString = buildOrFilter(qLower) ||
+      `title.ilike.%${qLower}%,description.ilike.%${qLower}%`;
     const fbQuery = supabase
       .from("listings")
-      .select("id,title,price,location,state,images,main_photo,created_at,categories,status,isBusinessSeller", { count: "exact" })
+      .select(
+        "id,title,price,location,state,images,main_photo,created_at,categories,status,isBusinessSeller",
+        { count: "exact" },
+      )
       .eq("status", "actief")
       .or(orString)
       .range(0, limit - 1);
@@ -180,7 +268,10 @@ export async function GET(request: Request) {
     // Zonder status filter nu
     const broadQ = supabase
       .from("listings")
-      .select("id,title,price,location,state,images,main_photo,created_at,categories,status,isBusinessSeller", { count: "exact" })
+      .select(
+        "id,title,price,location,state,images,main_photo,created_at,categories,status,isBusinessSeller",
+        { count: "exact" },
+      )
       .or(broadOr);
     if (!showAll) broadQ.eq("status", "actief");
     const broad = await broadQ.range(0, limit - 1);
@@ -197,7 +288,10 @@ export async function GET(request: Request) {
   if (!error && (data?.length ?? 0) === 0) {
     const any = await supabase
       .from("listings")
-      .select("id,title,price,location,state,images,main_photo,created_at,categories,status,isBusinessSeller", { count: "exact" })
+      .select(
+        "id,title,price,location,state,images,main_photo,created_at,categories,status,isBusinessSeller",
+        { count: "exact" },
+      )
       .eq("status", "actief")
       .order("created_at", { ascending: false })
       .range(0, limit - 1);
@@ -215,22 +309,54 @@ export async function GET(request: Request) {
     );
   }
 
-  interface Row { id: string; title?: string; price?: number; location?: string | null; state?: string | null; images?: string[] | null; main_photo?: string | null; created_at?: string | null; isBusinessSeller?: boolean | null; }
+  interface Row {
+    id: string;
+    title?: string;
+    price?: number;
+    location?: string | null;
+    state?: string | null;
+    images?: string[] | null;
+    main_photo?: string | null;
+    created_at?: string | null;
+    isBusinessSeller?: boolean | null;
+  }
   const items = (data as Row[] | null ?? []).map((l) => ({
     id: l.id,
     title: l.title,
     price: l.price,
     location: l.location ?? undefined,
     state: l.state ?? undefined,
-    main_photo: l.main_photo ?? (Array.isArray(l.images) && l.images.length ? l.images[0] : null),
+    main_photo: l.main_photo ??
+      (Array.isArray(l.images) && l.images.length ? l.images[0] : null),
     images: Array.isArray(l.images) ? l.images : [],
     created_at: l.created_at,
     isBusinessSeller: l.isBusinessSeller ?? null,
   }));
 
-  interface SearchItem { id: string; title?: string; price?: number; location?: string; state?: string; main_photo: string | null; images: string[]; created_at?: string | null; isBusinessSeller: boolean | null; }
-  interface SearchResponsePayload { items: SearchItem[]; page: number; limit: number; total: number; debug?: Record<string, unknown>; }
-  const payload: SearchResponsePayload = { items: items as SearchItem[], page, limit, total: count ?? 0 };
+  interface SearchItem {
+    id: string;
+    title?: string;
+    price?: number;
+    location?: string;
+    state?: string;
+    main_photo: string | null;
+    images: string[];
+    created_at?: string | null;
+    isBusinessSeller: boolean | null;
+  }
+  interface SearchResponsePayload {
+    items: SearchItem[];
+    page: number;
+    limit: number;
+    total: number;
+    debug?: Record<string, unknown>;
+  }
+  const payload: SearchResponsePayload = {
+    items: items as SearchItem[],
+    page,
+    limit,
+    total: count ?? 0,
+  };
   if (debug) {
     payload.debug = {
       q: qRaw,
@@ -243,8 +369,9 @@ export async function GET(request: Request) {
       from,
       to,
       received: data?.length || 0,
-  emptyReason: emptyReason || ((data?.length || 0) === 0 ? 'no-results' : undefined),
-  diag: diag || undefined,
+      emptyReason: emptyReason ||
+        ((data?.length || 0) === 0 ? "no-results" : undefined),
+      diag: diag || undefined,
     };
   }
 
@@ -253,4 +380,3 @@ export async function GET(request: Request) {
     { headers: { "Cache-Control": "no-store" } },
   );
 }
-

@@ -9,6 +9,7 @@ import Script from 'next/script';
 import AuthSessionSync from "@/components/AuthSessionSync";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
+import MobileFooter from "@/components/MobileFooter";
 import { ToastProvider } from "@/components/Toast";
 const ChatDockManager = dynamic(() => import('@/components/ChatDockManager'), { ssr: false });
 
@@ -37,8 +38,9 @@ export default function RootLayout({
         <ToastProvider>
           <Header />
           <AuthSessionSync />
-          <main className="flex-1">{children}</main>
+          <main className="flex-1 pb-20 md:pb-0">{children}</main>
           <Footer />
+          <MobileFooter />
           <ChatDockManager />
           {/* Client bootstrap for consent-based loaders */}
           <ConsentBootstrap />

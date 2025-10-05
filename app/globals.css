@@ -9,6 +9,9 @@
 html,
 body {
   @apply bg-gray-50 text-gray-900;
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Mobile-first responsive container */
@@ -46,7 +49,7 @@ body {
 }
 
 .btn-xs {
-  @apply px-2 py-0.5 text-xs rounded;
+  @apply px-2 py-0.5 text-sm rounded;
   min-height: 32px;
 }
 
@@ -90,4 +93,19 @@ input[type="checkbox"], input[type="radio"] {
   .grid {
     gap: 1rem; /* 16px on larger screens */
   }
+}
+
+/* Ensure images don't overflow on mobile */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Better focus styles for mobile */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #6EE7B7;
+  outline-offset: 2px;
 }

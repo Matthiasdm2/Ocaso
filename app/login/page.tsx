@@ -196,7 +196,7 @@ export default function LoginPage() {
               <IconApple />
               <span>Inloggen met Apple</span>
             </OAuthBtn>
-            <div className="text-center text-xs text-gray-500">
+            <div className="text-center text-sm text-gray-500">
               of met e-mail & wachtwoord
             </div>
           </div>
@@ -260,7 +260,7 @@ export default function LoginPage() {
         {info && <p className="text-green-600 text-sm">{info}</p>}
         {err && <p className="text-red-500 text-sm">{err}</p>}
         {debugRate && process.env.NODE_ENV !== 'production' && (
-          <p className="text-xs text-gray-400">{debugRate}</p>
+          <p className="text-sm text-gray-400">{debugRate}</p>
         )}
       </div>
     </div>

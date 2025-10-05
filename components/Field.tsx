@@ -24,7 +24,7 @@ export function TextField({
   const idToUse = id ?? name ?? `tf-${autoId}`;
   return (
     <label className="block" htmlFor={idToUse}>
-      <div className="text-xs text-gray-600 mb-1">{label}</div>
+      <div className="text-sm text-gray-600 mb-1">{label}</div>
       <input
         id={idToUse}
         name={name}
@@ -58,7 +58,7 @@ export function TextArea({
   const idToUse = id ?? name ?? `ta-${autoId}`;
   return (
     <label className="block" htmlFor={idToUse}>
-      <div className="text-xs text-gray-600 mb-1">{label}</div>
+      <div className="text-sm text-gray-600 mb-1">{label}</div>
       <textarea
         id={idToUse}
         name={name}

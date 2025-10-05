@@ -381,7 +381,7 @@ export default function RegisterPage() {
                   placeholder="BE0XXXXXXXXX"
                 />
                 {vat && !looksLikeBEVAT(normalizeBEVAT(vat)) && (
-                  <p className="text-xs text-red-500 mt-1">
+                  <p className="text-sm text-red-500 mt-1">
                     Controleer het BTW-formaat.
                   </p>
                 )}
@@ -406,7 +406,7 @@ export default function RegisterPage() {
                   placeholder="BE68 5390 0754 7034"
                 />
                 {iban && !looksLikeIBAN(iban) && (
-                  <p className="text-xs text-red-500 mt-1">
+                  <p className="text-sm text-red-500 mt-1">
                     IBAN lijkt ongeldig.
                   </p>
                 )}

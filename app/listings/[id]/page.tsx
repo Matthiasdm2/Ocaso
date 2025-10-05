@@ -233,7 +233,7 @@ export default async function ListingPage({ params }: { params: { id: string } }
                 <BidsModal bids={bids ?? []} />
                 <span className="text-sm text-emerald-700 font-semibold">{highestBid ? `€ ${highestBid}` : "—"}</span>
               </div>
-              <div className="ml-auto text-xs text-gray-500">
+              <div className="ml-auto text-sm text-gray-500">
                 Geplaatst: {listing.created_at ? new Date(listing.created_at).toLocaleDateString("nl-BE") : "Onbekend"}
               </div>
             </div>
@@ -251,7 +251,7 @@ export default async function ListingPage({ params }: { params: { id: string } }
               {category?.id && category?.name && (
                 <Link
                   href={`/marketplace?cat=${category.id}`}
-                  className="inline-flex items-center rounded-full bg-gray-100 hover:bg-gray-200 transition px-2 py-0.5 text-xs font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  className="inline-flex items-center rounded-full bg-gray-100 hover:bg-gray-200 transition px-2 py-0.5 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary/40"
                 >
                   {category.name}
                 </Link>
@@ -259,7 +259,7 @@ export default async function ListingPage({ params }: { params: { id: string } }
               {subcategory?.id && subcategory?.name && (
                 <Link
                   href={`/marketplace?cat=${category?.id ?? ''}&sub=${subcategory.id}`}
-                  className="inline-flex items-center rounded-full bg-gray-100 hover:bg-gray-200 transition px-2 py-0.5 text-xs font-medium text-gray-600 focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  className="inline-flex items-center rounded-full bg-gray-100 hover:bg-gray-200 transition px-2 py-0.5 text-sm font-medium text-gray-600 focus:outline-none focus:ring-2 focus:ring-primary/40"
                 >
                   {subcategory.name}
                 </Link>
@@ -296,11 +296,11 @@ export default async function ListingPage({ params }: { params: { id: string } }
             {/* Details */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 border-b pb-6 mb-6">
               <div>
-                <span className="block text-xs text-gray-500 mb-2">Staat</span>
+                <span className="block text-sm text-gray-500 mb-2">Staat</span>
                 <span className="text-base text-gray-700">{listing.state ?? "Onbekend"}</span>
               </div>
               <div>
-                <span className="block text-xs text-gray-500 mb-2">Locatie</span>
+                <span className="block text-sm text-gray-500 mb-2">Locatie</span>
                 <span className="text-base text-gray-700">{sellerLocationCombined || listing.location || "Onbekend"}</span>
               </div>
             </div>
@@ -363,12 +363,12 @@ export default async function ListingPage({ params }: { params: { id: string } }
           })()}
         </div>
       </div>
-      {/* Sticky mobile action bar */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t shadow-lg">
+      {/* Mobile action bar */}
+      <div className="md:hidden bg-white border-t shadow-lg mt-8">
         <div className="mx-auto max-w-5xl px-4 py-3">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <div className="text-xs text-gray-500">Prijs</div>
+              <div className="text-sm text-gray-500">Prijs</div>
               <div className="text-lg font-semibold text-emerald-700">€ {listing.price}</div>
             </div>
             <div className="flex-1">

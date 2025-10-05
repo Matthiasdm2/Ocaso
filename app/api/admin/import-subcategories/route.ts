@@ -27,7 +27,9 @@ export async function POST() {
       return NextResponse.json({ error: catError.message }, { status: 500 });
     }
 
-    const catMap = new Map((existingCats || []).map((c: CategoryRow) => [c.slug, c.id]));
+    const catMap = new Map(
+      (existingCats || []).map((c: CategoryRow) => [c.slug, c.id]),
+    );
 
     // Process L2 subcategories
     const l2Payload = [];
@@ -46,7 +48,7 @@ export async function POST() {
             name: sub.name,
             slug: sub.slug,
             is_active: sub.is_active ?? true,
-            sort_order: sub.sort_order ?? subIndex + 1
+            sort_order: sub.sort_order ?? subIndex + 1,
           });
         }
       }
@@ -54,7 +56,9 @@ export async function POST() {
 
     // Insert/update L2 subcategories
     if (l2Payload.length) {
-      const { error } = await sb.from("subcategories").upsert(l2Payload, { onConflict: "slug" });
+      const { error } = await sb.from("subcategories").upsert(l2Payload, {
+        onConflict: "slug",
+      });
       if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });
       }

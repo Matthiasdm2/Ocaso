@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import BackBar from "@/components/BackBar";
 import ListingCard from "@/components/ListingCard";
 import { supabaseServer } from "@/lib/supabaseServer";
 
@@ -64,13 +65,18 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
   const serverDuration = Date.now() - t0;
   return (
     <div className="container py-6 md:py-8 space-y-6">
+      {/* Terugkeer button - alleen zichtbaar op mobile/tablet */}
+      <div className="block md:hidden mb-4">
+        <BackBar />
+      </div>
+
       <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Zoekresultaten</h1>
-      <div className="text-sm text-gray-600">{q ? `Zoekwoord: "${q}"` : `Nieuwe zoekertjes`} <span className="text-[10px] text-gray-400">{serverDuration}ms</span></div>
+      <div className="text-sm text-gray-600">{q ? `Zoekwoord: "${q}"` : `Nieuwe zoekertjes`} <span className="text-sm text-gray-400">{serverDuration}ms</span></div>
       {items.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-10 text-center space-y-3">
           <div className="mx-auto h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">Ø</div>
           <h2 className="text-sm font-medium">Geen zoekertjes gevonden</h2>
-          <p className="text-xs text-gray-500 max-w-sm mx-auto">Probeer zonder zoekwoord of controleer later opnieuw.</p>
+          <p className="text-sm text-gray-500 max-w-sm mx-auto">Probeer zonder zoekwoord of controleer later opnieuw.</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-3 md:gap-4">
@@ -90,10 +96,10 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={p.avatar_url} alt={p.full_name || 'Seller'} className="h-full w-full object-cover" />
                     ) : (
-                      <span className="text-xs font-semibold text-gray-600">{initials || 'BZ'}</span>
+                      <span className="text-sm font-semibold text-gray-600">{initials || 'BZ'}</span>
                     )}
                   </div>
-                  <span className="mt-2 line-clamp-2 text-xs font-medium text-gray-700 group-hover:text-gray-900 max-w-[90px]">{p.full_name || 'Zakelijke verkoper'}</span>
+                  <span className="mt-2 line-clamp-2 text-sm font-medium text-gray-700 group-hover:text-gray-900 max-w-[90px]">{p.full_name || 'Zakelijke verkoper'}</span>
                 </Link>
               );
             })}

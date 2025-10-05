@@ -474,14 +474,14 @@ function KycFormInner({ onSuccess, stripePromiseState }: KycFormInnerProps) {
   <div>
     <label htmlFor="kyc-email" className="mb-1.5 block text-sm font-medium">Gekend e-mailadres</label>
     <input id="kyc-email" name="email" value={email} onChange={(e) => setEmail(e.target.value)} className={`w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm placeholder:text-neutral-400 focus:ring-2 focus:ring-emerald-200`} placeholder="E-mailadres" />
-  <p className="text-xs text-neutral-500 mt-1">Dit e-mailadres wordt gebruikt voor je account</p>
+  <p className="text-sm text-neutral-500 mt-1">Dit e-mailadres wordt gebruikt voor je account</p>
   </div>
       {/* Branch field: hide when individual (Particulier) to avoid showing it, but still include it in payload */}
       {businessType !== 'individual' ? (
         <div>
           <span className="mb-1.5 block text-sm font-medium">Branche / omschrijving activiteit</span>
           <input value={branch} onChange={(e) => setBranch(e.target.value)} className={`w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm placeholder:text-neutral-400 focus:ring-2 focus:ring-emerald-200`} placeholder="Bijv. Particuliere verkoop" />
-          <p className="text-xs text-neutral-500 mt-1">Beschrijf je activiteit.</p>
+          <p className="text-sm text-neutral-500 mt-1">Beschrijf je activiteit.</p>
         </div>
       ) : (
         // keep branch state populated for individuals but don't render the input
@@ -522,7 +522,7 @@ function KycFormInner({ onSuccess, stripePromiseState }: KycFormInnerProps) {
             <input id="kyc-company-number" name="company_number" value={companyNumber} onChange={(e) => setCompanyNumber(e.target.value)} placeholder="KBO / Registratienummer" className="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
             <input id="kyc-company-vat" name="company_vat" value={companyVat} onChange={(e) => setCompanyVat(e.target.value)} placeholder="BTW nummer (optioneel)" className="w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm" />
             {vatVerificationMessage && (
-              <p className={`text-xs mt-1 ${vatVerificationStatus === 'valid' ? 'text-green-600' : vatVerificationStatus === 'invalid' ? 'text-red-600' : 'text-neutral-500'}`}>
+              <p className={`text-sm mt-1 ${vatVerificationStatus === 'valid' ? 'text-green-600' : vatVerificationStatus === 'invalid' ? 'text-red-600' : 'text-neutral-500'}`}>
                 {vatVerificationMessage}
               </p>
             )}
@@ -615,7 +615,7 @@ function KycFormInner({ onSuccess, stripePromiseState }: KycFormInnerProps) {
                 aria-label="IBAN"
               />
               {!isValidIban(bankAccount.iban) && bankAccount.iban.length > 0 && (
-                <p className="text-xs text-red-600 mt-1">Vul een geldig IBAN in.</p>
+                <p className="text-sm text-red-600 mt-1">Vul een geldig IBAN in.</p>
               )}
             </div>
             <p className="text-sm text-neutral-600 mt-1">Vul je IBAN in zodat we uitbetalingen kunnen uitvoeren. We bewaren geen raw bankgegevens.</p>

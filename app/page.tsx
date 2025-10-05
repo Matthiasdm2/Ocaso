@@ -95,11 +95,11 @@ export default async function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-700">
             <div className="card p-4">
               <div className="font-medium mb-1">1. Controleer het profiel</div>
-              <p className="text-xs md:text-sm">Bekijk reviews en activiteit van de verkoper of koper.</p>
+              <p className="text-sm md:text-sm">Bekijk reviews en activiteit van de verkoper of koper.</p>
             </div>
             <div className="card p-4">
               <div className="font-medium mb-1">2. Betaal veilig</div>
-              <p className="text-xs md:text-sm">
+              <p className="text-sm md:text-sm">
                 Gebruik betrouwbare betaalmethodes en betaal nooit buiten het
                 platform.
               </p>
@@ -108,7 +108,7 @@ export default async function HomePage() {
               <div className="font-medium mb-1">
                 3. Spreek af op een veilige plek
               </div>
-              <p className="text-xs md:text-sm">
+              <p className="text-sm md:text-sm">
                 Kies drukke, publieke locaties of maak gebruik van
                 verzendservice.
               </p>

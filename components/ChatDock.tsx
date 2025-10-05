@@ -772,7 +772,7 @@ export default function ChatDock({
                 href={`/listings/${listingId}`}
                 target="_blank"
                 rel="noreferrer"
-                className="text-xs underline text-blue-600 hover:text-blue-800 whitespace-nowrap"
+                className="text-sm underline text-blue-600 hover:text-blue-800 whitespace-nowrap"
                 title="Open zoekertje"
                 onClick={(e) => { e.stopPropagation(); }}
               >Open</a>
@@ -873,7 +873,7 @@ export default function ChatDock({
                     <button
                       type="button"
                       onClick={() => setEpcOpen(true)}
-                      className="rounded-full bg-emerald-600 text-white px-3 py-1.5 text-xs font-semibold hover:bg-emerald-700"
+                      className="rounded-full bg-emerald-600 text-white px-3 py-1.5 text-sm font-semibold hover:bg-emerald-700"
                     >genereer betaalverzoek</button>
                   </div>
                 );
@@ -881,10 +881,10 @@ export default function ChatDock({
               return null;
             })()}
             {!loaded && (
-              <div className="text-xs text-gray-500 text-center py-6">Laden…</div>
+              <div className="text-sm text-gray-500 text-center py-6">Laden…</div>
             )}
             {loaded && loadError && (
-              <div className="text-xs text-red-600 text-center py-6">{loadError === 'not_found' ? 'Gesprek niet gevonden' : loadError}</div>
+              <div className="text-sm text-red-600 text-center py-6">{loadError === 'not_found' ? 'Gesprek niet gevonden' : loadError}</div>
             )}
             {messages.map((m) => {
               const own = m.from === 'me';
@@ -1021,7 +1021,7 @@ export default function ChatDock({
               <div className="text-[10px] text-red-600 text-center py-1 break-words">{sendError}</div>
             )}
             {loaded && !loadError && !messages.length && (
-              <div className="text-xs text-gray-500 text-center py-6">
+              <div className="text-sm text-gray-500 text-center py-6">
                 Geen berichten
               </div>
             )}
@@ -1036,7 +1036,7 @@ export default function ChatDock({
                 <button
                   type="button"
                   onClick={() => setEpcOpen(o => !o)}
-                  className="inline-flex items-center gap-1 rounded-full bg-primary text-black px-3 py-1.5 text-xs font-semibold border border-primary/30 hover:bg-primary/80 transition focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  className="inline-flex items-center gap-1 rounded-full bg-primary text-black px-3 py-1.5 text-sm font-semibold border border-primary/30 hover:bg-primary/80 transition focus:outline-none focus:ring-2 focus:ring-primary/40"
                 >
                   {epcOpen ? 'Verberg betaalverzoek' : 'Betaalverzoek toevoegen'}
                 </button>
@@ -1069,7 +1069,7 @@ export default function ChatDock({
                         type="button"
                         onClick={generateAndAttachEpc}
                         disabled={epcBusy}
-                        className="rounded bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60"
+                        className="rounded bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-60"
                       >{epcBusy ? 'Bezig…' : 'Genereer & voeg toe'}</button>
                       {epcError && <span className="text-[11px] text-red-600">{epcError}</span>}
                     </div>

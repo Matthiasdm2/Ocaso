@@ -80,7 +80,7 @@ export default function BusinessHero({ name, bannerUrl, logoUrl, verified, categ
                 </div>
               )}
             </div>
-            <div className="flex flex-wrap justify-center md:justify-start gap-3 text-xs text-gray-600">
+            <div className="flex flex-wrap justify-center md:justify-start gap-3 text-sm text-gray-600">
               {typeof responseTimeHours === 'number' && (
                 <span>Reactietijd ~ {responseTimeHours}u</span>
               )}

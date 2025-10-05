@@ -17,7 +17,7 @@ export default function PrivacyPage() {
       <section className="px-6 pt-16 pb-8 md:pt-20 md:pb-10">
         <div className="mx-auto max-w-5xl">
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs text-emerald-700">
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-sm text-emerald-700">
               <FileText className="h-4 w-4" /> Privacy & Disclaimer
             </div>
             <h1 className="mt-3 text-4xl font-semibold tracking-tight md:text-5xl">Privacybeleid & Disclaimer</h1>

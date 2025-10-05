@@ -122,7 +122,7 @@ export default function BusinessStatsLive({ businessId, initial, fallbackListing
       <Stat label="Bezoeken" value={loading ? loadingValue : views} />
       <Stat label="Biedingen" value={loading ? loadingValue : bids} />
       {error && !loading && (
-        <div className="col-span-full text-xs text-amber-600 mt-1">{error}</div>
+        <div className="col-span-full text-sm text-amber-600 mt-1">{error}</div>
       )}
       {!error && !loading && !isFallback && stats?._debugListings && (
         <pre className="col-span-full mt-2 p-2 bg-gray-50 border text-[10px] max-h-40 overflow-auto">{JSON.stringify(stats._debugListings, null, 2)}</pre>

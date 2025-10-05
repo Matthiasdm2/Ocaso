@@ -122,7 +122,7 @@ export default function ReviewsTabPage() {
   return (
     <div>
       <h2 className="text-lg font-semibold mb-4">Mijn reviews</h2>
-  <div className="mb-2 text-xs text-neutral-400">Debug: {count} reviews gevonden. Gemiddelde {avg.toFixed(2)}.</div>
+  <div className="mb-2 text-sm text-neutral-400">Debug: {count} reviews gevonden. Gemiddelde {avg.toFixed(2)}.</div>
   <BusinessReviewsSection
         businessId="self"
         hideCreate

@@ -4,7 +4,7 @@ type Listing = { id: string; title?: string; is_sold?: boolean; sold_via_ocaso?:
 export default function ListingsPanel({ listings, onToggleSold, onChangeViaOcaso }:{ listings: Listing[]; onToggleSold: (id:string, sold:boolean)=>void; onChangeViaOcaso: (id:string, via:boolean)=>void; }){
   return (
     <div className="space-y-3">
-      <div className="font-medium">Mijn zoekertjes <span className="text-xs text-neutral-500">({listings?.length || 0})</span></div>
+      <div className="font-medium">Mijn zoekertjes <span className="text-sm text-neutral-500">({listings?.length || 0})</span></div>
       {!listings?.length ? (
         <div className="text-sm text-neutral-600">Nog geen zoekertjes.</div>
       ) : (
@@ -12,7 +12,7 @@ export default function ListingsPanel({ listings, onToggleSold, onChangeViaOcaso
           {listings.map((l)=> (
             <li key={l.id} className="flex items-center justify-between rounded-lg border border-neutral-200 bg-white px-3 py-2">
               <div className="truncate pr-4">{l.title || l.id}</div>
-              <div className="flex items-center gap-2 text-xs">
+              <div className="flex items-center gap-2 text-sm">
                 <label className="flex items-center gap-1">
                   <input type="checkbox" checked={!!l.is_sold} onChange={(e)=>onToggleSold(l.id, e.target.checked)} />
                   verkocht

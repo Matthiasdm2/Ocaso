@@ -5,13 +5,14 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
 import {
-  createCategory,
-  createSubcategory,
-  importCategoriesFromJsonAction,
-  reorderCategory,
-  reorderSubcategory,
-  toggleCategory,
-  toggleSubcategory} from "./actions";
+    createCategory,
+    createSubcategory,
+    importCategoriesFromJsonAction,
+    reorderCategory,
+    reorderSubcategory,
+    toggleCategory,
+    toggleSubcategory
+} from "./actions";
 
 type Sub = {
   id: number;
@@ -97,7 +98,7 @@ export default function AdminCategoriesPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <div className="font-semibold">{c.name}</div>
-                  <div className="text-xs text-gray-500">{c.slug} • order {c.sort_order}</div>
+                  <div className="text-sm text-gray-500">{c.slug} • order {c.sort_order}</div>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
@@ -157,7 +158,7 @@ export default function AdminCategoriesPage() {
                   <div key={s.id} className="py-2 flex items-center justify-between">
                     <div>
                       <div className="font-medium">{s.name}</div>
-                      <div className="text-xs text-gray-500">{s.slug} • order {s.sort_order}</div>
+                      <div className="text-sm text-gray-500">{s.slug} • order {s.sort_order}</div>
                     </div>
                     <div className="flex items-center gap-2">
                       <button

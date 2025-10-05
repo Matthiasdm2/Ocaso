@@ -86,7 +86,7 @@ export default function ReviewSection({ listingId }: { listingId: string }) {
                 <div className="flex items-center gap-2">
                   <span className="font-medium">{r.reviewer}</span>
                   <span className="text-yellow-500">{'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)}</span>
-                  <span className="text-xs text-gray-400 ml-2">{new Date(r.created_at).toLocaleDateString("nl-BE")}</span>
+                  <span className="text-sm text-gray-400 ml-2">{new Date(r.created_at).toLocaleDateString("nl-BE")}</span>
                 </div>
                 <div className="mt-1 text-gray-700 text-sm">{r.comment}</div>
               </div>

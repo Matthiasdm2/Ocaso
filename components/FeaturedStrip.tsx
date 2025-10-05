@@ -88,7 +88,7 @@ export default function FeaturedStrip({ title = "Uitgelicht in deze categorie", 
             <div className="p-3">
               <div className="line-clamp-2 font-medium text-gray-900">{it.title}</div>
               {it.location ? (
-                <div className="mt-1 text-xs text-gray-500">{it.location}</div>
+                <div className="mt-1 text-sm text-gray-500">{it.location}</div>
               ) : null}
               <div className="mt-2 text-primary font-semibold">€ {Number(it.price).toLocaleString("nl-BE")}</div>
             </div>

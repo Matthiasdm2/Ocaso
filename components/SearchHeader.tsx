@@ -37,7 +37,7 @@ export default function SearchHeader({ total }: { total: number }) {
             autoComplete="off"
           />
         </div>
-        <div className="flex items-center gap-3 text-xs text-gray-600">
+        <div className="flex items-center gap-3 text-sm text-gray-600">
           <span className="px-3 py-1 rounded-full bg-gray-100 text-gray-700 font-medium">{total} resultaten</span>
           <button
             type="submit"

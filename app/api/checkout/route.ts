@@ -7,23 +7,38 @@ import { supabaseServiceRole } from "@/lib/supabaseServiceRole";
 
 export async function POST(req: Request) {
   try {
-  const body: unknown = await req.json().catch(() => ({}));
-  const obj = (body && typeof body === "object") ? body as Record<string, unknown> : {};
-  const listingId = typeof obj.listingId === "string" ? obj.listingId : undefined;
-  const messageId = typeof obj.messageId === "string" ? obj.messageId : undefined;
-  const quantity = typeof obj.quantity === "number" ? obj.quantity : 1;
-  const shipping = obj.shipping as
+    const body: unknown = await req.json().catch(() => ({}));
+    const obj = (body && typeof body === "object")
+      ? body as Record<string, unknown>
+      : {};
+    const listingId = typeof obj.listingId === "string"
+      ? obj.listingId
+      : undefined;
+    const messageId = typeof obj.messageId === "string"
+      ? obj.messageId
+      : undefined;
+    const quantity = typeof obj.quantity === "number" ? obj.quantity : 1;
+    const shipping = obj.shipping as
       | {
-          mode: "pickup" | "ship";
-          contact?: { name?: string; email?: string; phone?: string };
-          address?: { line1?: string; postal_code?: string; city?: string; country?: string };
-        }
+        mode: "pickup" | "ship";
+        contact?: { name?: string; email?: string; phone?: string };
+        address?: {
+          line1?: string;
+          postal_code?: string;
+          city?: string;
+          country?: string;
+        };
+      }
       | undefined;
-    if (!listingId) return NextResponse.json({ error: "Missing listingId" }, { status: 400 });
+    if (!listingId) {
+      return NextResponse.json({ error: "Missing listingId" }, { status: 400 });
+    }
 
     const supabase = supabaseServer();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     // Fetch listing from DB to trust server-side price/title/seller
     const { data: listing, error: listErr } = await supabase
@@ -31,14 +46,25 @@ export async function POST(req: Request) {
       .select("id,title,price,seller_id,stock")
       .eq("id", listingId)
       .maybeSingle();
-    if (listErr) return NextResponse.json({ error: listErr.message }, { status: 500 });
-    if (!listing) return NextResponse.json({ error: "Listing not found" }, { status: 404 });
-    if (listing.seller_id === user.id) return NextResponse.json({ error: "Je kan je eigen listing niet kopen" }, { status: 400 });
+    if (listErr) {
+      return NextResponse.json({ error: listErr.message }, { status: 500 });
+    }
+    if (!listing) {
+      return NextResponse.json({ error: "Listing not found" }, { status: 404 });
+    }
+    if (listing.seller_id === user.id) {
+      return NextResponse.json(
+        { error: "Je kan je eigen listing niet kopen" },
+        { status: 400 },
+      );
+    }
 
     // Check stock availability
     const availableStock = listing.stock ?? 1;
     if (quantity > availableStock) {
-      return NextResponse.json({ error: `Er zijn slechts ${availableStock} stuks beschikbaar` }, { status: 400 });
+      return NextResponse.json({
+        error: `Er zijn slechts ${availableStock} stuks beschikbaar`,
+      }, { status: 400 });
     }
 
     // Determine the price: if messageId is provided, check if it's an acceptance message and use the bid amount
@@ -51,8 +77,11 @@ export async function POST(req: Request) {
         .eq("id", messageId)
         .eq("sender_id", listing.seller_id) // Only seller can accept bids
         .maybeSingle();
-      
-      if (!msgErr && message && message.body && message.body.includes("Uw bod werd aanvaard")) {
+
+      if (
+        !msgErr && message && message.body &&
+        message.body.includes("Uw bod werd aanvaard")
+      ) {
         // This is a valid acceptance message - find the highest bid from this user on this listing
         const { data: userBids, error: bidsErr } = await supabase
           .from("bids")
@@ -61,7 +90,7 @@ export async function POST(req: Request) {
           .eq("bidder_id", user.id)
           .order("amount", { ascending: false })
           .limit(1);
-        
+
         if (!bidsErr && userBids && userBids.length > 0) {
           finalPrice = userBids[0].amount;
         }
@@ -74,17 +103,26 @@ export async function POST(req: Request) {
       .select("stripe_account_id")
       .eq("id", listing.seller_id)
       .maybeSingle();
-    if (profErr) return NextResponse.json({ error: profErr.message }, { status: 500 });
+    if (profErr) {
+      return NextResponse.json({ error: profErr.message }, { status: 500 });
+    }
     const destination = sellerProfile?.stripe_account_id;
     if (!destination) {
-      return NextResponse.json({ error: "Verkoper moet Stripe onboarding afronden" }, { status: 409 });
+      return NextResponse.json({
+        error: "Verkoper moet Stripe onboarding afronden",
+      }, { status: 409 });
     }
 
     const stripeSecret = process.env.STRIPE_SECRET_KEY;
-    if (!stripeSecret) return NextResponse.json({ error: "Missing STRIPE_SECRET_KEY" }, { status: 500 });
+    if (!stripeSecret) {
+      return NextResponse.json({ error: "Missing STRIPE_SECRET_KEY" }, {
+        status: 500,
+      });
+    }
     const stripe = new Stripe(stripeSecret, { apiVersion: "2025-08-27.basil" });
 
-    const origin = req.headers.get("origin") || req.headers.get("referer") || process.env.NEXT_PUBLIC_SITE_URL || "";
+    const origin = req.headers.get("origin") || req.headers.get("referer") ||
+      process.env.NEXT_PUBLIC_SITE_URL || "";
     const unit_amount = Math.round(Number(finalPrice) * 100);
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
@@ -92,7 +130,9 @@ export async function POST(req: Request) {
         {
           price_data: {
             currency: "eur",
-            product_data: { name: `${listing.title}${quantity > 1 ? ` (${quantity}x)` : ''}` },
+            product_data: {
+              name: `${listing.title}${quantity > 1 ? ` (${quantity}x)` : ""}`,
+            },
             unit_amount,
           },
           quantity,
@@ -125,18 +165,19 @@ export async function POST(req: Request) {
         sellerId: listing.seller_id,
         shipMode: shipping?.mode ?? "pickup",
       },
-      success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+      success_url:
+        `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/listings/${encodeURIComponent(listingId)}`,
     });
 
     // Create order row to track
-    const twoDaysFromNow = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
-    const piId =
-      typeof session.payment_intent === "string"
-        ? session.payment_intent
-        : session.payment_intent?.id ?? null;
+    const twoDaysFromNow = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000)
+      .toISOString();
+    const piId = typeof session.payment_intent === "string"
+      ? session.payment_intent
+      : session.payment_intent?.id ?? null;
     const admin = supabaseServiceRole();
-  await admin
+    await admin
       .from("orders")
       .insert({
         listing_id: listing.id,
@@ -149,11 +190,13 @@ export async function POST(req: Request) {
         stripe_payment_intent_id: piId ?? null,
         capture_after: twoDaysFromNow,
         state: "created",
-        shipping_details: shipping ? {
-          mode: shipping.mode,
-          contact: shipping.contact ?? null,
-          address: shipping.address ?? null,
-        } : null,
+        shipping_details: shipping
+          ? {
+            mode: shipping.mode,
+            contact: shipping.contact ?? null,
+            address: shipping.address ?? null,
+          }
+          : null,
       });
 
     return NextResponse.json({ url: session.url });

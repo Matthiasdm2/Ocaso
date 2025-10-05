@@ -336,7 +336,7 @@ function CategoriesContent() {
                 setParam("location", undefined);
                 setParam("sort", "relevance");
               }}
-              className="text-xs text-primary hover:underline"
+              className="text-sm text-primary hover:underline"
             >
               Reset
             </button>
@@ -344,7 +344,7 @@ function CategoriesContent() {
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6 items-stretch">
             <div>
-              <label className="block text-xs text-gray-600 mb-1">
+              <label className="block text-sm text-gray-600 mb-1">
                 Locatie
               </label>
               <select
@@ -363,7 +363,7 @@ function CategoriesContent() {
               </select>
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">Staat</label>
+              <label className="block text-sm text-gray-600 mb-1">Staat</label>
               <select
                 value={state || ""}
                 onChange={(e) => setParam("state", e.target.value || undefined)}
@@ -378,7 +378,7 @@ function CategoriesContent() {
               </select>
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">
+              <label className="block text-sm text-gray-600 mb-1">
                 Prijs min
               </label>
               <input
@@ -392,7 +392,7 @@ function CategoriesContent() {
               />
             </div>
             <div>
-              <label className="block text-xs text-gray-600 mb-1">
+              <label className="block text-sm text-gray-600 mb-1">
                 Prijs max
               </label>
               <input
@@ -406,7 +406,7 @@ function CategoriesContent() {
               />
             </div>
             <div className="lg:col-span-2">
-              <label className="block text-xs text-gray-600 mb-1">
+              <label className="block text-sm text-gray-600 mb-1">
                 Sorteren
               </label>
               <select

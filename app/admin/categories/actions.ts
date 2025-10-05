@@ -109,7 +109,9 @@ export async function importCategoriesFromJsonAction() {
       throw new Error(catError.message);
     }
 
-    const catMap = new Map((existingCats || []).map((c: CategoryRow) => [c.slug, c.id]));
+    const catMap = new Map(
+      (existingCats || []).map((c: CategoryRow) => [c.slug, c.id]),
+    );
 
     // Process L2 subcategories
     const l2Payload = [];
@@ -128,7 +130,7 @@ export async function importCategoriesFromJsonAction() {
             name: sub.name,
             slug: sub.slug,
             is_active: sub.is_active ?? true,
-            sort_order: sub.sort_order ?? subIndex + 1
+            sort_order: sub.sort_order ?? subIndex + 1,
           });
         }
       }

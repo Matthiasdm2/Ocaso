@@ -111,8 +111,20 @@ export default function Header() {
       </div>
 
       {/* Main row */}
-      <div className="container h-20 flex items-center justify-between">
-        <Logo className="text-xl" />
+      <div className="container h-20 flex items-center justify-between relative">
+        <div className="flex items-center gap-3">
+          <Logo className="text-xl" />
+        </div>
+        
+        {/* Mobile CTA Button - Centered */}
+        <Link
+          href="/sell"
+          className="md:hidden absolute left-1/2 transform -translate-x-1/2 inline-flex items-center justify-center rounded-lg bg-primary p-2 text-black shadow-smooth hover:opacity-90"
+          title="Plaats zoekertje"
+          aria-label="Plaats zoekertje"
+        >
+          <Plus className="h-5 w-5" />
+        </Link>
         
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-6 text-sm">

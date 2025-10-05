@@ -153,7 +153,7 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
               </label>
             </div>
             {saving && (
-              <div className="mt-2 text-xs text-neutral-500">Wijziging wordt opgeslagen…</div>
+              <div className="mt-2 text-sm text-neutral-500">Wijziging wordt opgeslagen…</div>
             )}
           </div>
         )}

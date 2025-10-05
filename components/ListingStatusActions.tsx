@@ -55,7 +55,7 @@ export default function ListingStatusActions({
         type="button"
         disabled={isSold || loading !== null}
         onClick={() => setStatus(isPaused ? "active" : "paused", isPaused ? "actief" : "gepauzeerd")}
-        className={`text-xs px-3 py-1 rounded-full border transition ${
+        className={`text-sm px-3 py-1 rounded-full border transition ${
           isPaused
             ? "bg-emerald-50 text-emerald-700 border-emerald-200 hover:opacity-90"
             : "bg-amber-50 text-amber-700 border-amber-200 hover:opacity-90"
@@ -70,7 +70,7 @@ export default function ListingStatusActions({
         type="button"
         disabled={isSold || loading !== null}
         onClick={() => setStatus("sold", "verkocht")}
-        className="text-xs px-3 py-1 rounded-full border bg-rose-50 text-rose-700 border-rose-200 hover:opacity-90 disabled:opacity-50"
+        className="text-sm px-3 py-1 rounded-full border bg-rose-50 text-rose-700 border-rose-200 hover:opacity-90 disabled:opacity-50"
         aria-label="Markeer als verkocht"
       >
         {loading === "sold" ? "Bezig…" : isSold ? "Verkocht" : "Verkocht"}

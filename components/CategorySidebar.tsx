@@ -82,13 +82,13 @@ export default function CategorySidebar({ categories }: { categories: CategorySi
     buildAndNavigate(cat.slug, sub.slug);
   };
   return (
-  <aside ref={asideRef} className="bg-white border border-gray-200 rounded-xl shadow-sm p-5 h-fit relative">
+  <aside ref={asideRef} className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 h-fit relative">
       {isPending && (
         <div className="absolute inset-0 bg-white/60 flex items-center justify-center text-sm text-primary animate-pulse rounded-xl z-10">
           Laden…
         </div>
       )}
-  <h2 className="text-xl font-bold mb-4 text-primary">Categorieën</h2>
+  <h2 className="font-medium text-sm text-gray-700 mb-2">Categorieën</h2>
   <ul className="space-y-1">
         {categories.length === 0 ? (
           <li className="text-gray-400">Geen categorieën gevonden.</li>
@@ -96,8 +96,8 @@ export default function CategorySidebar({ categories }: { categories: CategorySi
           categories.map((cat) => (
             <li key={cat.id}>
               <button
-                className={`w-full text-left px-4 py-1.5 rounded-lg transition-colors duration-150 cursor-pointer text-base font-medium flex items-center focus:outline-none focus:ring-2 focus:ring-primary truncate ${
-                  cat.slug === activeCategorySlug ? "bg-primary text-white shadow" : "text-gray-800 hover:bg-primary/10"
+                className={`w-full text-left px-3 py-2 rounded-lg transition cursor-pointer text-sm flex items-center truncate ${
+                  cat.slug === activeCategorySlug ? "bg-primary text-black font-medium" : "text-gray-700 hover:bg-gray-50"
                 }`}
                 onClick={() => handleCategoryClick(cat)}
                 aria-expanded={openId === cat.id}
@@ -106,14 +106,14 @@ export default function CategorySidebar({ categories }: { categories: CategorySi
                 <span className="truncate">{cat.name}</span>
               </button>
               {openId === cat.id && cat.subcategories.length > 0 && (
-                <ul className="ml-3 mt-1 pl-3 border-l-2 border-primary/20 space-y-[2px]">
+                <ul className="ml-4 space-y-1 mt-1">
                   {cat.subcategories.map((sub) => (
                     <li key={sub.id}>
                       <button
-                        className={`block w-full text-left px-3 py-1 rounded-lg text-sm cursor-pointer transition-colors duration-150 truncate ${
+                        className={`w-full text-left px-3 py-2 rounded-lg text-sm cursor-pointer transition truncate ${
                           sub.slug === activeSubSlug
-                            ? "bg-primary/20 text-primary font-medium"
-                            : "text-gray-700 hover:bg-primary/20"
+                            ? "bg-primary text-black font-medium"
+                            : "text-gray-600 hover:bg-gray-50"
                         }`}
                         onClick={() => handleSubcategoryClick(cat, sub)}
                         aria-current={sub.slug === activeSubSlug ? "true" : undefined}

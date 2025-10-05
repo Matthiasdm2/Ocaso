@@ -3,19 +3,21 @@ import { NextResponse } from "next/server";
 
 import { supabaseServer } from "@/lib/supabaseServer";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   const supabase = supabaseServer();
 
   try {
     // Get trending shops using the database function
-    const { data, error } = await supabase.rpc('get_trending_shops_this_week');
+    const { data, error } = await supabase.rpc("get_trending_shops_this_week");
 
     if (error) {
-      console.error('Error fetching trending shops:', error);
+      console.error("Error fetching trending shops:", error);
       // Return empty array instead of error for now
-      return NextResponse.json({ shops: [] }, { headers: { "Cache-Control": "no-store" } });
+      return NextResponse.json({ shops: [] }, {
+        headers: { "Cache-Control": "no-store" },
+      });
     }
 
     // Transform the data to match the expected format
@@ -33,10 +35,14 @@ export async function GET() {
       view_count: shop.view_count,
     }));
 
-    return NextResponse.json({ shops }, { headers: { "Cache-Control": "no-store" } });
+    return NextResponse.json({ shops }, {
+      headers: { "Cache-Control": "no-store" },
+    });
   } catch (error) {
-    console.error('Unexpected error in trending shops API:', error);
+    console.error("Unexpected error in trending shops API:", error);
     // Return empty array instead of error
-    return NextResponse.json({ shops: [] }, { headers: { "Cache-Control": "no-store" } });
+    return NextResponse.json({ shops: [] }, {
+      headers: { "Cache-Control": "no-store" },
+    });
   }
 }

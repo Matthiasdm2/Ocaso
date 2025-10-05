@@ -77,7 +77,7 @@ export default function Footer() {
         </div>
       </div>
       <div className="border-t border-gray-100">
-        <div className="container py-4 text-xs text-gray-500 flex items-center justify-between">
+        <div className="container py-4 text-sm text-gray-500 flex items-center justify-between">
           <span>
             © {new Date().getFullYear()} OCASO. Alle rechten voorbehouden.
           </span>

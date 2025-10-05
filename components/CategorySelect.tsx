@@ -394,7 +394,7 @@ export default function CategorySelect({
     <div className="space-y-3">
   {/* Marktplaats-categorie */}
       <div className="relative">
-  <label className="text-xs font-medium text-gray-600">Marktplaats-categorie</label>
+  <label className="text-sm font-medium text-gray-600">Marktplaats-categorie</label>
         <div className="mt-1 relative">
           <input
             ref={catInputRef}
@@ -478,7 +478,7 @@ export default function CategorySelect({
 
   {/* Marktplaats-subcategorie */}
       <div className="relative">
-  <label className="text-xs font-medium text-gray-600">Marktplaats-subcategorie (optioneel)</label>
+  <label className="text-sm font-medium text-gray-600">Marktplaats-subcategorie (optioneel)</label>
         <div className="mt-1 relative">
           <input
             ref={subInputRef}

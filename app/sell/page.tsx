@@ -385,10 +385,10 @@ export default function SellPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-lg font-semibold">Plaats een zoekertje</h1>
-                <p className="text-xs text-gray-500 mt-1">Stap 1/2 — Gegevens</p>
+                <p className="text-sm text-gray-500 mt-1">Stap 1/2 — Gegevens</p>
               </div>
               {!userEmail && (
-                <span className="inline-flex items-center rounded-full bg-amber-50 text-amber-700 border border-amber-200 px-3 py-1 text-xs">
+                <span className="inline-flex items-center rounded-full bg-amber-50 text-amber-700 border border-amber-200 px-3 py-1 text-sm">
                   Inloggen vereist
                 </span>
               )}
@@ -399,7 +399,7 @@ export default function SellPage() {
           <section className="rounded-2xl border border-gray-200 bg-white/60 backdrop-blur-sm shadow-sm p-6 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-medium">Foto’s</h2>
-              <span className="text-xs text-gray-500">
+              <span className="text-sm text-gray-500">
                 {imageUrls.length}/{MAX_PHOTOS} geselecteerd
               </span>
             </div>
@@ -426,7 +426,7 @@ export default function SellPage() {
             )}
 
             {imageUrls.length < MIN_PHOTOS && (
-              <div className="text-xs text-amber-600">Voeg minstens {MIN_PHOTOS} duidelijke foto toe.</div>
+              <div className="text-sm text-amber-600">Voeg minstens {MIN_PHOTOS} duidelijke foto toe.</div>
             )}
           </section>
 
@@ -435,7 +435,7 @@ export default function SellPage() {
             <h2 className="text-sm font-medium">Basisgegevens</h2>
             <div className="grid md:grid-cols-2 gap-5">
               <div className="space-y-2">
-                <label className="text-xs font-medium text-gray-600">Titel</label>
+                <label className="text-sm font-medium text-gray-600">Titel</label>
                 <input
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
@@ -458,7 +458,7 @@ export default function SellPage() {
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-medium">Omschrijving</h2>
               <div className="flex items-center gap-2">
-                <button onClick={translate} type="button" className="rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs shadow-sm hover:bg-gray-50">
+                <button onClick={translate} type="button" className="rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-sm shadow-sm hover:bg-gray-50">
                   Vertaal naar FR/EN/DE
                 </button>
               </div>
@@ -477,7 +477,7 @@ export default function SellPage() {
             <h2 className="text-sm font-medium">Prijs & staat</h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5">
               <div className="space-y-2">
-                <label className="text-xs font-medium text-gray-600">Prijs (€)</label>
+                <label className="text-sm font-medium text-gray-600">Prijs (€)</label>
                 <input
                   type="text"
                   inputMode="decimal"
@@ -487,7 +487,7 @@ export default function SellPage() {
                   placeholder="0,00"
                 />
                 <div className="mt-3">
-                  <div className="flex items-center justify-between text-[11px]">
+                  <div className="flex items-center justify-between text-sm">
                     <span className="text-gray-600">Prijsanalyse</span>
                     <span className="font-medium">{ratingMeta(priceScore).label}</span>
                   </div>
@@ -501,7 +501,7 @@ export default function SellPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-medium text-gray-600">Voorraad</label>
+                <label className="text-sm font-medium text-gray-600">Voorraad</label>
                 <input
                   type="number"
                   min="1"
@@ -511,11 +511,11 @@ export default function SellPage() {
                   className="w-full rounded-2xl border border-gray-200 bg-white px-3 py-2.5 text-sm shadow-sm outline-none transition focus:border-gray-300 focus:ring-2 focus:ring-emerald-100"
                   placeholder="Aantal beschikbaar (bijv. 5)"
                 />
-                <p className="text-[10px] text-gray-500">Hoeveel stuks heb je beschikbaar voor verkoop?</p>
+                <p className="text-sm text-gray-500">Hoeveel stuks heb je beschikbaar voor verkoop?</p>
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-medium text-gray-600">Staat</label>
+                <label className="text-sm font-medium text-gray-600">Staat</label>
                 <select
                   value={condition}
                   onChange={(e) => setCondition(e.target.value)}
@@ -529,7 +529,7 @@ export default function SellPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-medium text-gray-600">Locatie</label>
+                <label className="text-sm font-medium text-gray-600">Locatie</label>
                 <input
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
@@ -546,7 +546,7 @@ export default function SellPage() {
             <Toggle checked={allowOffers} onChange={setAllowOffers} label="Bieden toestaan" />
             {allowOffers && (
               <div className="ml-6 mt-2 space-y-2">
-                <label className="text-xs font-medium text-gray-600">Minimum bod (optioneel)</label>
+                <label className="text-sm font-medium text-gray-600">Minimum bod (optioneel)</label>
                 <input
                   value={minBid}
                   onChange={(e) => setMinBid(e.target.value)}
@@ -580,7 +580,7 @@ export default function SellPage() {
             <div className="rounded-2xl border border-gray-200 bg-white/70 backdrop-blur-sm shadow-sm p-5">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-medium">Samenvatting</h3>
-                <span className="inline-flex items-center rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 text-[11px]">
+                <span className="inline-flex items-center rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 text-sm">
                   {ratingMeta(priceScore).label}
                 </span>
               </div>
@@ -624,14 +624,14 @@ export default function SellPage() {
               </div>
 
               {!userEmail && (
-                <p className="mt-3 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                <p className="mt-3 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
                   Je moet ingelogd zijn om te plaatsen.
                 </p>
               )}
             </div>
 
             {/* Tipkaart */}
-            <div className="rounded-2xl border border-gray-200 bg-white/70 backdrop-blur-sm shadow-sm p-4 text-xs text-gray-600">
+            <div className="rounded-2xl border border-gray-200 bg-white/70 backdrop-blur-sm shadow-sm p-4 text-sm text-gray-600">
               Tip: een duidelijke titel en 3+ foto’s vergroten je kans op verkoop.
             </div>
           </div>

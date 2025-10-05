@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabaseServer";
 import { supabaseServiceRole } from "@/lib/supabaseServiceRole";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 type UpsertPayload = Partial<{
   email: string | null;
@@ -24,14 +24,20 @@ export async function PUT(req: Request) {
   let { data: { user } } = await anon.auth.getUser();
   if (!user) {
     // Fallback: Authorization: Bearer <token>
-    const auth = req.headers.get('authorization');
-    const token = auth?.toLowerCase().startsWith('bearer ') ? auth.slice(7) : null;
+    const auth = req.headers.get("authorization");
+    const token = auth?.toLowerCase().startsWith("bearer ")
+      ? auth.slice(7)
+      : null;
     if (token) {
       const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
       const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
       const alt = createClient(url, anonKey, {
         global: { headers: { Authorization: `Bearer ${token}` } },
-        auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+          detectSessionInUrl: false,
+        },
       });
       const got = await alt.auth.getUser();
       if (got.data.user) {
@@ -44,17 +50,26 @@ export async function PUT(req: Request) {
   }
 
   let body: UpsertPayload = {};
-  try { body = await req.json() as UpsertPayload; } catch { /* ignore */ }
+  try {
+    body = await req.json() as UpsertPayload;
+  } catch { /* ignore */ }
 
   // Alleen toegestane kolommen; forceer id = auth.uid()
   const allowed: UpsertPayload & { id?: string } = {};
   const allowKeys = [
-    "email", "phone", "avatar_url", "bio",
-    "address", "bank", "preferences", "notifications", "full_name",
+    "email",
+    "phone",
+    "avatar_url",
+    "bio",
+    "address",
+    "bank",
+    "preferences",
+    "notifications",
+    "full_name",
   ] as const satisfies Readonly<Array<keyof UpsertPayload>>;
   function assign<K extends keyof UpsertPayload>(key: K) {
     const v = body[key];
-    if (typeof v !== 'undefined') {
+    if (typeof v !== "undefined") {
       allowed[key] = v;
     }
   }
@@ -63,13 +78,17 @@ export async function PUT(req: Request) {
 
   try {
     if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      return NextResponse.json({ error: 'service_role_missing' }, { status: 503 });
+      return NextResponse.json({ error: "service_role_missing" }, {
+        status: 503,
+      });
     }
     const service = supabaseServiceRole();
     const { data: upserted, error } = await service
       .from("profiles")
       .upsert(allowed)
-      .select("id, full_name, email, phone, avatar_url, bio, address, bank, preferences, notifications")
+      .select(
+        "id, full_name, email, phone, avatar_url, bio, address, bank, preferences, notifications",
+      )
       .single();
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 400 });
@@ -84,10 +103,14 @@ export async function PUT(req: Request) {
       .from("profiles")
       .update(allowed)
       .eq("id", user.id)
-      .select("id, full_name, email, phone, avatar_url, bio, address, bank, preferences, notifications")
+      .select(
+        "id, full_name, email, phone, avatar_url, bio, address, bank, preferences, notifications",
+      )
       .single();
     if (updErr) {
-      return NextResponse.json({ error: updErr.message || 'Kon profiel niet opslaan' }, { status: 400 });
+      return NextResponse.json({
+        error: updErr.message || "Kon profiel niet opslaan",
+      }, { status: 400 });
     }
     return NextResponse.json(
       { ok: true, profile: updated },

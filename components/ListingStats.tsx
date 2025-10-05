@@ -45,7 +45,7 @@ export default function ListingStats({ id, views = 0, favorites = 0 }: { id: str
     return () => { supabase.removeChannel(chan); };
   }, [id]);
   return (
-    <div className="flex items-center gap-2 text-xs text-white bg-black/40 backdrop-blur-sm rounded-md px-2 py-1">
+    <div className="flex items-center gap-2 text-sm text-white bg-black/40 backdrop-blur-sm rounded-md px-2 py-1">
       <div className="flex items-center gap-1">
         <Eye className="h-3 w-3 text-white" aria-hidden />
         <span data-testid={`listing-views-${id}`} aria-live="polite" className="min-w-[2ch]">

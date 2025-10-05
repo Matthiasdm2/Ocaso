@@ -4,6 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import CollapsibleContainer from "@/components/CollapsibleContainer";
+import ListingCard from "@/components/ListingCard";
 import { createClient } from "@/lib/supabaseClient";
 
 /* =================== Types =================== */
@@ -30,6 +32,17 @@ type Listing = {
   price?: number;
   imageUrl?: string | null;
   status?: string;
+};
+
+type Product = {
+  id: string;
+  title: string;
+  price?: number | null;
+  imageUrl?: string | null;
+  status?: string | null;
+  sellerId: string;
+  sellerName: string;
+  sellerCity: string;
 };
 
 type CategorySidebarCategory = {
@@ -59,10 +72,12 @@ export default function BusinessListClient({ categories }: { categories: Categor
   // Data
   const [data, setData] = useState<{
     businesses: Biz[];
+  products: Product[];
     cats: string[];
     cities: string[];
   }>({
     businesses: [],
+  products: [],
     cats: [],
     cities: [],
   });
@@ -88,14 +103,17 @@ export default function BusinessListClient({ categories }: { categories: Categor
       cache: "no-store",
     });
     const json = await res.json();
-    // Verrijk: shopName expliciet afleiden indien backend alleen 'name' geeft
-    const enriched: Biz[] = Array.isArray(json.businesses)
+    // Mode based mapping
+    const enrichedBusinesses: Biz[] = Array.isArray(json.businesses)
       ? (json.businesses as Partial<Biz>[]).map((b) => {
           const shopName = b.shopName || b.shop_name || b.company_name || b.full_name || b.name || null;
           return { ...(b as Biz), shopName };
         })
       : [];
-    setData({ ...json, businesses: enriched });
+    const products: Product[] = Array.isArray(json.products)
+      ? (json.products as Product[])
+      : [];
+    setData({ businesses: enrichedBusinesses, products, cats: json.cats || [], cities: json.cities || [] });
     setLoading(false);
   }, [searchCategory, q, selectedCategory, selectedSubcategory, selectedLocation]);
 
@@ -160,7 +178,8 @@ export default function BusinessListClient({ categories }: { categories: Categor
       if (json.query) setQ(json.query);
       setSearchCategory("product"); // Foto → product-zoek
       setData({
-        businesses: json.businesses || [],
+        businesses: Array.isArray(json.businesses) ? json.businesses : [],
+        products: Array.isArray(json.products) ? json.products : [],
         cats: json.cats || data.cats,
         cities: json.cities || data.cities,
       });
@@ -187,7 +206,7 @@ export default function BusinessListClient({ categories }: { categories: Categor
               (AI).
             </p>
           </div>
-          <div className="hidden lg:flex text-xs text-gray-500">
+          <div className="hidden lg:flex text-sm text-gray-500">
             Modus:&nbsp;
             <span className="font-medium">
               {searchCategory === "business" ? "Handelaars" : "Producten"}
@@ -259,10 +278,10 @@ export default function BusinessListClient({ categories }: { categories: Categor
       </section>
 
       {/* MAIN CONTENT: SIDEBAR + RESULTS */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* SIDEBAR: FILTERS */}
-        <aside className="lg:col-span-1">
-          <div className="card p-4 space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6">
+        {/* SIDEBAR: FILTERS - hidden on mobile */}
+        <div className="hidden md:block">
+          <aside className="card p-4 space-y-6">
             {/* Locatie filter */}
             <div className="space-y-2">
               <h3 className="font-medium text-sm text-gray-700">Locatie</h3>
@@ -357,70 +376,168 @@ export default function BusinessListClient({ categories }: { categories: Categor
                 Filters wissen
               </button>
             )}
-          </div>
-        </aside>
+          </aside>
+        </div>
 
         {/* RESULTS */}
-        <div className="lg:col-span-3">
+        <main className="md:col-span-3 space-y-4 pt-[2px]">
+          {/* Filters & Categories - visible on mobile/tablet */}
+          <div className="block md:hidden">
+            <CollapsibleContainer
+              title="Filters & Categorieën"
+              defaultOpenDesktop={false}
+              defaultOpenMobile={false}
+              elevation="flat"
+              className="relative"
+            >
+              <div className="-mt-1">
+                <div className="card p-4 space-y-6">
+                  {/* Locatie filter */}
+                  <div className="space-y-2">
+                    <h3 className="font-medium text-sm text-gray-700">Locatie</h3>
+                    <select
+                      value={selectedLocation}
+                      onChange={(e) => setSelectedLocation(e.target.value)}
+                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                    >
+                      <option value="">Alle locaties</option>
+                      {data.cities.map((city) => (
+                        <option key={city} value={city}>
+                          {city}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Categorieën */}
+                  <div className="space-y-2">
+                    <h3 className="font-medium text-sm text-gray-700">Categorieën</h3>
+                    <div className="space-y-1">
+                      <button
+                        onClick={() => {
+                          setSelectedCategory("");
+                          setSelectedSubcategory("");
+                        }}
+                        className={`w-full text-left px-3 py-2 rounded-lg text-sm transition ${
+                          selectedCategory === ""
+                            ? "bg-primary text-black font-medium"
+                            : "hover:bg-gray-50 text-gray-700"
+                        }`}
+                      >
+                        Alle categorieën
+                      </button>
+                      {categories.map((cat) => (
+                        <div key={cat.id} className="space-y-1">
+                          <button
+                            onClick={() => {
+                              setSelectedCategory(selectedCategory === cat.name ? "" : cat.name);
+                              setSelectedSubcategory("");
+                            }}
+                            className={`w-full text-left px-3 py-2 rounded-lg text-sm transition ${
+                              selectedCategory === cat.name
+                                ? "bg-primary text-black font-medium"
+                                : "hover:bg-gray-50 text-gray-700"
+                            }`}
+                          >
+                            {cat.name}
+                          </button>
+                          {selectedCategory === cat.name && cat.subcategories.length > 0 && (
+                            <div className="ml-4 space-y-1">
+                              <button
+                                onClick={() => setSelectedSubcategory("")}
+                                className={`w-full text-left px-3 py-2 rounded-lg text-sm transition ${
+                                  selectedSubcategory === ""
+                                    ? "bg-primary text-black font-medium"
+                                    : "hover:bg-gray-50 text-gray-600"
+                                }`}
+                              >
+                                Alle subcategorieën
+                              </button>
+                              {cat.subcategories.map((subcat) => (
+                                <button
+                                  key={subcat.id}
+                                  onClick={() => setSelectedSubcategory(selectedSubcategory === subcat.name ? "" : subcat.name)}
+                                  className={`w-full text-left px-3 py-2 rounded-lg text-sm transition ${
+                                    selectedSubcategory === subcat.name
+                                      ? "bg-primary text-black font-medium"
+                                      : "hover:bg-gray-50 text-gray-600"
+                                  }`}
+                                >
+                                  {subcat.name}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Filters wissen */}
+                  {(selectedCategory || selectedSubcategory || selectedLocation) && (
+                    <button
+                      onClick={() => {
+                        setSelectedCategory("");
+                        setSelectedSubcategory("");
+                        setSelectedLocation("");
+                      }}
+                      className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm hover:bg-gray-50"
+                    >
+                      Filters wissen
+                    </button>
+                  )}
+                </div>
+              </div>
+            </CollapsibleContainer>
+          </div>
           <section className="space-y-3">
             <div className="text-sm text-gray-600">
-              {loading ? "Laden…" : `${data.businesses.length} resultaten`}
+              {loading
+                ? "Laden…"
+                : searchCategory === "product"
+                ? `${data.products.length} producten`
+                : `${data.businesses.length} handelaars`}
             </div>
 
             {loading ? (
               <SkeletonGrid />
+            ) : searchCategory === "product" ? (
+              data.products.length === 0 ? (
+                <EmptyState mode={searchCategory} q={q} />
+              ) : (
+                <ul className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+                  {data.products.map((p) => (
+                    <li key={p.id}>
+                      <ProductCard product={p} />
+                    </li>
+                  ))}
+                </ul>
+              )
             ) : data.businesses.length === 0 ? (
               <EmptyState mode={searchCategory} q={q} />
             ) : (
-              <ul className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <ul className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
                 {data.businesses.map((b) => (
                   <li key={b.id}>
                     <BizCard biz={b} />
-                    {/* Listings aanbod */}
                     {Array.isArray(b.listings) && b.listings.length > 0 && (
                       <div className="mt-4">
                         <div className="font-medium mb-2 text-sm text-primary">Aanbod van deze handelaar:</div>
-                        <ul className="space-y-2">
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
                           {b.listings.map((l: Listing) => (
                             l.imageUrl ? (
-                              <li key={l.id}>
-                                <Link
-                                  href={`/listing/${l.id}`}
-                                  className="border rounded-lg p-3 bg-white flex items-center justify-between hover:border-primary/60 hover:shadow-sm transition group focus:outline-none focus:ring-2 focus:ring-primary/40"
-                                >
-                                  <div className="flex items-center gap-3">
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img
-                                      src={l.imageUrl}
-                                      alt="Hoofdafbeelding van zoekertje"
-                                      className="w-12 h-12 rounded object-cover border bg-white"
-                                    />
-                                    <div>
-                                      <div className="font-semibold group-hover:text-primary transition-colors">{l.title}</div>
-                                      <div className="text-xs text-gray-600">€ {l.price}</div>
-                                    </div>
-                                  </div>
-                                  <div className="text-primary text-sm font-medium flex items-center gap-1">
-                                    Bekijk
-                                    <svg
-                                      xmlns="http://www.w3.org/2000/svg"
-                                      viewBox="0 0 24 24"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      strokeWidth={2}
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      className="w-4 h-4"
-                                    >
-                                      <path d="M5 12h14" />
-                                      <path d="m13 6 6 6-6 6" />
-                                    </svg>
-                                  </div>
-                                </Link>
-                              </li>
+                              <ListingCard
+                                key={l.id}
+                                listing={{
+                                  id: l.id,
+                                  title: l.title,
+                                  price: l.price ?? 0,
+                                  images: [l.imageUrl],
+                                }}
+                              />
                             ) : null
                           ))}
-                        </ul>
+                        </div>
                       </div>
                     )}
                   </li>
@@ -428,7 +545,7 @@ export default function BusinessListClient({ categories }: { categories: Categor
               </ul>
             )}
           </section>
-        </div>
+        </main>
       </div>
     </div>
   );
@@ -488,8 +605,9 @@ function EmptyState({ mode, q }: { mode: "business" | "product"; q: string }) {
         {q ? (
           mode === "product" ? (
             <>
-              Geen handelaars gevonden die{" "}
-              <span className="font-medium">&quot;{q}&quot;</span> aanbieden.
+              Geen producten gevonden bij zakelijke verkopers{q ? (
+                <> voor <span className="font-medium">&quot;{q}&quot;</span></>
+              ) : null}.
             </>
           ) : (
             <>
@@ -542,7 +660,7 @@ function BizCard({ biz }: { biz: Biz }) {
             <h3 className="font-semibold text-neutral-900 line-clamp-2 text-sm mb-1">
               {biz.shopName || biz.name}
             </h3>
-            <p className="text-xs text-gray-600 truncate">
+            <p className="text-sm text-gray-600 truncate">
               {biz.city} • {biz.categories.join(", ")}
             </p>
           </div>
@@ -584,6 +702,35 @@ function BizCard({ biz }: { biz: Biz }) {
               </svg>
             </div>
           </div>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+function ProductCard({ product }: { product: Product }) {
+  return (
+    <Link
+      href={`/listings/${product.id}`}
+      className="group relative block rounded-2xl border bg-white shadow-sm transition hover:shadow-md border-neutral-200"
+    >
+      <div className="w-full aspect-square overflow-hidden bg-neutral-100 rounded-t-2xl">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={product.imageUrl || "/placeholder.png"}
+          alt={product.title}
+          className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+        />
+      </div>
+      <div className="p-4 space-y-1">
+        <div className="font-semibold text-neutral-900 line-clamp-2 text-sm">
+          {product.title}
+        </div>
+        <div className="text-sm text-gray-800">
+          {product.price != null ? `€ ${product.price}` : "Prijs op aanvraag"}
+        </div>
+        <div className="text-sm text-gray-500 truncate">
+          {product.sellerName} • {product.sellerCity}
         </div>
       </div>
     </Link>

@@ -112,7 +112,7 @@ export default async function PublicSellerProfile({ params }: { params: { id: st
                       <span className="text-neutral-500">({data.reviewsCount})</span>
                     </span>
                   ) : (
-                    <span className="text-xs text-neutral-500">Nog geen reviews</span>
+                    <span className="text-sm text-neutral-500">Nog geen reviews</span>
                   )}
                 </div>
               </div>
@@ -139,7 +139,7 @@ export default async function PublicSellerProfile({ params }: { params: { id: st
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={l.main_photo} alt={l.title || 'Zoekertje'} className="h-full w-full object-cover group-hover:scale-[1.03] transition" />
                       ) : (
-                        <div className="flex h-full w-full items-center justify-center text-neutral-400 text-xs">Geen afbeelding</div>
+                        <div className="flex h-full w-full items-center justify-center text-neutral-400 text-sm">Geen afbeelding</div>
                       )}
                     </div>
                     <div className="p-3 space-y-1">

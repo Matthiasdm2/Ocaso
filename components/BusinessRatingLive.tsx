@@ -41,7 +41,7 @@ export default function BusinessRatingLive({ businessId, initialRating = 0, init
 	}, [businessId, initialRating, initialCount]);
 
 	if (loading && !rating) {
-		return <span className={`inline-flex items-center gap-1 text-xs text-gray-400 ${className}`}>Laden…</span>;
+		return <span className={`inline-flex items-center gap-1 text-sm text-gray-400 ${className}`}>Laden…</span>;
 	}
 
 	if (compact) {

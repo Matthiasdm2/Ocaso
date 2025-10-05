@@ -139,7 +139,7 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
 				<div className="max-w-lg mx-auto text-center space-y-4">
 					<div className="text-2xl font-semibold text-gray-800">Profiel niet gevonden</div>
 					<p className="text-sm text-gray-500">ID/Slug: {rawParam}</p>
-					<p className="text-xs text-red-600">{profileError?.message}</p>
+					<p className="text-sm text-red-600">{profileError?.message}</p>
 					<a href="/explore" className="btn btn-sm inline-block">Terug naar overzicht</a>
 				</div>
 			</div>
@@ -177,12 +177,12 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
 										<h1 className="text-3xl font-bold tracking-tight text-gray-900">{displayName}</h1>
 										<div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
 											{profile.company_name && <span className="font-medium">{profile.company_name}</span>}
-											{profile.vat && <span className="rounded bg-emerald-50 text-emerald-700 px-2 py-0.5 text-xs border border-emerald-100">BTW: {profile.vat}</span>}
+											{profile.vat && <span className="rounded bg-emerald-50 text-emerald-700 px-2 py-0.5 text-sm border border-emerald-100">BTW: {profile.vat}</span>}
 											{avgRating > 0 && (<BusinessRatingBadge initialAvg={avgRating} initialCount={reviews.length} />)}
 										</div>
 										{isVerified && <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-medium shadow-sm w-fit">Vertrouwd</span>}
 									</div>
-									<div className="flex flex-wrap gap-2 text-xs">
+									<div className="flex flex-wrap gap-2 text-sm">
 										{profile.website && <a className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white border text-gray-700 hover:bg-emerald-50 transition" href={profile.website} target="_blank" rel="noopener">Website</a>}
 										{profile.social_instagram && <a className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white border text-gray-700 hover:bg-pink-50 transition" href={profile.social_instagram} target="_blank" rel="noopener">Instagram</a>}
 										{profile.social_facebook && <a className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white border text-gray-700 hover:bg-blue-50 transition" href={profile.social_facebook} target="_blank" rel="noopener">Facebook</a>}
@@ -193,7 +193,7 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
 							<div className="flex md:flex-col gap-4 md:items-end">
 								<div className="rounded-lg bg-white border shadow-sm px-4 py-3 flex items-center gap-3">
 									<div>
-										<div className="text-xs text-gray-500">Zoekertjes</div>
+										<div className="text-sm text-gray-500">Zoekertjes</div>
 										<div className="text-lg font-semibold">{Array.isArray(listings) ? listings.length : 0}</div>
 									</div>
 								</div>
@@ -217,7 +217,7 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
 						<div className="flex items-center justify-between">
 							<h2 className="text-xl font-semibold">Aanbod</h2>
 							{Array.isArray(listings) && listings.length > 0 && (
-								<span className="text-xs px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">{listings.length} actief</span>
+								<span className="text-sm px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">{listings.length} actief</span>
 							)}
 						</div>
 						{Array.isArray(listings) && listings.length > 0 && (
@@ -264,13 +264,13 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
 							<div className="card p-5 text-sm text-gray-600 space-y-2">
 							{profile.public_show_email && profile.invoice_email && (
 								<div>
-									<div className="text-xs text-gray-400">E-mail</div>
+									<div className="text-sm text-gray-400">E-mail</div>
 									<a href={`mailto:${profile.invoice_email}`} className="text-emerald-700 hover:underline break-all">{profile.invoice_email}</a>
 								</div>
 							)}
 							{profile.public_show_phone && profile.address && (
 								<div>
-									<div className="text-xs text-gray-400">Adres</div>
+									<div className="text-sm text-gray-400">Adres</div>
 									<div className="whitespace-pre-line">
 										{typeof profile.address === 'object' && profile.address
 											? `${profile.address.street || ''} ${profile.address.zip || ''} ${profile.address.city || ''}, ${profile.address.country || ''}`.trim()
@@ -279,7 +279,7 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
 								</div>
 							)}
 							{(!profile.public_show_email && !profile.public_show_phone) && (
-								<div className="text-xs text-gray-400">Contactgegevens afgeschermd</div>
+								<div className="text-sm text-gray-400">Contactgegevens afgeschermd</div>
 							)}
 						</div>
 					</section>

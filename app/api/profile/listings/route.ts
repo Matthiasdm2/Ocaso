@@ -1,3 +1,4 @@
+export const runtime = 'nodejs';
 // app/api/profile/listings/route.ts
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { createClient } from "@supabase/supabase-js";

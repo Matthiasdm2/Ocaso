@@ -1,10 +1,11 @@
+export const runtime = 'nodejs';
 import { NextResponse } from "next/server";
 
-import { supabase } from "@/lib/supabaseClient";
-// relatieve import voorkomt alias-issues
+import { supabaseServer } from "@/lib/supabaseServer";
 
 export async function GET() {
   try {
+  const supabase = supabaseServer();
     // 1) Publiek leesrecht testen
     const p = await supabase.from("profiles").select("id").limit(1);
     if (p.error) throw new Error(`profiles: ${p.error.message}`);

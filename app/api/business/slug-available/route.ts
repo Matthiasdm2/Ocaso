@@ -1,6 +1,7 @@
+export const runtime = 'nodejs';
 import { NextResponse } from 'next/server';
 
-import { createClient } from '@/lib/supabaseClient';
+import { supabaseServer } from '@/lib/supabaseServer';
 
 // Controleer of een shop_slug nog vrij is
 export async function GET(req: Request) {
@@ -9,7 +10,7 @@ export async function GET(req: Request) {
     const slug = (searchParams.get('slug') || '').trim().toLowerCase();
     if (!slug) return NextResponse.json({ available: false, reason: 'empty' }, { status: 400 });
 
-    const supabase = createClient();
+  const supabase = supabaseServer();
     const { data, error } = await supabase
       .from('profiles')
       .select('id')

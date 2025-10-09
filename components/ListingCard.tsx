@@ -21,7 +21,7 @@ function toCurrency(value: number | string, locale = "nl-BE", currency = "EUR") 
   return new Intl.NumberFormat(locale, { style: "currency", currency }).format(n);
 }
 
-export default function ListingCard({ listing, item, reviewAvg, reviewCount, compact = false, businessHighlight = false }: { listing?: Listing; item?: Listing; reviewAvg?: number; reviewCount?: number; compact?: boolean; businessHighlight?: boolean }) {
+export default function ListingCard({ listing, item, reviewAvg, reviewCount, compact = false, businessHighlight = false, noClampTitle = false }: { listing?: Listing; item?: Listing; reviewAvg?: number; reviewCount?: number; compact?: boolean; businessHighlight?: boolean; noClampTitle?: boolean }) {
   const listingData = listing ?? item!;
   const firstImage =
     Array.isArray(listingData.images) && listingData.images.length > 0
@@ -66,7 +66,11 @@ export default function ListingCard({ listing, item, reviewAvg, reviewCount, com
         compact ? "p-2.5" : "p-4 md:p-3"
       ].join(" ")}>
         <div className="min-w-0 flex-1">
-          <h3 className={["font-medium text-neutral-900 mb-1 line-clamp-2", compact ? "text-[11px] leading-tight" : "text-base md:text-sm leading-tight"].join(" ") }>
+          <h3 className={[
+            "font-medium text-neutral-900 mb-1",
+            compact ? "text-[11px] leading-tight" : "text-base md:text-sm leading-tight",
+            noClampTitle ? "" : "line-clamp-2"
+          ].join(" ") }>
             {listingData.title}
           </h3>
           {!compact && typeof reviewAvg === 'number' && reviewCount && reviewCount > 0 && (

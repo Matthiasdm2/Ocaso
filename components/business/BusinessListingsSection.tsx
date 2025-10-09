@@ -152,7 +152,7 @@ export default function BusinessListingsSection({ listings, title = "Aanbod" }: 
       {filtered.length === 0 ? (
         <div className="text-sm text-neutral-500">Geen resultaten.</div>
       ) : (
-        <ul className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        <ul className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3">
           {filtered.map(l => (
             <li key={l.id}><ListingCard listing={{ id:l.id, title:l.title, price:l.price, images:l.images, created_at:l.created_at, views:l.views, favorites:l.favorites }} /></li>
           ))}

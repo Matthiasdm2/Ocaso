@@ -505,10 +505,18 @@ export default function BusinessListClient({ categories }: { categories: Categor
               data.products.length === 0 ? (
                 <EmptyState mode={searchCategory} q={q} />
               ) : (
-                <ul className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+    <ul className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
                   {data.products.map((p) => (
                     <li key={p.id}>
-                      <ProductCard product={p} />
+                      <ListingCard
+                        listing={{
+                          id: p.id,
+                          title: p.title,
+                          price: p.price ?? 0,
+                          images: p.imageUrl ? [p.imageUrl] : undefined,
+      }}
+      noClampTitle
+                      />
                     </li>
                   ))}
                 </ul>
@@ -523,7 +531,7 @@ export default function BusinessListClient({ categories }: { categories: Categor
                     {Array.isArray(b.listings) && b.listings.length > 0 && (
                       <div className="mt-4">
                         <div className="font-medium mb-2 text-sm text-primary">Aanbod van deze handelaar:</div>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3">
                           {b.listings.map((l: Listing) => (
                             l.imageUrl ? (
                               <ListingCard
@@ -702,35 +710,6 @@ function BizCard({ biz }: { biz: Biz }) {
               </svg>
             </div>
           </div>
-        </div>
-      </div>
-    </Link>
-  );
-}
-
-function ProductCard({ product }: { product: Product }) {
-  return (
-    <Link
-      href={`/listings/${product.id}`}
-      className="group relative block rounded-2xl border bg-white shadow-sm transition hover:shadow-md border-neutral-200"
-    >
-      <div className="w-full aspect-square overflow-hidden bg-neutral-100 rounded-t-2xl">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={product.imageUrl || "/placeholder.png"}
-          alt={product.title}
-          className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
-        />
-      </div>
-      <div className="p-4 space-y-1">
-        <div className="font-semibold text-neutral-900 line-clamp-2 text-sm">
-          {product.title}
-        </div>
-        <div className="text-sm text-gray-800">
-          {product.price != null ? `€ ${product.price}` : "Prijs op aanvraag"}
-        </div>
-        <div className="text-sm text-gray-500 truncate">
-          {product.sellerName} • {product.sellerCity}
         </div>
       </div>
     </Link>

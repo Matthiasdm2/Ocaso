@@ -89,6 +89,17 @@ export default function CategorySidebar({ categories }: { categories: CategorySi
         </div>
       )}
   <h2 className="font-medium text-sm text-gray-700 mb-2">Categorieën</h2>
+  <button
+    className={`w-full text-left px-3 py-2 rounded-lg transition cursor-pointer text-sm truncate mb-2 ${
+      !activeCategorySlug && !activeSubSlug ? "bg-primary text-black font-medium" : "text-gray-700 hover:bg-gray-50"
+    }`}
+    onClick={() => {
+      setOpenId(null);
+      buildAndNavigate(undefined, undefined);
+    }}
+  >
+    Alle categorieën
+  </button>
   <ul className="space-y-1">
         {categories.length === 0 ? (
           <li className="text-gray-400">Geen categorieën gevonden.</li>

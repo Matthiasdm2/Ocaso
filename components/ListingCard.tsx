@@ -2,7 +2,7 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 
-const ListingCardStats = dynamic(() => import("./ListingCardStats"), { ssr: false });
+const ListingCardStats = dynamic(() => import("@/components/ListingCardStats"), { ssr: false, loading: () => null });
 
 type Listing = {
   id: string;

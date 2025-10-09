@@ -18,7 +18,9 @@ export default function SearchHeader({ total }: { total: number }) {
     const next = new URLSearchParams(params.toString());
     if (term) next.set("q", term); else next.delete("q");
     // Reset paging if later added
-    next.delete("page");
+  next.delete("page");
+  // Ensure visual-search ids don't stick when doing a new text search
+  next.delete("ids");
     router.push(`/search?${next.toString()}`);
   }
 

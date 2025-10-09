@@ -1,5 +1,6 @@
 'use client';
 
+import { useSearchParams } from 'next/navigation';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import KycForm from '@/components/KycForm';
@@ -84,6 +85,30 @@ export default function BusinessProfilePage() {
     status: 'not_onboarded' | 'incomplete' | 'pending' | 'approved' | 'rejected';
     message: string;
   } | null>(null);
+
+  const searchParams = useSearchParams();
+  const openSection = searchParams.get('open');
+  console.log('openSection:', openSection);
+
+  // Scroll to section if specified
+  useEffect(() => {
+    if (openSection === 'betaalterminal') {
+      // Small delay to ensure the component is rendered and expanded
+      setTimeout(() => {
+        const element = document.getElementById('betaalterminal');
+        console.log('Scrolling to betaalterminal, element found:', element);
+        if (element) {
+          const rect = element.getBoundingClientRect();
+          const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+          const top = rect.top + scrollTop - 100; // 100px offset from top
+          window.scrollTo({ top, behavior: 'smooth' });
+          console.log('Scrolled to top:', top);
+        } else {
+          console.log('Element not found');
+        }
+      }, 500); // Increased delay
+    }
+  }, [openSection]);
 
   // Houd profiel's billingCycle in sync wanneer profiel geladen wordt
   useEffect(() => {
@@ -709,9 +734,11 @@ export default function BusinessProfilePage() {
 
             {/* Eigen betaalterminal (Stripe onboarding) */}
             <Section
+              id="betaalterminal"
               overline="Betalingen"
               title="Eigen betaalterminal"
               subtitle="Registreer je als verkoper om betalingen veilig via je eigen betaalterminal te ontvangen."
+              defaultCollapsed={openSection !== 'betaalterminal'}
             >
               <div className="rounded-lg border bg-white p-4">
                 <p className="text-sm text-neutral-700 mb-3">Wil je dat kopers via je eigen betaalterminal kunnen betalen? Registreer je verkopersaccount bij onze betalingsprovider.</p>
@@ -947,12 +974,12 @@ export default function BusinessProfilePage() {
 
 /* --------------------------------- atoms --------------------------------- */
 function Section({
-  overline, title, subtitle, children, collapsible = true, defaultCollapsed = true,
-}: { overline?: string; title: string; subtitle?: string; children: React.ReactNode; collapsible?: boolean; defaultCollapsed?: boolean }) {
+  overline, title, subtitle, children, collapsible = true, defaultCollapsed = true, id,
+}: { overline?: string; title: string; subtitle?: string; children: React.ReactNode; collapsible?: boolean; defaultCollapsed?: boolean; id?: string }) {
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
   function toggle() { if (!collapsible) return; setCollapsed(c => !c); }
   return (
-    <section className="rounded-2xl border bg-white shadow-sm">
+    <section id={id} className="rounded-2xl border bg-white shadow-sm">
       <div className="p-6 pb-4">
         <button
           type="button"

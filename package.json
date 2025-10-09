@@ -16,6 +16,7 @@
     "\"format:check\"": "prettier --check ."
   },
   "dependencies": {
+  "@xenova/transformers": "^2.14.0",
     "@stripe/react-stripe-js": "^4.0.2",
     "@stripe/stripe-js": "^7.9.0",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
@@ -37,6 +38,8 @@
     "react-easy-crop": "^5.5.0",
     "react-leaflet": "^4.2.1",
     "stripe": "^18.5.0",
+  "sharp": "^0.33.5",
+    "tesseract.js": "^6.0.1",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {

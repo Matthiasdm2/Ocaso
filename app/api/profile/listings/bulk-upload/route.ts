@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
 // Local
+import { computeAHash64 } from '@/lib/imageHash';
 import { supabaseServer } from '@/lib/supabaseServer';
 // XLSX is optional; prefer CSV parsing fallback to avoid adding a native dependency.
 
@@ -142,6 +143,64 @@ export async function POST(req: Request) {
 
   // inserted may be an object with id property
   const insertedId = (inserted && (inserted as Record<string, unknown>)['id']) || null;
+  // Index image hashes for instant visual search (best-effort)
+  try {
+    const listingId = String(insertedId || '');
+    const images = (insertPayload['images'] as string[] | undefined) || [];
+    const urls = Array.isArray(images) ? images.filter((u) => typeof u === 'string' && !!u) : [];
+    if (listingId && urls.length > 0) {
+      // Helper: fetch image into buffer with timeout
+      const fetchImageBuffer = async (url: string, timeoutMs = 4000, maxBytes = 4_000_000): Promise<Buffer | null> => {
+        try {
+          const controller = new AbortController();
+          const t = setTimeout(() => controller.abort(), timeoutMs);
+          const res = await fetch(url, { signal: controller.signal });
+          clearTimeout(t);
+          if (!res.ok) return null;
+          const cl = res.headers.get('content-length');
+          if (cl && parseInt(cl, 10) > maxBytes) return null;
+          const ab = await res.arrayBuffer();
+          if (ab.byteLength > maxBytes) return null;
+          return Buffer.from(ab);
+        } catch {
+          return null;
+        }
+      };
+      for (const url of urls) {
+        const buf = await fetchImageBuffer(url);
+        if (!buf) continue;
+        try {
+          const hash = await computeAHash64(buf);
+          await supabase
+            .from('listing_image_hashes')
+            .upsert({ listing_id: listingId, image_url: url, ahash_64: hash }, { onConflict: 'listing_id,image_url' });
+        } catch {
+          // ignore
+        }
+      }
+
+      // Index first image to ANN service for visual search
+      try {
+        const imgUrl = urls[0];
+        const buf = await fetchImageBuffer(imgUrl);
+        if (buf) {
+          const svcIndex = process.env.IMAGE_SEARCH_INDEX_URL
+            || (process.env.IMAGE_SEARCH_URL ? String(process.env.IMAGE_SEARCH_URL).replace('/search', '/index') : '')
+            || 'http://localhost:9000/index';
+          const fd = new FormData();
+          fd.append('listing_id', listingId);
+          fd.append('image_url', imgUrl);
+          fd.append('file', new Blob([new Uint8Array(buf)]), 'image.jpg');
+          await fetch(svcIndex, { method: 'POST', body: fd });
+        }
+      } catch {
+        // best-effort
+      }
+    }
+  } catch {
+    // best-effort; do not fail upload on hashing issues
+  }
+
   results.push({ row: rowNum, ok: true, listingId: insertedId ? String(insertedId) : undefined });
       } catch (e: unknown) {
         const msg = safeErrMessage(e);

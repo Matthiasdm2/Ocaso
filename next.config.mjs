@@ -13,6 +13,14 @@ const nextConfig = {
   },
   experimental: {
     optimizeCss: true,
+    // Allow native/node packages to be loaded at runtime in server components/routes
+    serverComponentsExternalPackages: ['sharp', '@xenova/transformers'],
+  },
+  webpack: (config) => {
+    // Ensure sharp is treated as external (server runtime will resolve it)
+    config.externals = config.externals || [];
+    config.externals.push({ sharp: 'commonjs sharp' });
+    return config;
   },
 };
 export default nextConfig;

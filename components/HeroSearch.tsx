@@ -3,7 +3,7 @@ import { Camera, Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
-import { useToast } from "./Toast";
+import ImageSearchModal from "./ImageSearchModal";
 
 const MOCK = [
   "iPhone 13",
@@ -17,7 +17,7 @@ const MOCK = [
 export default function HeroSearch({ noContainer = false }: { noContainer?: boolean }) {
   const [q, setQ] = useState("");
   const [show, setShow] = useState(false);
-  const { push } = useToast();
+  const [showImageSearch, setShowImageSearch] = useState(false);
   const router = useRouter();
   const results = useMemo(
     () =>
@@ -73,7 +73,7 @@ export default function HeroSearch({ noContainer = false }: { noContainer?: bool
             </label>
           </form>
           <button
-            onClick={() => push("Foto-zoek (AI) demo — nog te koppelen.")}
+            onClick={() => setShowImageSearch(true)}
             className="rounded-xl border border-gray-200 px-4 py-3 flex items-center justify-center gap-2 hover:bg-gray-50 min-h-[44px] text-base font-medium"
           >
             <Camera className="size-5" /> Zoek op foto (AI)
@@ -103,6 +103,11 @@ export default function HeroSearch({ noContainer = false }: { noContainer?: bool
           )}
         </div>
       </div>
+
+      <ImageSearchModal
+        isOpen={showImageSearch}
+        onClose={() => setShowImageSearch(false)}
+      />
     </section>
   );
 }

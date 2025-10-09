@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import CategorySelect from "@/components/CategorySelect";
+import ConfirmModal from "@/components/ConfirmModal";
 import ImagePreviewSlider from "@/components/ImagePreviewSlider";
 import PhotoUploader from "@/components/PhotoUploader";
 import PreviewModal from "@/components/PreviewModal";
@@ -90,6 +91,9 @@ export default function SellPage() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [isBusiness, setIsBusiness] = useState<boolean>(false);
+  const [kycApproved, setKycApproved] = useState<boolean>(false);
+  const [showKycModal, setShowKycModal] = useState<boolean>(false);
 
   // Prijsanalyse
   const [priceScore, setPriceScore] = useState<number | null>(null);
@@ -126,9 +130,93 @@ export default function SellPage() {
       .catch(() => setUserEmail(null));
   }, []);
 
+  // Check if user is business and has approved KYC
+  useEffect(() => {
+    const checkBusinessAndKycStatus = async () => {
+      if (!userEmail) return; // Wacht tot gebruiker is opgehaald
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("id, account_type, stripe_account_id")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (profileError) {
+        console.error('Profile fetch error:', profileError);
+        setIsBusiness(false);
+        setKycApproved(false);
+        return;
+      }
+
+      if (!profile) {
+        console.log('No profile found for user:', user.id);
+        setIsBusiness(false);
+        setKycApproved(false);
+        return;
+      }
+
+      const business =
+        (profile.account_type && (
+          String(profile.account_type).toLowerCase().includes("business") ||
+          String(profile.account_type).toLowerCase().includes("zakelijk") ||
+          String(profile.account_type).toLowerCase().includes("company")
+        )) ||
+        !!profile.stripe_account_id; // Als Stripe account bestaat, beschouw als business
+
+      let kycApproved = false;
+      if (business && profile.stripe_account_id) {
+        try {
+          // Check KYC status via API
+          const response = await fetch('/api/stripe/custom/status', {
+            headers: {
+              'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+            },
+          });
+          if (response.ok) {
+            const statusData = await response.json();
+            kycApproved = statusData.status === 'approved';
+            console.log('KYC status response:', statusData);
+          } else {
+            console.log('KYC status fetch failed:', response.status);
+          }
+        } catch (error) {
+          console.warn('Failed to check KYC status:', error);
+        }
+      } else {
+        console.log('Not checking KYC because:', { business, hasStripeId: !!profile.stripe_account_id });
+      }
+
+      console.log('Business and KYC check:', { profile: { id: profile.id, account_type: profile.account_type, stripe_account_id: profile.stripe_account_id }, business, kycApproved });
+      setIsBusiness(business);
+      setKycApproved(kycApproved);
+      // Als gebruiker niet zakelijk is of KYC niet approved, zet veilig betalen uit
+      if (!business || !kycApproved) {
+        setAllowSecurePay(false);
+      }
+    };
+
+    checkBusinessAndKycStatus();
+  }, [userEmail]);
+
   const translate = () => {
     push("Automatische vertaling toegevoegd.");
     setDesc((d) => d + "\n\nFR: Description automatique\nEN: Automatic description\nDE: Automatische Beschrijving");
+  };
+
+  const handleSecurePayToggle = (value: boolean) => {
+    console.log('Secure pay toggle:', { value, isBusiness, kycApproved, userEmail });
+    if (value && (!isBusiness || !kycApproved)) {
+      console.log('Showing modal because:', { notBusiness: !isBusiness, notKycApproved: !kycApproved });
+      // Probeert in te schakelen maar niet zakelijk of KYC niet approved
+      setShowKycModal(true);
+    } else {
+      console.log('Setting allowSecurePay to:', value);
+      // Normaal gedrag
+      setAllowSecurePay(value);
+    }
   };
 
   // ---------- Validatie & upload helpers ----------
@@ -239,11 +327,6 @@ export default function SellPage() {
       if (!isFinite(priceNum) || priceNum <= 0) { push("Vul een geldige prijs in."); return; }
       if (stock < 1) { push("Voorraad moet minimaal 1 zijn."); return; }
       if (!category) { push("Kies een categorie."); return; }
-      if (allowOffers && minBid.trim()) {
-        const minBidNum = parsePrice(minBid);
-        if (!isFinite(minBidNum) || minBidNum < 0) { push("Minimum bod is ongeldig."); return; }
-        if (minBidNum >= priceNum) { push("Minimum bod moet kleiner zijn dan de prijs."); return; }
-      }
 
       // Auth
       const { data: { user }, error: userErr } = await supabase.auth.getUser();
@@ -251,20 +334,48 @@ export default function SellPage() {
 
       if (imageUrls.length < MIN_PHOTOS) { push(`Upload minstens ${MIN_PHOTOS} foto.`); return; }
 
-      // Zakelijk profiel ophalen
       const { data: profile } = await supabase
         .from("profiles")
-        .select("id, account_type, organization_id, business_id, company_id, company_slug, org_slug, business_slug")
+        .select("id, account_type, company_slug, org_slug, business_slug, stripe_account_id")
         .eq("id", user.id)
         .maybeSingle();
 
       const isBusiness =
-        (profile?.account_type && String(profile.account_type).toLowerCase().includes("business")) ||
-        (profile?.account_type && String(profile.account_type).toLowerCase().includes("zakelijk")) ||
-        (!!profile?.organization_id || !!profile?.business_id || !!profile?.company_id);
+        (profile?.account_type && (
+          String(profile.account_type).toLowerCase().includes("business") ||
+          String(profile.account_type).toLowerCase().includes("zakelijk") ||
+          String(profile.account_type).toLowerCase().includes("company")
+        )) ||
+        !!profile?.stripe_account_id; // Als Stripe account bestaat, beschouw als business
 
-      const orgId =
-        profile?.organization_id ?? profile?.business_id ?? profile?.company_id ?? null;
+      // Check KYC status voor zakelijke accounts
+      let kycApproved = false;
+      if (isBusiness && profile?.stripe_account_id) {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          const authToken = session?.access_token;
+          if (authToken) {
+            const response = await fetch('/api/stripe/custom/status', {
+              headers: { 'Authorization': `Bearer ${authToken}` },
+            });
+            if (response.ok) {
+              const statusData = await response.json();
+              kycApproved = statusData.status === 'approved';
+            }
+          }
+        } catch (error) {
+          console.warn('Failed to check KYC status:', error);
+        }
+      }
+
+      const hasSecurePayPermission = isBusiness && kycApproved;
+
+      if (allowSecurePay && !hasSecurePayPermission) {
+        push("Veilig betalen is alleen beschikbaar voor goedgekeurde zakelijke verkopers met volledige KYC verificatie.");
+        return;
+      }
+
+      const orgId = null;
 
       const orgSlug =
         profile?.org_slug ?? profile?.business_slug ?? profile?.company_slug ?? (orgId ? String(orgId) : null);
@@ -319,7 +430,7 @@ export default function SellPage() {
     images: imageUrls,
     main_photo,
     min_bid: minBid ? parsePrice(minBid) : null,
-    secure_pay: !!allowSecurePay,
+    secure_pay: !!allowSecurePay && hasSecurePayPermission,
     categories: categoriesPayload,
     status: "active", // Zorg dat elk nieuw zoekertje actief is
     stock: stock,
@@ -555,7 +666,7 @@ export default function SellPage() {
                 />
               </div>
             )}
-            <Toggle checked={allowSecurePay} onChange={setAllowSecurePay} label="Veilig betalen via OCASO (3% transactiekosten)" />
+            {userEmail && <Toggle checked={allowSecurePay} onChange={handleSecurePayToggle} label="Veilig betalen via OCASO (3% transactiekosten)" />}
             <Toggle checked={allowShipping} onChange={setAllowShipping} label="Verzenden via OCASO (6,00€)" />
             {allowShipping && (
               <div className="mt-2">
@@ -639,6 +750,23 @@ export default function SellPage() {
       </div>
 
       <PreviewModal open={openPreview} onClose={() => setOpenPreview(false)} data={previewData} />
+
+      <ConfirmModal
+        open={showKycModal}
+        onClose={() => setShowKycModal(false)}
+        onConfirm={() => {
+          // Redirect naar business tab voor KYC of upgrade
+          router.push('/profile/business?open=betaalterminal');
+        }}
+        title={!isBusiness ? "Zakelijk account vereist" : "KYC verificatie vereist"}
+        message={!isBusiness
+          ? "Veilig betalen is alleen beschikbaar voor zakelijke verkopers. Upgrade naar een zakelijk account om deze functie te gebruiken."
+          : "Om veilig betalen te kunnen gebruiken, moet je KYC verificatie eerst afronden. Ga naar je bedrijfsprofiel om dit te voltooien."
+        }
+        confirmText={!isBusiness ? "Naar account instellingen" : "Naar KYC"}
+        cancelText="Annuleren"
+        confirmButtonClass="bg-primary hover:bg-primary/80 text-black"
+      />
     </div>
   );
 }

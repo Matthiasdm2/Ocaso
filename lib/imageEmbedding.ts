@@ -30,9 +30,9 @@ export async function computeImageEmbedding(buffer: Buffer): Promise<number[]> {
   // Lazy import to avoid bundling in edge/client
   if (!cachedExtractor) {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-expect-error types not available at build time in this environment
+    // @ts-ignore types not available at build time in this environment
     const { pipeline } = await import('@xenova/transformers');
-    cachedExtractor = (await pipeline('feature-extraction', 'Xenova/clip-vit-base-patch32')) as FeatureExtractor;
+  cachedExtractor = (await pipeline('feature-extraction', 'Xenova/clip-vit-base-patch32')) as unknown as FeatureExtractor;
   }
   const extractor = cachedExtractor;
   const features = await extractor(img, { pooling: 'mean', normalize: true });

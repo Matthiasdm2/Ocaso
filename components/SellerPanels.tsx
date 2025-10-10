@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import Avatar from "@/components/Avatar";
 import RatingStars from "@/components/RatingStars";
+import Tooltip from "@/components/Tooltip";
 import { createClient } from '@/lib/supabaseClient';
 import { useProfile } from '@/lib/useProfile';
 
@@ -29,6 +30,7 @@ type Seller = {
   seller_sales_count?: number | null;
   seller_is_business?: boolean | null;
   seller_is_verified?: boolean | null;
+  seller_vat?: string | null;
   seller_review_count?: number | null;
 };
 
@@ -74,7 +76,7 @@ export default function SellerPanels({
   const rating = seller.rating ?? seller.seller_rating ?? null;
   const reviewCount = seller.seller_review_count ?? null;
   const sales = seller.salesCount ?? seller.seller_sales_count ?? null;
-  const isBusiness = !!(seller.isBusiness ?? seller.seller_is_business);
+  const isBusiness = !!(seller.isBusiness ?? seller.seller_is_business) && !!(seller.seller_vat);
   const isVerified = !!(seller.isVerified ?? seller.seller_is_verified);
   const [responseMins, setResponseMins] = useState<number | null | undefined>(seller.responseMins ?? null);
   const [loadingResp, setLoadingResp] = useState(false);
@@ -212,14 +214,18 @@ export default function SellerPanels({
                 <h3 className="font-semibold text-lg leading-tight truncate max-w-full">{name}</h3>
               )}
               {isBusiness && (
-                <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium shadow-sm">
-                  Bedrijf
-                </span>
+                <Tooltip content="Geregistreerde onderneming met geldig BTW-nummer">
+                  <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium shadow-sm cursor-help">
+                    Bedrijf
+                  </span>
+                </Tooltip>
               )}
               {isVerified && (
-                <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-medium shadow-sm">
-                  Vertrouwd
-                </span>
+                <Tooltip content="Geverifieerde gebruiker en ondersteunt betaling via een eigen betaalterminal">
+                  <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-medium shadow-sm cursor-help">
+                    Vertrouwd
+                  </span>
+                </Tooltip>
               )}
             </div>
             <div className="flex items-center gap-2 flex-wrap text-sm text-gray-600">

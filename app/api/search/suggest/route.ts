@@ -1,81 +1,100 @@
-export const runtime = 'nodejs';
+export const runtime = "nodejs";
 
-import { NextResponse } from 'next/server';
+import { NextResponse } from "next/server";
 
-import { supabaseServer } from '@/lib/supabaseServer';
+import { getSynonymTerms } from "@/lib/searchSynonyms";
+import { supabaseServer } from "@/lib/supabaseServer";
 
 // Simple, robust suggest endpoint
 // - If q provided: prefix + contains matches on listing titles (distinct), limited
 // - If no q: return trending recent titles
 export async function GET(req: Request) {
-  try {
-    const { searchParams } = new URL(req.url);
-    const q = (searchParams.get('q') || '').trim();
-    const limit = Math.max(1, Math.min(20, Number(searchParams.get('limit') || '8')));
+    try {
+        const { searchParams } = new URL(req.url);
+        const q = (searchParams.get("q") || "").trim();
+        const limit = Math.max(
+            1,
+            Math.min(20, Number(searchParams.get("limit") || "8")),
+        );
 
-    const supabase = supabaseServer();
+        const supabase = supabaseServer();
 
-    // When a query is provided, try prefix first, then contains, and merge distinct
-    if (q) {
-      const prefix = q.replace(/[%_]/g, '').toLowerCase();
+        // When a query is provided, try prefix first, then contains, and merge distinct
+        if (q) {
+            const prefix = q.replace(/[%_]/g, "").toLowerCase();
+            const synonymTerms = getSynonymTerms(prefix);
 
-      // Prefix matches
-      const { data: d1, error: e1 } = await supabase
-        .from('listings')
-        .select('title')
-        .ilike('title', `${prefix}%`)
-        .limit(limit);
-      if (e1) console.warn('suggest prefix error', e1.message);
+            // Prefix matches voor alle synoniemen
+            const prefixPromises = synonymTerms.map(term =>
+                supabase
+                    .from("listings")
+                    .select("title")
+                    .ilike("title", `${term}%`)
+                    .limit(Math.ceil(limit / synonymTerms.length))
+            );
 
-      // Contains matches (if still need more)
-      let d2: { title: string | null }[] = [];
-      if (!d1 || d1.length < limit) {
-        const { data, error } = await supabase
-          .from('listings')
-          .select('title')
-          .ilike('title', `%${prefix}%`)
-          .limit(limit * 2);
-        if (error) console.warn('suggest contains error', error.message);
-        d2 = data || [];
-      }
+            // Contains matches voor alle synoniemen
+            const containsPromises = synonymTerms.map(term =>
+                supabase
+                    .from("listings")
+                    .select("title")
+                    .ilike("title", `%${term}%`)
+                    .limit(Math.ceil(limit / synonymTerms.length))
+            );
 
-      const uniq = new Set<string>();
-      const out: string[] = [];
-      for (const r of [...(d1 || []), ...d2]) {
-        const t = (r?.title || '').trim();
-        if (!t) continue;
-        const key = t.toLowerCase();
-        if (uniq.has(key)) continue;
-        uniq.add(key);
-        out.push(t);
-        if (out.length >= limit) break;
-      }
-      return NextResponse.json({ suggestions: out });
+            // Voer alle queries parallel uit
+            const [prefixResults, containsResults] = await Promise.all([
+                Promise.all(prefixPromises),
+                Promise.all(containsPromises)
+            ]);
+
+            const uniq = new Set<string>();
+            const out: string[] = [];
+
+            // Verwerk resultaten
+            for (const result of [...prefixResults, ...containsResults]) {
+                if (result.error) {
+                    console.warn("suggest error", result.error.message);
+                    continue;
+                }
+                for (const r of result.data || []) {
+                    const t = (r?.title || "").trim();
+                    if (!t) continue;
+                    const key = t.toLowerCase();
+                    if (uniq.has(key)) continue;
+                    uniq.add(key);
+                    out.push(t);
+                    if (out.length >= limit) break;
+                }
+                if (out.length >= limit) break;
+            }
+
+            return NextResponse.json({ suggestions: out });
+        }
+
+        // Trending fallback: latest distinct titles
+        const { data: recent, error } = await supabase
+            .from("listings")
+            .select("title, created_at")
+            .order("created_at", { ascending: false })
+            .limit(50);
+        if (error) {
+            console.warn("suggest trending error", error.message);
+        }
+        const uniq = new Set<string>();
+        const out: string[] = [];
+        for (const r of recent || []) {
+            const t = (r?.title || "").trim();
+            if (!t) continue;
+            const key = t.toLowerCase();
+            if (uniq.has(key)) continue;
+            uniq.add(key);
+            out.push(t);
+            if (out.length >= limit) break;
+        }
+        return NextResponse.json({ suggestions: out });
+    } catch (e) {
+        console.error("suggest error", e);
+        return NextResponse.json({ suggestions: [] }, { status: 200 });
     }
-
-    // Trending fallback: latest distinct titles
-    const { data: recent, error } = await supabase
-      .from('listings')
-      .select('title, created_at')
-      .order('created_at', { ascending: false })
-      .limit(50);
-    if (error) {
-      console.warn('suggest trending error', error.message);
-    }
-    const uniq = new Set<string>();
-    const out: string[] = [];
-    for (const r of recent || []) {
-      const t = (r?.title || '').trim();
-      if (!t) continue;
-      const key = t.toLowerCase();
-      if (uniq.has(key)) continue;
-      uniq.add(key);
-      out.push(t);
-      if (out.length >= limit) break;
-    }
-    return NextResponse.json({ suggestions: out });
-  } catch (e) {
-    console.error('suggest error', e);
-    return NextResponse.json({ suggestions: [] }, { status: 200 });
-  }
 }

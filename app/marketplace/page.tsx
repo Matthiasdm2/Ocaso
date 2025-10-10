@@ -9,6 +9,7 @@ import ListingCard from "@/components/ListingCard";
 import MarketplaceFilters from "@/components/MarketplaceFilters";
 import MarketplaceMapModal from "@/components/MarketplaceMapModal";
 import RatingStars from "@/components/RatingStars";
+import Tooltip from "@/components/Tooltip";
 import { supabaseServer } from "@/lib/supabaseServer";
 import type { Category, Listing as BaseListing, Subcategory } from "@/lib/types";
 
@@ -230,13 +231,13 @@ export default async function MarketplacePage({ searchParams }: { searchParams?:
   // Seller rating aggregatie (lightweight)
   const sellerIds = Array.from(new Set(listings.map(l => l.seller_id).filter(Boolean))) as string[];
   let sellerRatings: Record<string, { rating: number; count: number }> = {};
-  const sellerProfiles: Record<string, { name: string; avatar_url: string | null; is_business?: boolean | null; is_verified?: boolean | null }> = {};
+  const sellerProfiles: Record<string, { name: string; avatar_url: string | null; is_business?: boolean | null; is_verified?: boolean | null; vat?: string | null }> = {};
   if (sellerIds.length) {
     // Profiel basis info ophalen (display_name/full_name en avatar)
-    interface ProfileRow { id: string; display_name?: string | null; full_name?: string | null; avatar_url?: string | null; is_business?: boolean | null; stripe_account_id?: string | null; }
+    interface ProfileRow { id: string; display_name?: string | null; full_name?: string | null; avatar_url?: string | null; is_business?: boolean | null; stripe_account_id?: string | null; vat?: string | null; }
     const { data: profileRows } = await supabase
       .from('profiles')
-      .select('id,display_name,full_name,avatar_url,is_business,stripe_account_id')
+      .select('id,display_name,full_name,avatar_url,is_business,stripe_account_id,vat')
       .in('id', sellerIds)
       .limit(300);
     if (profileRows) {
@@ -246,6 +247,7 @@ export default async function MarketplacePage({ searchParams }: { searchParams?:
           avatar_url: p.avatar_url || null,
           is_business: p.is_business ?? null,
           is_verified: false, // wordt later ingevuld
+          vat: p.vat || null,
         };
       });
       
@@ -690,11 +692,15 @@ export default async function MarketplacePage({ searchParams }: { searchParams?:
                                             ) : (
                                               <span className="font-medium text-sm text-gray-900 truncate max-w-[140px]" title={name}>{name}</span>
                                             )}
-                                            {profile?.is_business && (
-                                              <span className="inline-block px-1.5 py-0.5 text-[10px] leading-none rounded bg-blue-50 text-blue-700 border border-blue-200 font-medium">Business</span>
+                                            {profile?.is_business && profile?.vat && (
+                                              <Tooltip content="Geregistreerde onderneming met geldig BTW-nummer">
+                                                <span className="inline-block px-1.5 py-0.5 text-[10px] leading-none rounded bg-blue-50 text-blue-700 border border-blue-200 font-medium cursor-help">Business</span>
+                                              </Tooltip>
                                             )}
                                             {profile?.is_verified && (
-                                              <span className="inline-block px-1.5 py-0.5 text-[10px] leading-none rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium">Vertrouwd</span>
+                                              <Tooltip content="Geverifieerde gebruiker en ondersteunt betaling via een eigen betaalterminal">
+                                                <span className="inline-block px-1.5 py-0.5 text-[10px] leading-none rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium cursor-help">Vertrouwd</span>
+                                              </Tooltip>
                                             )}
                                           </span>
                                           <span className="inline-flex items-center gap-1 text-sm text-gray-600" aria-label={ratingInfo && ratingInfo.count > 0 ? `Rating ${ratingInfo.rating.toFixed(1)} uit 5` : 'Nog geen reviews'}>

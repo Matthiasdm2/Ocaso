@@ -22,18 +22,18 @@ type NormalizedAttachment = {
 type Msg = { id: string; from: "me" | "them"; text: string; at: string; edited_at?: string | null; deleted_at?: string | null; attachments?: NormalizedAttachment[]; read?: boolean; readAt?: string | null };
 interface ApiMessage { id: string; sender_id: string; body: string; created_at: string; edited_at?: string | null; deleted_at?: string | null; attachments?: unknown[]; read?: boolean }
 
-// Helper function to extract IBAN from EPC attachment name
+// Helper function to extract IBAN from attachment name (supports both EPC and universal formats)
 const extractIbanFromAttachment = (att: NormalizedAttachment): string | null => {
   const name = att.name || '';
-  const match = name.match(/epc[-_](?:qr-)?([A-Z]{2}\d{14}|[A-Z]{2}\d{2}\s*\d{4}\s*\d{4}\s*\d{4}\s*\d{2,4})(?:_EUR[\d.]+)?\.png$/i);
+  const match = name.match(/epc-qr_([A-Z]{2}\d{14}|[A-Z]{2}\d{2}\s*\d{4}\s*\d{4}\s*\d{4}\s*\d{2,4})(?:_[\d.]+EUR)?\.png$/i);
   return match ? match[1].replace(/\s+/g, '') : null;
 };
 
 // Helper function to extract amount from EPC attachment name
 const extractAmountFromAttachment = (att: NormalizedAttachment): string | null => {
   const name = att.name || '';
-  const match = name.match(/epc[-_](?:qr-)?[A-Z0-9]+_(EUR[\d.]+)\.png$/i);
-  return match ? match[1] : null;
+  const match = name.match(/epc-qr_[A-Z0-9]+_([\d.]+)EUR\.png$/i);
+  return match ? `EUR${match[1]}` : null;
 };
 
 export default function ChatDock({
@@ -80,7 +80,7 @@ export default function ChatDock({
   const markPending = useRef<NodeJS.Timeout | null>(null);
   const [peer, setPeer] = useState<{ id: string; full_name: string | null; avatar_url: string | null } | null>(null);
   const [isSeller, setIsSeller] = useState(false);
-  // EPC QR local state (seller only)
+  // Payment QR local state (seller only)
   const [epcOpen, setEpcOpen] = useState(false);
   const [epcAmount, setEpcAmount] = useState('');
   const [epcDesc, setEpcDesc] = useState('');
@@ -228,7 +228,7 @@ export default function ChatDock({
     })();
   }, [supabase, profile?.id, listingId, epcAmount]);
 
-  // When opening EPC panel, ensure we have own bank details
+  // When opening payment QR panel, ensure we have own bank details
   useEffect(() => {
     if (!epcOpen) return;
     if (myIban && myName) return;
@@ -247,6 +247,13 @@ export default function ChatDock({
       } catch { /* ignore */ }
     })();
   }, [epcOpen, supabase, profile?.id, myIban, myName]);
+
+  // Auto-fill description with listing title when opening payment panel
+  useEffect(() => {
+    if (epcOpen && !epcDesc && listingTitle) {
+      setEpcDesc(listingTitle);
+    }
+  }, [epcOpen, epcDesc, listingTitle]);
 
   // Fetch peer (other participant) profile for avatar/name
   useEffect(() => {
@@ -542,12 +549,10 @@ export default function ChatDock({
     })();
   };
 
-  // Generate EPC QR and attach as draft (uploads to storage first)
-  const generateAndAttachEpc = async () => {
+  // Generate EPC QR code - European standard supported by most bank apps
+  const generateEpcQr = async () => {
     setEpcError(null);
-    if (!isSeller) return;
     const cleanIban = (myIban || '').replace(/\s+/g, '').toUpperCase();
-    const cleanBic = ''; // BIC optioneel voor Belgische betalingen
     const sanitize = (v: string, max = 70) =>
       v
         .normalize('NFD')
@@ -559,31 +564,29 @@ export default function ChatDock({
       return;
     }
     const amt = parseFloat((epcAmount || '').replace(',', '.'));
-    const amountLine = isFinite(amt) && amt > 0 ? `EUR${amt.toFixed(2)}` : '';
-    const rem = sanitize((epcDesc || `Ocaso ${listingId || ''}`), 35);
-    const lines = [
-      'BCD', '001', '1', 'SCT',
-      cleanBic || '',
-      sanitize((myName || 'Verkoper'), 70),
-      cleanIban,
-      amountLine,
-      '', // Purpose: empty for maximum compatibility
-      rem,
-    ];
-    const epc = lines.join('\n') + '\n';
-    console.log('EPC QR data:', epc);
+    const amountText = isFinite(amt) && amt > 0 ? `€${amt.toFixed(2)}` : 'Bedrag naar keuze';
+    const rem = sanitize((epcDesc || listingTitle || `Ocaso ${listingId || ''}`), 35);
+    
+    // Generate EPC QR code - the European standard that most bank apps support
+    // EPC (European Payments Council) is the most widely supported format
+    const bic = 'NOBANL2U'; // Default BIC for Dutch banks when not specified
+    const epcData = `BCD\n001\n1\nSCT\n${bic}\n${sanitize((myName || 'Verkoper'), 70)}\n${cleanIban}\nEUR${amt > 0 ? amt.toFixed(2) : '0.00'}\n\n${rem}\n\n`;
 
-    // For EPC QR codes, the qrcode library expects a string and handles encoding.
+    console.log('EPC QR data:', epcData);
+
+    const paymentText = epcData;
+
+    // For payment QR codes, the qrcode library expects a string and handles encoding.
     // Our sanitize function already strips diacritics and non-ASCII chars.
     setEpcBusy(true);
     try {
-      const dataUrl = await QRCode.toDataURL(epc, { errorCorrectionLevel: 'L', scale: 8, margin: 4, color: { dark: '#000000', light: '#FFFFFF' } });
+      const dataUrl = await QRCode.toDataURL(paymentText, { errorCorrectionLevel: 'M', scale: 8, margin: 4, color: { dark: '#000000', light: '#FFFFFF' } });
       // Convert to Blob
       const res = await fetch(dataUrl);
       const blob = await res.blob();
       // Some storage backends / client versions behave better when given a File with a name
       // instead of a raw Blob. Create a File wrapper and try uploading that first.
-      const fileName = `epc_${cleanIban}${amountLine ? `_${amountLine}` : ''}.png`;
+      const fileName = `epc-qr_${cleanIban}${amountText !== 'Bedrag naar keuze' ? `_${amt.toFixed(2)}EUR` : ''}.png`;
   const fileToUpload: Blob | File = new File([blob], fileName, { type: 'image/png' });
   const path = `${chatId}/${fileName}`;
   let uploadResult: { data?: { path?: string } | null; error?: { message?: string } | null } | null = null;
@@ -607,7 +610,7 @@ export default function ChatDock({
           setDraftAttachments(prev => [...prev, {
             url: publicUrl,
             content_type: 'image/png',
-            name: `epc-qr-${cleanIban}.png`,
+            name: fileName,
             storage_path: fallback.data.path,
             mime_type: 'image/png',
             size_bytes: (blob as Blob).size,
@@ -629,7 +632,7 @@ export default function ChatDock({
       setDraftAttachments(prev => [...prev, {
         url: publicUrl,
         content_type: 'image/png',
-        name: `epc-qr-${cleanIban}.png`,
+        name: fileName,
         storage_path: uploadedPath,
         mime_type: 'image/png',
         size_bytes: (blob as Blob).size,
@@ -896,7 +899,7 @@ export default function ChatDock({
                 <div className={`max-w-[78%] rounded-2xl px-3 py-2 text-sm shadow-sm leading-relaxed space-y-2 ${own ? 'bg-primary text-black rounded-br-sm' : 'bg-gray-100 rounded-bl-sm'}`}>
                   {m.attachments && m.attachments.length > 0 && (
                     <>
-                      {/* EPC QR codes apart weergeven met volledige breedte */}
+                      {/* Payment QR codes apart weergeven met volledige breedte */}
                       {m.attachments
                         .filter(att => {
                           const iban = extractIbanFromAttachment(att);
@@ -916,7 +919,7 @@ export default function ChatDock({
                               </a>
                               <div className="mt-2 text-center space-y-1">
                                 <div className="text-[9px] text-gray-500">
-                                  Sommige bankapps ondersteunen deze QR code nog niet
+                                  Europese betalingsstandaard - werkt met de meeste bankapps
                                 </div>
                                 <div className="text-[10px] font-medium text-gray-700">
                                   Alternatief: {extractIbanFromAttachment(att)}{extractAmountFromAttachment(att) ? ` - ${extractAmountFromAttachment(att)?.replace('EUR', 'EUR ').replace('.', ',')}` : ''}
@@ -1031,7 +1034,7 @@ export default function ChatDock({
         {/* Input */}
         {!minimized && (
           <div className="flex flex-col gap-2 p-3 border-t bg-white shrink-0">
-            {isSeller && (
+            {listingId && (
               <div className="-mt-1">
                 <button
                   type="button"
@@ -1059,7 +1062,7 @@ export default function ChatDock({
                           type="text"
                           value={epcDesc}
                           onChange={(e) => setEpcDesc(e.target.value)}
-                          placeholder="bv. Ocaso betaling"
+                          placeholder={listingTitle ? `bv. ${listingTitle.slice(0, 20)}` : "bv. Ocaso betaling"}
                           className="w-full rounded border px-2 py-1 text-sm"
                         />
                       </div>
@@ -1067,7 +1070,7 @@ export default function ChatDock({
                     <div className="mt-2 flex items-center gap-2">
                       <button
                         type="button"
-                        onClick={generateAndAttachEpc}
+                        onClick={generateEpcQr}
                         disabled={epcBusy}
                         className="rounded bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-60"
                       >{epcBusy ? 'Bezig…' : 'Genereer & voeg toe'}</button>
@@ -1085,7 +1088,7 @@ export default function ChatDock({
                   const url = a.url || '';
                   const ext = a.name?.split('.').pop() || url.split('?')[0].split('#')[0].split('.').pop() || '';
                   const iban = extractIbanFromAttachment(a);
-                  const isEpcQr = iban !== null;
+                  const hasPaymentInfo = iban !== null;
                   return (
                     <div key={url} className="relative group">
                       <div className="w-16 h-16">
@@ -1098,10 +1101,10 @@ export default function ChatDock({
                           </div>
                         )}
                       </div>
-                      {isEpcQr && (
+                      {hasPaymentInfo && (
                         <>
                           <div className="mt-1 text-[8px] text-center text-gray-500 w-full">
-                            Sommige bankapps ondersteunen deze QR code nog niet
+                            EPC QR code
                           </div>
                           <div className="mt-0.5 text-[9px] text-center font-medium text-gray-700 w-full">
                             Alternatief: {iban}

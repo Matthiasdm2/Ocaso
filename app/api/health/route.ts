@@ -1,11 +1,11 @@
-export const runtime = 'nodejs';
+export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 
 import { supabaseServer } from "@/lib/supabaseServer";
 
 export async function GET() {
   try {
-  const supabase = supabaseServer();
+    const supabase = supabaseServer();
     // 1) Publiek leesrecht testen
     const p = await supabase.from("profiles").select("id").limit(1);
     if (p.error) throw new Error(`profiles: ${p.error.message}`);
@@ -31,6 +31,8 @@ export async function GET() {
     return NextResponse.json({ ok: true });
   } catch (e: unknown) {
     const errorMessage = e instanceof Error ? e.message : String(e);
-    return NextResponse.json({ ok: false, error: errorMessage }, { status: 500 });
+    return NextResponse.json({ ok: false, error: errorMessage }, {
+      status: 500,
+    });
   }
 }

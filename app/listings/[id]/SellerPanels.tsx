@@ -2,6 +2,7 @@
 import Link from "next/link";
 
 import Avatar from "@/components/Avatar";
+import Tooltip from "@/components/Tooltip";
 
 type Seller = {
   id?: string | null;
@@ -11,6 +12,7 @@ type Seller = {
   salesCount?: number | null;
   isBusiness?: boolean | null;
   isVerified?: boolean | null;
+  vat?: string | null;
   joinedISO?: string | null;
   responseMins?: number | null; // gemiddelde antwoordtermijn in minuten
   lastSeenISO?: string | null;
@@ -74,15 +76,19 @@ export default function SellerPanels({
               ) : (
                 <p className="font-medium truncate">{s.name ?? "Onbekend"}</p>
               )}
-              {s.isBusiness ? (
-                <span className="rounded-md bg-blue-50 px-2 py-0.5 text-sm font-semibold text-blue-700">
-                  Zakelijk
-                </span>
+              {s.isBusiness && s.vat ? (
+                <Tooltip content="Geregistreerde onderneming met geldig BTW-nummer">
+                  <span className="rounded-md bg-blue-50 px-2 py-0.5 text-sm font-semibold text-blue-700 cursor-help">
+                    Zakelijk
+                  </span>
+                </Tooltip>
               ) : null}
               {s.isVerified ? (
-                <span className="rounded-md bg-emerald-50 px-2 py-0.5 text-sm font-semibold text-emerald-700">
-                  Vertrouwd
-                </span>
+                <Tooltip content="Geverifieerde gebruiker en ondersteunt betaling via een eigen betaalterminal">
+                  <span className="rounded-md bg-emerald-50 px-2 py-0.5 text-sm font-semibold text-emerald-700 cursor-help">
+                    Vertrouwd
+                  </span>
+                </Tooltip>
               ) : null}
             </div>
             <div className="text-sm text-neutral-600">

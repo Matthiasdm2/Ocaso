@@ -1,21 +1,21 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 import CategorySelect from "@/components/CategorySelect";
 import ConfirmModal from "@/components/ConfirmModal";
 import ImagePreviewSlider from "@/components/ImagePreviewSlider";
+import LocationSelect from "@/components/LocationSelect";
 import PhotoUploader from "@/components/PhotoUploader";
 import PreviewModal from "@/components/PreviewModal";
 import ShippingFields from "@/components/ShippingFields";
 import { useToast } from "@/components/Toast";
 import Toggle from "@/components/Toggle";
+import { detectCategorySmart } from "@/lib/categoryDetection";
 import { createClient } from "@/lib/supabaseClient";
 
 const supabase = createClient();
-
-// --------- constants ----------
 const MIN_PHOTOS = 1;
 const MAX_PHOTOS = 12;
 const BUCKET_NAME = "listing-images";
@@ -79,11 +79,56 @@ export default function SellPage() {
   // Categorie + Subcategorie
   const [category, setCategory] = useState<string>("");
   const [subcategory, setSubcategory] = useState<string>("");
+  const [categoryName, setCategoryName] = useState<string>("");
+  const [subcategoryName, setSubcategoryName] = useState<string>("");
+
+  // Haal categorie namen op wanneer categorie/subcategorie verandert
+  useEffect(() => {
+    const fetchCategoryNames = async () => {
+      if (!category) {
+        setCategoryName("");
+        setSubcategoryName("");
+        return;
+      }
+
+      try {
+        // Haal categorie naam op
+        const { data: catData } = await supabase
+          .from("categories")
+          .select("name")
+          .eq("id", parseInt(category))
+          .maybeSingle();
+
+        setCategoryName(catData?.name || category);
+
+        // Haal subcategorie naam op als er een subcategorie is
+        if (subcategory) {
+          const { data: subData } = await supabase
+            .from("subcategories")
+            .select("name")
+            .eq("id", parseInt(subcategory))
+            .maybeSingle();
+
+          setSubcategoryName(subData?.name || subcategory);
+        } else {
+          setSubcategoryName("");
+        }
+      } catch (error) {
+        console.error("Error fetching category names:", error);
+        setCategoryName(category);
+        setSubcategoryName(subcategory);
+      }
+    };
+
+    fetchCategoryNames();
+  }, [category, subcategory]);
 
   // Foto’s
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [mainIndex, setMainIndex] = useState<number>(0);
   const dragFrom = useRef<number | null>(null);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   // Shipping (optioneel)
   const [shipping, setShipping] = useState<{ length?: number; width?: number; height?: number; weight?: number; }>({});
@@ -94,34 +139,6 @@ export default function SellPage() {
   const [isBusiness, setIsBusiness] = useState<boolean>(false);
   const [kycApproved, setKycApproved] = useState<boolean>(false);
   const [showKycModal, setShowKycModal] = useState<boolean>(false);
-
-  // Prijsanalyse
-  const [priceScore, setPriceScore] = useState<number | null>(null);
-  const clamp = (n: number, min = 0, max = 100) => Math.max(min, Math.min(max, n));
-  const analyzePrice = useCallback((n: number) => {
-    let score = 60;
-    if (condition === "nieuw") score += 15;
-    else if (condition === "bijna nieuw") score += 8;
-    else if (condition === "in goede staat") score += 2;
-    else if (condition === "gebruikt") score -= 8;
-    if (desc.length > 200) score += 8;
-    else if (desc.length > 80) score += 4;
-    if (n <= 5) score -= 20;
-    if (n >= 2000) score -= 10;
-    return clamp(score);
-  }, [condition, desc]);
-  const ratingMeta = (score: number | null) => {
-    if (score === null) return { label: "Nog geen prijs", bar: "bg-gray-300" };
-    if (score < 40) return { label: "Te laag", bar: "bg-red-500" };
-    if (score < 70) return { label: "Correct", bar: "bg-amber-500" };
-    return { label: "Uitstekend", bar: "bg-emerald-500" };
-  };
-  useEffect(() => {
-    const n = parsePrice(price);
-    if (!price || !isFinite(n) || n <= 0) { setPriceScore(null); return; }
-    const t = setTimeout(() => setPriceScore(analyzePrice(n)), 400);
-    return () => clearTimeout(t);
-  }, [price, condition, desc, analyzePrice]);
 
   // Auth badge
   useEffect(() => {
@@ -201,9 +218,73 @@ export default function SellPage() {
     checkBusinessAndKycStatus();
   }, [userEmail]);
 
-  const translate = () => {
-    push("Automatische vertaling toegevoegd.");
-    setDesc((d) => d + "\n\nFR: Description automatique\nEN: Automatic description\nDE: Automatische Beschrijving");
+  // Automatische categorie detectie op basis van titel en afbeeldingen
+  const prevImageCountRef = useRef(0);
+  useEffect(() => {
+    // Alleen toepassen als nog geen categorie geselecteerd is
+    if (category) return;
+
+    // Controleer of er nieuwe afbeeldingen zijn toegevoegd en of ze Supabase URLs zijn
+    const imageCountIncreased = imageUrls.length > prevImageCountRef.current;
+    const hasSupabaseImages = imageUrls.some(url => url.startsWith('https://'));
+    prevImageCountRef.current = imageUrls.length;
+
+    // Probeer te detecteren op basis van titel, afbeeldingen, of beide
+    const hasTitle = title.trim().length > 0;
+    const hasImages = hasSupabaseImages && imageCountIncreased; // Alleen als er nieuwe Supabase afbeeldingen zijn
+
+    if (!hasTitle && !hasImages) return; // Niets om te detecteren
+
+    // Async functie voor categorie detectie
+    const detectCategory = async () => {
+      // Gebruik alleen Supabase URLs voor image analysis
+      const supabaseImageUrls = imageUrls.filter(url => url.startsWith('https://'));
+      const detected = await detectCategorySmart(title, supabaseImageUrls);
+      if (detected && detected.confidence > 0.2) { // Alleen toepassen bij redelijke confidence
+        const categoryId = detected.categoryId.toString(); // Convert to string for CategorySelect
+        setCategory(categoryId);
+        if (detected.subcategorySlug) {
+          setSubcategory(detected.subcategorySlug);
+        }
+        console.log('Auto-detected category:', detected, 'from:', { hasTitle, hasImages, supabaseUrls: supabaseImageUrls.length }); // Debug logging
+      }
+    };
+
+    // Kleine delay om ervoor te zorgen dat uploads compleet zijn
+    setTimeout(detectCategory, 500);
+  }, [title, imageUrls, category]);  const translate = async (targetLang: string) => {
+    if (!desc.trim()) {
+      push("Geen tekst om te vertalen.");
+      return;
+    }
+
+    push("Vertaling wordt geladen...");
+    try {
+      const response = await fetch('/api/translate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: desc,
+          targetLang,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Vertaling mislukt');
+      }
+
+      const data = await response.json();
+      const translatedText = data.translatedText;
+
+      // Insert translation below the original text
+      setDesc((d) => d + `\n\n${targetLang.toUpperCase()}: ${translatedText}`);
+      push(`Vertaling naar ${targetLang.toUpperCase()} toegevoegd.`);
+    } catch (error) {
+      console.error('Translation error:', error);
+      push("Vertaling mislukt. Probeer opnieuw.");
+    }
   };
 
   const handleSecurePayToggle = (value: boolean) => {
@@ -216,6 +297,37 @@ export default function SellPage() {
       console.log('Setting allowSecurePay to:', value);
       // Normaal gedrag
       setAllowSecurePay(value);
+    }
+  };
+
+  // Automatisch categorie invullen
+  const [autoDetecting, setAutoDetecting] = useState(false);
+  const autoFillCategory = async () => {
+    if (!title.trim() && imageUrls.length === 0) {
+      push("Vul eerst een titel in of upload foto’s om de categorie automatisch te detecteren.");
+      return;
+    }
+
+    setAutoDetecting(true);
+    try {
+      // Gebruik alleen Supabase URLs voor image analysis
+      const supabaseImageUrls = imageUrls.filter(url => url.startsWith('https://'));
+      const detected = await detectCategorySmart(title, supabaseImageUrls);
+
+      if (detected && detected.confidence > 10) { // Lagere threshold voor handmatige actie
+        setCategory(detected.categoryId.toString());
+        if (detected.subcategorySlug) {
+          setSubcategory(detected.subcategorySlug);
+        }
+        push(`Categorie automatisch ingesteld: ${detected.detectedLabel || 'Onbekend'} (zekerheid: ${Math.round(detected.confidence)}%)`);
+      } else {
+        push("Kon geen categorie detecteren. Probeer een duidelijker titel of betere foto’s.");
+      }
+    } catch (error) {
+      console.error('Auto category detection failed:', error);
+      push("Fout bij automatisch detecteren van categorie. Probeer het opnieuw.");
+    } finally {
+      setAutoDetecting(false);
     }
   };
 
@@ -282,7 +394,46 @@ export default function SellPage() {
   }
 
   // DnD / slider
-  function onDragStart(i: number) { dragFrom.current = i; }
+  function onDragStart(i: number) {
+    dragFrom.current = i;
+    setDraggedIndex(i);
+  }
+  function onDragOver(e: React.DragEvent, i: number) {
+    e.preventDefault();
+    setDragOverIndex(i);
+  }
+  function onDragEnd() {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  }
+  function onDrop(e: React.DragEvent, i: number) {
+    e.preventDefault();
+    const from = dragFrom.current;
+    if (from === null || from === i) return;
+
+    setImageUrls((prev) => {
+      const newUrls = [...prev];
+      const [moved] = newUrls.splice(from, 1);
+      newUrls.splice(i, 0, moved);
+
+      // Update mainIndex if it was affected
+      let newMainIndex = mainIndex;
+      if (from === mainIndex) {
+        newMainIndex = i;
+      } else if (from < mainIndex && i >= mainIndex) {
+        newMainIndex = mainIndex - 1;
+      } else if (from > mainIndex && i <= mainIndex) {
+        newMainIndex = mainIndex + 1;
+      }
+      setMainIndex(newMainIndex);
+
+      return newUrls;
+    });
+
+    dragFrom.current = null;
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  }
   function markAsMain(i: number) { setMainIndex(i); }
   const trackRef = useRef<HTMLDivElement | null>(null);
   function scrollByCards(dir: "left" | "right") {
@@ -291,6 +442,22 @@ export default function SellPage() {
     const card = el.querySelector<HTMLDivElement>("[data-thumb]");
     const step = card ? card.getBoundingClientRect().width + 12 : 220;
     el.scrollBy({ left: dir === "left" ? -step : step, behavior: "smooth" });
+  }
+
+  // Verwijder individuele foto
+  function removeImage(index: number) {
+    setImageUrls((prev) => {
+      const newUrls = prev.filter((_, i) => i !== index);
+      // Als de hoofdafbeelding wordt verwijderd, selecteer de eerste resterende foto als hoofdafbeelding
+      if (index === mainIndex && newUrls.length > 0) {
+        setMainIndex(0);
+      } else if (index < mainIndex && mainIndex > 0) {
+        // Als een foto voor de hoofdafbeelding wordt verwijderd, verschuif de index
+        setMainIndex(mainIndex - 1);
+      }
+      return newUrls;
+    });
+    push("Foto verwijderd.");
   }
 
   // Preview
@@ -530,8 +697,14 @@ export default function SellPage() {
                   mainIndex={mainIndex}
                   markAsMain={markAsMain}
                   onDragStart={onDragStart}
+                  onDragOver={onDragOver}
+                  onDragEnd={onDragEnd}
+                  onDrop={onDrop}
+                  draggedIndex={draggedIndex}
+                  dragOverIndex={dragOverIndex}
                   scrollByCards={scrollByCards}
                   trackRef={trackRef}
+                  onRemove={removeImage}
                 />
               </div>
             )}
@@ -553,6 +726,13 @@ export default function SellPage() {
                   className="w-full rounded-2xl border border-gray-200 bg-white px-3 py-2.5 text-sm shadow-sm outline-none transition focus:border-gray-300 focus:ring-2 focus:ring-emerald-100"
                   placeholder="Titel van je product"
                 />
+                <button
+                  onClick={autoFillCategory}
+                  disabled={autoDetecting}
+                  className="w-full rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700 shadow-sm hover:bg-emerald-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                >
+                  {autoDetecting ? 'Detecteren...' : 'Vul categorie automatisch in'}
+                </button>
               </div>
 
               <CategorySelect
@@ -569,8 +749,14 @@ export default function SellPage() {
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-medium">Omschrijving</h2>
               <div className="flex items-center gap-2">
-                <button onClick={translate} type="button" className="rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-sm shadow-sm hover:bg-gray-50">
-                  Vertaal naar FR/EN/DE
+                <button onClick={() => translate('fr')} type="button" className="rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-sm shadow-sm hover:bg-gray-50">
+                  FR
+                </button>
+                <button onClick={() => translate('en')} type="button" className="rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-sm shadow-sm hover:bg-gray-50">
+                  EN
+                </button>
+                <button onClick={() => translate('de')} type="button" className="rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-sm shadow-sm hover:bg-gray-50">
+                  DE
                 </button>
               </div>
             </div>
@@ -597,18 +783,6 @@ export default function SellPage() {
                   className="w-full rounded-2xl border border-gray-200 bg-white px-3 py-2.5 text-sm shadow-sm outline-none transition focus:border-gray-300 focus:ring-2 focus:ring-emerald-100"
                   placeholder="0,00"
                 />
-                <div className="mt-3">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Prijsanalyse</span>
-                    <span className="font-medium">{ratingMeta(priceScore).label}</span>
-                  </div>
-                  <div className="mt-1 h-2.5 bg-gray-100 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full ${ratingMeta(priceScore).bar}`}
-                      style={{ width: `${priceScore ?? 0}%` }}
-                    />
-                  </div>
-                </div>
               </div>
 
               <div className="space-y-2">
@@ -641,11 +815,10 @@ export default function SellPage() {
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-600">Locatie</label>
-                <input
+                <LocationSelect
                   value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  className="w-full rounded-2xl border border-gray-200 bg-white px-3 py-2.5 text-sm shadow-sm outline-none transition focus:border-gray-300 focus:ring-2 focus:ring-emerald-100"
-                  placeholder="Gent"
+                  onChange={setLocation}
+                  placeholder="Zoek op postcode of gemeente..."
                 />
               </div>
             </div>
@@ -692,7 +865,7 @@ export default function SellPage() {
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-medium">Samenvatting</h3>
                 <span className="inline-flex items-center rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 text-sm">
-                  {ratingMeta(priceScore).label}
+                  Nog geen prijs
                 </span>
               </div>
               <div className="mt-4 space-y-2 text-sm">
@@ -703,7 +876,7 @@ export default function SellPage() {
                 <div className="flex justify-between text-gray-600">
                   <span>Categorie</span>
                   <span className="font-medium text-gray-900">
-                    {category || "—"}{subcategory ? ` / ${subcategory}` : ""}
+                    {categoryName || "—"}{subcategoryName ? ` / ${subcategoryName}` : ""}
                   </span>
                 </div>
                 <div className="flex justify-between text-gray-600">

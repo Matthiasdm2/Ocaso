@@ -17,8 +17,8 @@ export async function GET() {
 
     const { data, error } = await sb
       .from("categories")
-      .select("id,name,parent_id,position,slug")
-      .order("position", { ascending: true });
+      .select("id,name,slug,sort_order")
+      .order("sort_order", { ascending: true });
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500, headers: { "X-Category-Source": "error-db" } });
@@ -27,25 +27,27 @@ export async function GET() {
     const rows = data || [];
     if (!rows.length) return new NextResponse(null, { status: 204, headers: { "X-Category-Source": "empty-db" } });
 
-    const parents = rows.filter((r) => !r.parent_id);
-    const byParent = new Map<string, { id: string; name: string; slug: string | null }[]>();
-    for (const r of rows) {
-      if (r.parent_id) {
-        const arr = byParent.get(r.parent_id) || [];
-        arr.push({ id: r.id, name: r.name, slug: r.slug || null });
-        byParent.set(r.parent_id, arr);
+    // Get subcategories for each category
+    const categoriesWithSubs = [];
+    for (const cat of rows) {
+      const { data: subs, error: subsError } = await sb
+        .from("subcategories")
+        .select("id,name,slug")
+        .eq("category_id", cat.id)
+        .order("name", { ascending: true });
+
+      if (!subsError) {
+        categoriesWithSubs.push({
+          id: cat.id,
+          name: cat.name,
+          slug: cat.slug,
+          subcategories: (subs || []).map((sub) => ({ id: sub.id, name: sub.name, slug: sub.slug })),
+        });
       }
     }
 
-    const shaped = parents.map((p) => ({
-      id: p.id,
-      name: p.name,
-      slug: p.slug,
-      subcategories: (byParent.get(p.id) || []).map((c) => ({ id: c.id, name: c.name, slug: c.slug })),
-    }));
-
-    if (!shaped.length) return new NextResponse(null, { status: 204, headers: { "X-Category-Source": "no-parents" } });
-    return NextResponse.json(shaped, { status: 200, headers: { "X-Category-Source": "supabase" } });
+    if (!categoriesWithSubs.length) return new NextResponse(null, { status: 204, headers: { "X-Category-Source": "no-parents" } });
+    return NextResponse.json(categoriesWithSubs, { status: 200, headers: { "X-Category-Source": "supabase" } });
   } catch (e: unknown) {
     const errorMessage = typeof e === "object" && e !== null && "message" in e ? (e as { message?: string }).message : "Onbekend";
     return NextResponse.json({ error: errorMessage || "Onbekend" }, { status: 500, headers: { "X-Category-Source": "exception" } });

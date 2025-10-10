@@ -26,7 +26,7 @@ export default async function ListingPage({ params }: { params: { id: string } }
     .from("listings")
     // Via foreign key listings_seller_id_fkey koppelen we naar profiles en aliassen dit als seller
     // We halen extra velden op: is_business + created_at (aansluitdatum)
-  .select("*,categories,seller:profiles!listings_seller_id_fkey(id,display_name,full_name,avatar_url,is_business,created_at,address,invoice_address,stripe_account_id)")
+  .select("*,categories,seller:profiles!listings_seller_id_fkey(id,display_name,full_name,avatar_url,is_business,created_at,address,invoice_address,stripe_account_id,vat)")
     .eq("id", params.id)
     .maybeSingle();
 
@@ -336,6 +336,7 @@ export default async function ListingPage({ params }: { params: { id: string } }
               seller_review_count?: number | null;
               seller_is_business?: boolean | null;
               seller_is_verified?: boolean | null;
+              seller_vat?: string | null;
               joinedISO?: string | null;
               location?: string | null;
             } = {
@@ -349,6 +350,7 @@ export default async function ListingPage({ params }: { params: { id: string } }
               seller_review_count: sellerReviewCount,
               seller_is_business: (raw as { is_business?: boolean | null })?.is_business ?? null,
               seller_is_verified: sellerKycCompleted,
+              seller_vat: (raw as { vat?: string | null })?.vat || null,
               joinedISO: (raw as { created_at?: string | null })?.created_at || null,
               location: sellerLocation,
             };

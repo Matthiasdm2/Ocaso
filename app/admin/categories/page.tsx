@@ -5,13 +5,13 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
 import {
-    createCategory,
-    createSubcategory,
-    importCategoriesFromJsonAction,
-    reorderCategory,
-    reorderSubcategory,
-    toggleCategory,
-    toggleSubcategory
+  createCategory,
+  createSubcategory,
+  importCategoriesFromJsonAction,
+  reorderCategory,
+  reorderSubcategory,
+  toggleCategory,
+  toggleSubcategory
 } from "./actions";
 
 type Sub = {

@@ -1,3 +1,3 @@
 export async function GET() {
-  return Response.json({ message: 'Not implemented' });
+    return Response.json({ message: "Not implemented" });
 }

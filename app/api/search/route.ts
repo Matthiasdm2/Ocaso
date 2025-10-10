@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 
 import { CATEGORIES } from "@/lib/categories";
+import { buildSynonymOrFilter } from "@/lib/searchSynonyms";
 import { supabaseServer } from "@/lib/supabaseServer";
 
 export const dynamic = "force-dynamic";
@@ -46,7 +47,7 @@ export async function GET(request: Request) {
     let base = supabase
       .from("listings")
       .select(
-        "id,title,price,location,state,images,main_photo,created_at,status,isBusinessSeller",
+        "id,title,price,location,state,images,main_photo,created_at,status,organization_id",
         { count: "exact" },
       );
     if (!showAll) base = base.eq("status", "actief");
@@ -74,7 +75,7 @@ export async function GET(request: Request) {
       main_photo?: string | null;
       created_at: string;
       status?: string;
-      isBusinessSeller?: boolean | null;
+      organization_id?: string | null;
     }
     const items = (data as SimpleListingRow[] | null | undefined ?? []).map((
       l: SimpleListingRow,
@@ -88,7 +89,7 @@ export async function GET(request: Request) {
         (Array.isArray(l.images) && l.images.length ? l.images[0] : null),
       images: Array.isArray(l.images) ? l.images : [],
       created_at: l.created_at,
-      isBusinessSeller: l.isBusinessSeller ?? null,
+      isBusinessSeller: l.organization_id ? true : false,
     }));
     if (diag) {
       // haal totaal zonder filters + sample
@@ -125,7 +126,7 @@ export async function GET(request: Request) {
   let query = supabase
     .from("listings")
     .select(
-      "id,title,price,location,state,images,main_photo,created_at,categories,status,isBusinessSeller",
+      "id,title,price,location,state,images,main_photo,created_at,categories,status,organization_id",
       { count: "exact" },
     );
   if (!showAll) {
@@ -165,45 +166,7 @@ export async function GET(request: Request) {
 
   // Helper om OR filter string op te bouwen op basis van synoniemen/varianten
   const buildOrFilter = (term: string) => {
-    const tNorm = term.toLowerCase();
-    const terms = new Set<string>();
-    terms.add(tNorm);
-    tNorm.split(" ").forEach((t) => t && terms.add(t));
-    const bicycleSynonyms: Record<string, string[]> = {
-      racefiets: [
-        "racefiets",
-        "racefietsen",
-        "koersfiets",
-        "koersfietsen",
-        "road bike",
-        "roadbike",
-      ],
-      koersfiets: ["koersfiets", "koersfietsen", "racefiets", "racefietsen"],
-      mountainbike: ["mountainbike", "mountainbikes", "mtb"],
-      mtb: ["mtb", "mountainbike", "mountainbikes"],
-      e: [
-        "e-bike",
-        "ebike",
-        "e bike",
-        "elektrische fiets",
-        "elektrische fietsen",
-        "e-bike",
-        "e-bikes",
-      ],
-      fiets: ["fiets", "fietsen"],
-    };
-    Object.entries(bicycleSynonyms).forEach(([key, arr]) => {
-      if (tNorm.includes(key)) arr.forEach((a) => terms.add(a));
-    });
-    const termList = Array.from(terms).filter((x) => x.length > 1).slice(0, 14);
-    if (!termList.length) return undefined;
-    const orParts: string[] = [];
-    termList.forEach((t) => {
-      const esc = t.replace(/%/g, "");
-      orParts.push(`title.ilike.%${esc}%`);
-      orParts.push(`description.ilike.%${esc}%`);
-    });
-    return orParts.join(",");
+    return buildSynonymOrFilter(term);
   };
 
   // --- Synoniemen & uitbreidingen voor gerichtere matches ---
@@ -218,10 +181,10 @@ export async function GET(request: Request) {
   if (state) query = query.eq("state", state);
   if (location) query = query.ilike("location", `%${location}%`);
   if (businessOnly) {
-    query = query.eq("isBusinessSeller", true);
+    query = query.not("organization_id", "is", null);
   } else if (businessParam === "0") {
     // verberg zakelijke
-    query = query.neq("isBusinessSeller", true);
+    query = query.is("organization_id", null);
   }
 
   if (sort === "price_asc") query = query.order("price", { ascending: true });
@@ -248,7 +211,7 @@ export async function GET(request: Request) {
     const fbQuery = supabase
       .from("listings")
       .select(
-        "id,title,price,location,state,images,main_photo,created_at,categories,status,isBusinessSeller",
+        "id,title,price,location,state,images,main_photo,created_at,categories,status,organization_id",
         { count: "exact" },
       )
       .eq("status", "actief")
@@ -289,7 +252,7 @@ export async function GET(request: Request) {
     const any = await supabase
       .from("listings")
       .select(
-        "id,title,price,location,state,images,main_photo,created_at,categories,status,isBusinessSeller",
+        "id,title,price,location,state,images,main_photo,created_at,categories,status,organization_id",
         { count: "exact" },
       )
       .eq("status", "actief")
@@ -318,7 +281,7 @@ export async function GET(request: Request) {
     images?: string[] | null;
     main_photo?: string | null;
     created_at?: string | null;
-    isBusinessSeller?: boolean | null;
+    organization_id?: string | null;
   }
   const items = (data as Row[] | null ?? []).map((l) => ({
     id: l.id,
@@ -330,7 +293,7 @@ export async function GET(request: Request) {
       (Array.isArray(l.images) && l.images.length ? l.images[0] : null),
     images: Array.isArray(l.images) ? l.images : [],
     created_at: l.created_at,
-    isBusinessSeller: l.isBusinessSeller ?? null,
+    isBusinessSeller: l.organization_id ? true : false,
   }));
 
   interface SearchItem {
@@ -342,7 +305,7 @@ export async function GET(request: Request) {
     main_photo: string | null;
     images: string[];
     created_at?: string | null;
-    isBusinessSeller: boolean | null;
+    isBusinessSeller: boolean;
   }
   interface SearchResponsePayload {
     items: SearchItem[];

@@ -11,7 +11,7 @@ import { useUnreadReviews } from "@/lib/useUnreadReviews";
 
 const TABS = [
   { href: "/profile/info", label: "Mijn gegevens" },
-  { href: "/profile/business", label: "Zakelijke gegevens" }, // altijd zichtbaar
+  { href: "/profile/business", label: "Gegevens shop" }, // altijd zichtbaar
   { href: "/profile/chats", label: "Chats" },
   // Notificaties tab verwijderd — instellingen nu onder 'Mijn gegevens'
   { href: "/profile/listings", label: "Mijn zoekertjes" },
@@ -162,7 +162,7 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
         <div className="rounded-2xl border border-neutral-200 bg-white p-6">
           {isBusinessRoute && !isBusiness ? (
             <div className="text-sm text-neutral-700">
-              <div className="mb-2 font-medium">Zakelijke gegevens</div>
+              <div className="mb-2 font-medium">Gegevens shop</div>
               <p>
                 U bent geen zakelijke gebruiker, gelieve in uw profiel aan te geven dat u een zakelijke gebruiker bent.
               </p>

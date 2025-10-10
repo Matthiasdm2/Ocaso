@@ -7,6 +7,7 @@ import BusinessReviewsSection from "@/components/BusinessReviewsSection";
 import BusinessSectionNav from "@/components/BusinessSectionNav";
 import BusinessStatsLive from "@/components/BusinessStatsLive";
 import ListingCard from "@/components/ListingCard";
+import Tooltip from "@/components/Tooltip";
 import { supabaseServer } from "@/lib/supabaseServer";
 
 interface ListingRow { id: string; title?: string | null; price?: number | null; images?: string[] | null; created_at?: string | null; views?: number | null; favorites?: number | null; favorites_count?: number | null; category?: string | null; subcategory?: string | null; seller_id?: string | null; status?: string | null }
@@ -180,7 +181,7 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
 											{profile.vat && <span className="rounded bg-emerald-50 text-emerald-700 px-2 py-0.5 text-sm border border-emerald-100">BTW: {profile.vat}</span>}
 											{avgRating > 0 && (<BusinessRatingBadge initialAvg={avgRating} initialCount={reviews.length} />)}
 										</div>
-										{isVerified && <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-medium shadow-sm w-fit">Vertrouwd</span>}
+										{isVerified && <Tooltip content="Geverifieerde gebruiker en ondersteunt betaling via een eigen betaalterminal"><span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-medium shadow-sm w-fit cursor-help">Vertrouwd</span></Tooltip>}
 									</div>
 									<div className="flex flex-wrap gap-2 text-sm">
 										{profile.website && <a className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white border text-gray-700 hover:bg-emerald-50 transition" href={profile.website} target="_blank" rel="noopener">Website</a>}

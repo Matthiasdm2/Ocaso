@@ -2,14 +2,14 @@
 
 import { motion } from "framer-motion";
 import {
-    ArrowRight,
-    MessageCircle,
-    Shield,
-    ShoppingBag,
-    Sparkles,
-    Store,
-    Truck,
-    Users,
+  ArrowRight,
+  MessageCircle,
+  Shield,
+  ShoppingBag,
+  Sparkles,
+  Store,
+  Truck,
+  Users,
 } from "lucide-react";
 import Link from "next/link";
 

@@ -16,6 +16,12 @@ export default function HeroSearch({ noContainer = false }: { noContainer?: bool
   const [shopSuggestions, setShopSuggestions] = useState<Array<{ name: string; slug: string }>>([]);
   const abortRef = useRef<AbortController | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (q.length === 0) {
+      setSuggestions([]);
+      setShopSuggestions([]);
+    }
+  }, [q]);
 
   useEffect(() => {
     if (!show) return;
@@ -86,12 +92,13 @@ export default function HeroSearch({ noContainer = false }: { noContainer?: bool
                 value={q}
                 onChange={(e) => {
                   setQ(e.target.value);
-                  setShow(true);
+                  setShow(e.target.value.length > 0);
                 }}
                 onKeyDown={(e) => {
                   if (e.key === "Escape") setShow(false);
                 }}
-                onFocus={() => setShow(true)}
+                onFocus={() => setShow(q.length > 0)}
+                onBlur={() => setTimeout(() => setShow(false), 150)}
                 placeholder="Waar ben je naar op zoek?"
                 className="w-full rounded-xl border border-gray-200 pl-10 pr-4 py-3 md:py-3 focus:outline-none focus:ring-2 focus:ring-primary min-h-[44px] text-base"
                 type="search"

@@ -15,8 +15,11 @@ export default function SearchHeader({ total }: { total: number }) {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    setQ(params.get("q") || "");
-  }, [params]);
+    if (q.length === 0) {
+      setSuggestions([]);
+      setShopSuggestions([]);
+    }
+  }, [q]);
 
   useEffect(() => {
     if (!show) return;
@@ -68,8 +71,12 @@ export default function SearchHeader({ total }: { total: number }) {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-5 text-gray-500" />
           <input
             value={q}
-            onChange={(e) => { setQ(e.target.value); setShow(true); }}
-            onFocus={() => setShow(true)}
+            onChange={(e) => { 
+              setQ(e.target.value); 
+              setShow(e.target.value.length > 0); 
+            }}
+            onFocus={() => setShow(q.length > 0)}
+            onBlur={() => setTimeout(() => setShow(false), 150)} // Delay to allow clicks on suggestions
             onKeyDown={(e) => { if (e.key === 'Escape') setShow(false); }}
             placeholder="Zoek producten of shops, bv. 'racefiets' of 'Fietsen De Smet'"
             className="w-full rounded-xl border border-gray-200 bg-white pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary"

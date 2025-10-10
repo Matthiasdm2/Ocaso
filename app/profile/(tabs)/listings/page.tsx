@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import React, { useEffect, useMemo, useState } from 'react';
 
 import EditListingModal from '@/components/EditListingModal';
+import ShareButton from '@/components/ShareButton';
 import { useToast } from '@/components/Toast';
 import { createClient } from '@/lib/supabaseClient';
 import { useProfile } from '@/lib/useProfile';
@@ -709,6 +710,14 @@ export default function ListingsPage() {
                           </td>
                           <td className="px-3 py-3 align-top">
                             <div className="flex flex-col items-stretch gap-2 w-36">
+                              <div className="flex items-center gap-2 mb-2">
+                                <ShareButton
+                                  title={it.title}
+                                  url={`${typeof window !== 'undefined' ? window.location.origin : ''}/listings/${it.id}`}
+                                  showSocialMedia={true}
+                                />
+                                <span className="text-xs text-neutral-500">Deel</span>
+                              </div>
                               <button
                                 onClick={() => updateFlags(it.id, { status: it.status === 'paused' ? 'active' : 'paused' })}
                                 disabled={!!busyIds[it.id]}
@@ -789,6 +798,13 @@ export default function ListingsPage() {
                       </div>
 
                       <div className="mt-3 flex flex-col gap-2 w-36">
+                        <div className="flex items-center justify-center gap-2 mb-2">
+                          <ShareButton
+                            title={it.title}
+                            url={`${typeof window !== 'undefined' ? window.location.origin : ''}/listings/${it.id}`}
+                            showSocialMedia={true}
+                          />
+                        </div>
                         <button
                           onClick={() => updateFlags(it.id, { status: it.status === 'paused' ? 'active' : 'paused' })}
                           disabled={!!busyIds[it.id]}

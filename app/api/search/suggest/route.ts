@@ -12,7 +12,7 @@ import { toURL } from "@/lib/url";
 // - If no q: return trending recent titles
 export async function GET(req: Request) {
     try {
-    const { searchParams } = toURL(req.url);
+        const { searchParams } = toURL(req.url);
         const q = (searchParams.get("q") || "").trim();
         const limit = Math.max(
             1,
@@ -27,7 +27,7 @@ export async function GET(req: Request) {
             const synonymTerms = getSynonymTerms(prefix);
 
             // Prefix matches voor alle synoniemen
-            const prefixPromises = synonymTerms.map(term =>
+            const prefixPromises = synonymTerms.map((term) =>
                 supabase
                     .from("listings")
                     .select("title")
@@ -36,7 +36,7 @@ export async function GET(req: Request) {
             );
 
             // Contains matches voor alle synoniemen
-            const containsPromises = synonymTerms.map(term =>
+            const containsPromises = synonymTerms.map((term) =>
                 supabase
                     .from("listings")
                     .select("title")
@@ -47,7 +47,7 @@ export async function GET(req: Request) {
             // Voer alle queries parallel uit
             const [prefixResults, containsResults] = await Promise.all([
                 Promise.all(prefixPromises),
-                Promise.all(containsPromises)
+                Promise.all(containsPromises),
             ]);
 
             const uniq = new Set<string>();

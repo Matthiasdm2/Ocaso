@@ -13,6 +13,7 @@ import ImageGallery from "@/components/ImageGallery";
 import ListingStats from "@/components/ListingStats";
 import MarkBidsSeen from "@/components/MarkBidsSeen";
 import SellerPanels from "@/components/SellerPanels";
+import SharePanel from "@/components/SharePanel";
 import { supabaseServer } from "@/lib/supabaseServer";
 import type { Category, Subcategory } from "@/lib/types";
 
@@ -318,8 +319,8 @@ export default async function ListingPage({ params }: { params: { id: string } }
             </div>
           </section>
         </div>
-        {/* Verkoper info rechts */}
-  <div className="md:col-span-1 md:sticky md:top-24 self-start">
+    {/* Verkoper info rechts */}
+  <div className="md:col-span-1 md:sticky md:top-24 self-start flex flex-col gap-4">
           {(() => {
             type RawSeller = { id?: string; name?: string; full_name?: string; display_name?: string; avatar_url?: string } | null;
             // listing.seller komt uit de join (alias seller:profiles...) zie select hierboven
@@ -363,6 +364,11 @@ export default async function ListingPage({ params }: { params: { id: string } }
               />
             );
           })()}
+          {/* Social share panel */}
+          <SharePanel
+            title={listing.title}
+            url={`/listings/${listing.id}`}
+          />
         </div>
       </div>
       {/* Mobile action bar */}

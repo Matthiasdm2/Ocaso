@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { type NextRequest, NextResponse } from "next/server";
 
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 interface ListingView {
     user_id: string | null;

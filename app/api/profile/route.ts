@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { supabaseServer } from "@/lib/supabaseServer";
+import { toURL } from "@/lib/url";
 
 interface Listing {
   id: string;
@@ -16,7 +17,7 @@ interface Listing {
 }
 
 export async function GET(req: Request) {
-  const url = new URL(req.url);
+  const url = toURL(req.url);
   const page = Math.max(1, Number(url.searchParams.get("page") ?? 1));
   const limit = Math.min(
     50,

@@ -5,13 +5,14 @@ import { NextResponse } from "next/server";
 
 import { getSynonymTerms } from "@/lib/searchSynonyms";
 import { supabaseServer } from "@/lib/supabaseServer";
+import { toURL } from "@/lib/url";
 
 // Simple, robust suggest endpoint
 // - If q provided: prefix + contains matches on listing titles (distinct), limited
 // - If no q: return trending recent titles
 export async function GET(req: Request) {
     try {
-        const { searchParams } = new URL(req.url);
+    const { searchParams } = toURL(req.url);
         const q = (searchParams.get("q") || "").trim();
         const limit = Math.max(
             1,

@@ -1,6 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 import { type NextRequest, NextResponse } from "next/server";
 
+import { toURL } from "@/lib/url";
+
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
@@ -13,7 +15,7 @@ export async function GET(request: NextRequest) {
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = toURL(request.url);
     const period = searchParams.get("period") || "31d";
 
     // Bereken de startdatum gebaseerd op de periode

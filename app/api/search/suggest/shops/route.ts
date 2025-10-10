@@ -4,12 +4,13 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 
 import { supabaseServer } from "@/lib/supabaseServer";
+import { toURL } from "@/lib/url";
 
 type ShopSuggestion = { name: string; slug: string };
 
 export async function GET(req: Request) {
     try {
-        const { searchParams } = new URL(req.url);
+    const { searchParams } = toURL(req.url);
         const q = (searchParams.get("q") || "").trim();
         const limit = Math.max(
             1,

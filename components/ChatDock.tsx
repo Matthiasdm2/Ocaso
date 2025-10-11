@@ -36,6 +36,44 @@ const extractAmountFromAttachment = (att: NormalizedAttachment): string | null =
   return match ? `EUR${match[1]}` : null;
 };
 
+// Helper function to determine Belgian bank from IBAN
+const getBankFromIban = (iban: string): string | null => {
+  if (!iban.startsWith('BE')) return null;
+  const code = iban.slice(4, 8); // Belgian IBAN format: BE 2 digits + 10 digits, bank code is positions 5-8
+  if (code.startsWith('73')) return 'kbc';
+  if (code.startsWith('68')) return 'belfius';
+  if (code.startsWith('21') || code.startsWith('25')) return 'bnp'; // BNP and Fortis
+  if (code.startsWith('25')) return 'ing'; // ING
+  if (code.startsWith('29')) return 'argenta';
+  return null;
+};
+
+// Helper function to get bank app URL scheme
+const getBankAppScheme = (bank: string): string | null => {
+  switch (bank) {
+    case 'kbc': return 'kbc-mobile://';
+    case 'belfius': return 'belfius://';
+    case 'bnp': return 'bnp://'; // May not work, BNP uses different scheme
+    case 'ing': return 'ing://'; // May not work
+    case 'argenta': return 'argenta://'; // May not work
+    default: return null;
+  }
+};
+
+// Helper function to open bank app
+const openBankApp = (iban: string) => {
+  const bank = getBankFromIban(iban);
+  if (!bank) return false;
+  const scheme = getBankAppScheme(bank);
+  if (!scheme) return false;
+  try {
+    window.location.href = scheme;
+    return true;
+  } catch (e) {
+    return false;
+  }
+};
+
 export default function ChatDock({
   chatId,
   title,
@@ -916,6 +954,8 @@ export default function ChatDock({
                         })
                         .map(att => {
                           const url = att.url || '';
+                          const iban = extractIbanFromAttachment(att);
+                          const amount = extractAmountFromAttachment(att);
                           return (
                             <div key={url} className="block group relative mb-2">
                               <div className="text-center mb-2">
@@ -923,15 +963,27 @@ export default function ChatDock({
                                   Scan en betaal
                                 </div>
                               </div>
-                              <a href={url} target="_blank" rel="noreferrer" className="flex justify-center">
-                                <Image src={url} alt={att.name || 'QR code'} width={120} height={120} className="w-30 h-30 object-cover rounded-lg border border-black/10 group-hover:opacity-90" />
-                              </a>
+                              <div className="flex justify-center">
+                                <button
+                                  onClick={() => {
+                                    if (iban && openBankApp(iban)) {
+                                      // Bank app opened successfully
+                                    } else {
+                                      // Fallback: open image in new tab
+                                      window.open(url, '_blank');
+                                    }
+                                  }}
+                                  className="group-hover:opacity-90"
+                                >
+                                  <Image src={url} alt={att.name || 'QR code'} width={120} height={120} className="w-30 h-30 object-cover rounded-lg border border-black/10" />
+                                </button>
+                              </div>
                               <div className="mt-2 text-center space-y-1">
                                 <div className="text-[9px] text-gray-500">
                                   Europese betalingsstandaard - werkt met de meeste bankapps
                                 </div>
                                 <div className="text-[10px] font-medium text-gray-700">
-                                  Alternatief: {extractIbanFromAttachment(att)}{extractAmountFromAttachment(att) ? ` - ${extractAmountFromAttachment(att)?.replace('EUR', 'EUR ').replace('.', ',')}` : ''}
+                                  Alternatief: {iban}{amount ? ` - ${amount?.replace('EUR', 'EUR ').replace('.', ',')}` : ''}
                                 </div>
                               </div>
                             </div>

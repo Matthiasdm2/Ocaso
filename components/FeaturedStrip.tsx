@@ -57,7 +57,7 @@ export default function FeaturedStrip({ title = "Uitgelicht in deze categorie", 
       {/* Scroller */}
       <div
         ref={scrollerRef}
-        className="flex gap-4 overflow-x-auto snap-x snap-mandatory scroll-p-2 [-ms-overflow-style:none] [scrollbar-width:none]"
+        className="grid grid-cols-2 gap-3 md:flex md:gap-4 md:overflow-x-auto md:snap-x md:snap-mandatory md:scroll-p-2 md:[-ms-overflow-style:none] md:[scrollbar-width:none]"
         style={{ scrollbarWidth: "none" }}
       >
         {/* Hide scrollbar (webkit) */}
@@ -69,10 +69,10 @@ export default function FeaturedStrip({ title = "Uitgelicht in deze categorie", 
           <a
             key={it.id}
             href={it.href}
-            className="snap-start shrink-0 w-[260px] rounded-xl border border-gray-200 bg-white hover:shadow transition"
+            className="w-full md:snap-start md:shrink-0 md:w-[260px] rounded-2xl border border-gray-200 bg-white hover:shadow transition"
             title={it.title}
           >
-            <div>
+            <div className="aspect-[4/3] w-full overflow-hidden bg-neutral-100 rounded-t-2xl">
               {/* Gebruik je eigen Next/Image als je wil; hieronder Next.js <Image> voor optimalisatie */}
               <Image
                 src={it.image || "/placeholder.png"}
@@ -85,12 +85,18 @@ export default function FeaturedStrip({ title = "Uitgelicht in deze categorie", 
                 priority={false}
               />
             </div>
-            <div className="p-3">
-              <div className="line-clamp-2 font-medium text-gray-900">{it.title}</div>
-              {it.location ? (
-                <div className="mt-1 text-sm text-gray-500">{it.location}</div>
-              ) : null}
-              <div className="mt-2 text-primary font-semibold">€ {Number(it.price).toLocaleString("nl-BE")}</div>
+            <div className="p-4 md:p-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <h3 className="line-clamp-2 font-medium text-gray-900">{it.title}</h3>
+                  {it.location ? (
+                    <p className="mt-1 text-sm text-gray-500">{it.location}</p>
+                  ) : null}
+                </div>
+                <div className="shrink-0 rounded-lg bg-gray-900 font-semibold text-white px-2 py-1 text-sm">
+                  € {Number(it.price).toLocaleString("nl-BE")}
+                </div>
+              </div>
             </div>
           </a>
         ))}

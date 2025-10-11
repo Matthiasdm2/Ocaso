@@ -64,6 +64,14 @@ export default function ChatDock({
   const [messages, setMessages] = useState<Msg[]>([]);
   const [text, setText] = useState("");
   const [expanded, setExpanded] = useState(false);
+
+  // Auto-resize textarea
+  useEffect(() => {
+    if (textAreaRef.current) {
+      textAreaRef.current.style.height = 'auto';
+      textAreaRef.current.style.height = textAreaRef.current.scrollHeight + 'px';
+    }
+  }, [text]);
   const [loaded, setLoaded] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [sendError, setSendError] = useState<string | null>(null);
@@ -78,6 +86,7 @@ export default function ChatDock({
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const boxRef = useRef<HTMLDivElement | null>(null);
   const markPending = useRef<NodeJS.Timeout | null>(null);
+  const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
   const [peer, setPeer] = useState<{ id: string; full_name: string | null; avatar_url: string | null } | null>(null);
   const [isSeller, setIsSeller] = useState(false);
   // Payment QR local state (seller only)
@@ -1139,18 +1148,19 @@ export default function ChatDock({
                 )}
               </div>
             )}
-            <div className="flex items-center gap-3">
+            <div className="flex items-end gap-2 sm:gap-3">
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-50"
+                className="p-2 sm:p-2 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-50 shrink-0"
                 title="Bestand toevoegen"
                 disabled={uploading || draftAttachments.length >= 5}
               >
-                <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a5 5 0 0 1-7.07-7.07l9.2-9.19a3 3 0 0 1 4.24 4.24l-9.2 9.19a1 1 0 0 1-1.41-1.41l8.49-8.48" /></svg>
+                <svg viewBox="0 0 24 24" className="w-5 h-5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a5 5 0 0 1-7.07-7.07l9.2-9.19a3 3 0 0 1 4.24 4.24l-9.2 9.19a1 1 0 0 1-1.41-1.41l8.49-8.48" /></svg>
               </button>
               <input ref={fileInputRef} type="file" multiple hidden onChange={onPickFiles} />
-            <input
+            <textarea
+              ref={textAreaRef}
               value={text}
               onChange={(e) => setText(e.target.value)}
               onKeyDown={(e) => {
@@ -1160,12 +1170,13 @@ export default function ChatDock({
                 }
               }}
               placeholder="Schrijf een bericht…"
-              className="flex-1 rounded-xl border border-gray-200 px-3 py-2 text-sm"
+              rows={1}
+              className="flex-1 rounded-xl border border-gray-200 px-3 py-2 text-sm resize-none overflow-hidden min-h-[36px] max-h-32"
             />
             <button
               onClick={send}
               disabled={uploading || (!text.trim() && draftAttachments.length === 0)}
-              className="rounded-xl bg-primary text-black px-5 py-2 text-sm font-semibold disabled:opacity-50"
+              className="rounded-xl bg-primary text-black px-4 py-2 sm:px-5 sm:py-2 text-sm font-semibold disabled:opacity-50 shrink-0"
             >
               {uploading ? 'Upload…' : 'Verstuur'}
             </button>

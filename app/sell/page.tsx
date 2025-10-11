@@ -599,7 +599,7 @@ export default function SellPage() {
     min_bid: minBid ? parsePrice(minBid) : null,
     secure_pay: !!allowSecurePay && hasSecurePayPermission,
     categories: categoriesPayload,
-    status: "active", // Zorg dat elk nieuw zoekertje actief is
+  status: "actief", // Zorg dat elk nieuw zoekertje zichtbaar is in queries
     stock: stock,
     promo_featured: false,
     promo_top: false

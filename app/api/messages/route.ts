@@ -5,6 +5,7 @@ import { supabaseServer } from "@/lib/supabaseServer";
 import { supabaseServiceRole } from "@/lib/supabaseServiceRole";
 
 // Ensure this route never attempts static optimization
+export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 function supabaseFromBearer(token?: string | null) {

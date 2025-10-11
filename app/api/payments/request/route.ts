@@ -3,6 +3,9 @@ import { NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabaseServer';
 import { supabaseServiceRole } from '@/lib/supabaseServiceRole';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 // POST: Buyer requests a payment; creates/ensures conversation and posts a request message with a CTA token
 // body: { listingId: string }
 export async function POST(request: Request) {

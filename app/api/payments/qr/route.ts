@@ -4,6 +4,9 @@ import QRCode from 'qrcode';
 import { supabaseServer } from '@/lib/supabaseServer';
 import { supabaseServiceRole } from '@/lib/supabaseServiceRole';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 const CHAT_BUCKET = process.env.NEXT_PUBLIC_CHAT_BUCKET || 'chat-attachments';
 
 // POST: Generate EPC QR for listing and send in chat as attachment

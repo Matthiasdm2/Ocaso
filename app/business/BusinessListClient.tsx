@@ -682,16 +682,16 @@ function BizCard({ biz }: { biz: Biz }) {
 
           {/* Subscription status */}
           <div className="flex items-center justify-between">
-            <span
-              className={cls(
-                "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
-                biz.subscriptionActive
-                  ? "bg-primary/15 text-primary"
-                  : "bg-yellow-100 text-yellow-700"
-              )}
-            >
-              {biz.subscriptionActive ? "Zakelijk actief" : "Gratis profiel"}
-            </span>
+            {biz.subscriptionActive && (
+              <span
+                className={cls(
+                  "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+                  "bg-primary/15 text-primary"
+                )}
+              >
+                Zakelijk actief
+              </span>
+            )}
 
             <div className="text-primary text-sm font-medium flex items-center gap-1">
               Bekijk

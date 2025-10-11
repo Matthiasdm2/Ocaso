@@ -555,6 +555,8 @@ export default function SellPage() {
 
       // Prepare categories payload
       const categoriesPayload = subcategory ? [category, subcategory] : [category];
+      const categoryId = category ? parseInt(category) : null;
+      const subcategoryId = subcategory ? parseInt(subcategory) : null;
 
   const basePayload: {
     created_by: string;
@@ -580,6 +582,8 @@ export default function SellPage() {
     status?: string;
     organization_id?: string | null;
     stock: number;
+    category_id?: number | null;
+    subcategory_id?: number | null;
   } = {
     created_by: user.id,
     seller_id: user.id,
@@ -599,13 +603,13 @@ export default function SellPage() {
     min_bid: minBid ? parsePrice(minBid) : null,
     secure_pay: !!allowSecurePay && hasSecurePayPermission,
     categories: categoriesPayload,
-  status: "actief", // Zorg dat elk nieuw zoekertje zichtbaar is in queries
+    status: "actief", // Zorg dat elk nieuw zoekertje zichtbaar is in queries
     stock: stock,
     promo_featured: false,
-    promo_top: false
-  };
-
-      let tryWithOrg = false;
+    promo_top: false,
+    category_id: categoryId,
+    subcategory_id: subcategoryId,
+  };      let tryWithOrg = false;
       if (isBusiness && orgId) {
         basePayload.organization_id = orgId; // als kolom bestaat
         tryWithOrg = true;

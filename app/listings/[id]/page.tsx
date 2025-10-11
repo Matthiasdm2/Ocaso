@@ -364,11 +364,6 @@ export default async function ListingPage({ params }: { params: { id: string } }
               />
             );
           })()}
-          {/* Social share panel */}
-          <SharePanel
-            title={listing.title}
-            url={`/listings/${listing.id}`}
-          />
         </div>
       </div>
       {/* Mobile action bar */}
@@ -392,6 +387,13 @@ export default async function ListingPage({ params }: { params: { id: string } }
             </div>
           </div>
         </div>
+      </div>
+      {/* Social share panel */}
+      <div className="mt-8">
+        <SharePanel
+          title={listing.title}
+          url={`/listings/${listing.id}`}
+        />
       </div>
     </div>
   );

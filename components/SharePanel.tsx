@@ -54,6 +54,17 @@ export default function SharePanel({ title, url, className = "" }: Props) {
       </div>
       <p className="mt-1 text-sm text-gray-500">Help je zoekertje sneller verkopen door het te delen.</p>
 
+      <div className="mt-3">
+        <div className="flex items-center gap-2">
+          <input
+            readOnly
+            value={absoluteUrl}
+            className="flex-1 rounded-lg border bg-gray-50 px-3 py-2 text-sm text-gray-700"
+          />
+          <button onClick={copy} className="rounded-lg border bg-white px-3 py-2 text-sm hover:bg-gray-50">Kopieer</button>
+        </div>
+      </div>
+
       <div className="mt-3 grid grid-cols-5 gap-2">
         <button onClick={() => open(links.facebook)} className="group flex flex-col items-center gap-1 rounded-lg border bg-white p-2 hover:bg-blue-50">
           <div className="h-8 w-8 rounded-full bg-blue-600 text-white flex items-center justify-center">
@@ -81,21 +92,10 @@ export default function SharePanel({ title, url, className = "" }: Props) {
         </button>
         <button onClick={async () => { await copy(); open(links.instagram); }} className="group flex flex-col items-center gap-1 rounded-lg border bg-white p-2 hover:bg-pink-50">
           <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 text-white flex items-center justify-center">
-            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M7 2C4.239 2 2 4.239 2 7v10c0 2.761 2.239 5 5 5h10c2.761 0 5-2.239 5-5V7c0-2.761-2.239-5-5-5H7zm10 2a3 3 0 013 3v10a3 3 0 01-3 3H7a3 3 0 01-3-3V7a3 3 0 013-3h10zm-5 3a5 5 0 100 10 5 5 0 000-10zm0 2.2a2.8 2.8 0 110 5.6 2.8 2.8 0 010-5.6zM17.5 6.5a1 1 0 100 2 1 1 0 000-2z"/></svg>
+            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M21 8.5c-2.7 0-4.9-2.2-4.9-4.9V3h-3.4v12.2c0 1.7-1.4 3.1-3.1 3.1S6.5 16.9 6.5 15.2s1.4-3.1 3.1-3.1c.3 0 .7.1 1 .2V9.1c-.3 0-.6-.1-1-.1-3 0-5.5 2.5-5.5 5.5S6.6 20 9.6 20s5.5-2.5 5.5-5.5V8.8c1.1 1 2.6 1.7 4.2 1.7h.7V8.5H21z"/></svg>
           </div>
           <span className="text-[10px] text-gray-600">Instagram</span>
         </button>
-      </div>
-
-      <div className="mt-3">
-        <div className="flex items-center gap-2">
-          <input
-            readOnly
-            value={absoluteUrl}
-            className="flex-1 rounded-lg border bg-gray-50 px-3 py-2 text-sm text-gray-700"
-          />
-          <button onClick={copy} className="rounded-lg border bg-white px-3 py-2 text-sm hover:bg-gray-50">Kopieer</button>
-        </div>
       </div>
     </aside>
   );

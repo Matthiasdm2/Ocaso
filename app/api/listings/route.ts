@@ -37,7 +37,7 @@ export async function GET(request: Request) {
   let query = supabase
     .from("listings")
     .select(
-      "id,title,price,location,state,images,main_photo,created_at,categories,status",
+      "id,title,price,location,state,images,main_photo,created_at,categories,category_id,subcategory_id,status",
       { count: wantCount ? "exact" : undefined },
     )
     .eq("status", "actief");
@@ -60,7 +60,8 @@ export async function GET(request: Request) {
       .maybeSingle();
     if (cat?.id) {
       catId = cat.id;
-      query = query.contains("categories", [catId]);
+      // Check both category_id field and categories array for backward compatibility
+      query = query.or(`category_id.eq.${catId},categories.cs.{${catId}}`);
     } else {
       return NextResponse.json({ items: [], page, limit, total: 0 });
     }
@@ -74,7 +75,8 @@ export async function GET(request: Request) {
       .maybeSingle();
     if (sub?.id) {
       subId = sub.id;
-      query = query.contains("categories", [subId]);
+      // Check both subcategory_id field and categories array for backward compatibility
+      query = query.or(`subcategory_id.eq.${subId},categories.cs.{${subId}}`);
     } else {
       return NextResponse.json({ items: [], page, limit, total: 0 });
     }
@@ -112,7 +114,7 @@ export async function GET(request: Request) {
     const fbQuery = supabase
       .from("listings")
       .select(
-        "id,title,price,location,state,images,main_photo,created_at,categories,status",
+        "id,title,price,location,state,images,main_photo,created_at,categories,category_id,subcategory_id,status",
       )
       .eq("status", "actief")
       .order("created_at", { ascending: false })

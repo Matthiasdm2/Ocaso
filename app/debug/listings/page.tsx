@@ -6,7 +6,7 @@ export default async function ListingsDebugPage() {
   const supabase = supabaseServer();
   const { data, error } = await supabase
     .from("listings")
-    .select("id,title,price,seller_id,created_at")
+    .select("id,title,price,seller_id,created_at,status")
     .order("created_at", { ascending: false })
     .limit(20);
 
@@ -17,9 +17,9 @@ export default async function ListingsDebugPage() {
     <main style={{ padding: 24 }}>
       <h1>Listings (debug)</h1>
       <ul>
-  {(data as { id: number; title: string; price: number | null; created_at?: string | null }[]).map((l) => (
+  {(data as { id: number; title: string; price: number | null; created_at?: string | null; status?: string | null }[]).map((l) => (
           <li key={l.id}>
-            <strong>{l.title}</strong> — €{l.price}{" "}
+            <strong>{l.title}</strong> — €{l.price} — Status: <em>{l.status || 'geen'}</em>{" "}
             <small>({new Date(l.created_at!).toLocaleString()})</small>
           </li>
         ))}

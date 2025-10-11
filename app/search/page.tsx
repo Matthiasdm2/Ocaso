@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import BackBar from "@/components/BackBar";
 import CategorySidebar from "@/components/CategorySidebar";
-import ListingCard from "@/components/ListingCard";
+import ListingCard from "../../components/ListingCard";
 import SearchHeader from "@/components/SearchHeader";
 import { supabaseServer } from "@/lib/supabaseServer";
 

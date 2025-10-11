@@ -1,4 +1,9 @@
 /** @type {import('next').NextConfig} */
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 const nextConfig = {
   images: {
       domains: [
@@ -20,6 +25,13 @@ const nextConfig = {
     // Ensure sharp is treated as external (server runtime will resolve it)
     config.externals = config.externals || [];
     config.externals.push({ sharp: 'commonjs sharp' });
+
+    // Add path aliases for @ imports
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@': path.resolve(__dirname),
+    };
+
     return config;
   },
 };

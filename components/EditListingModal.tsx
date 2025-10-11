@@ -6,7 +6,7 @@ import CategorySelect from "@/components/CategorySelect";
 import ImagePreviewSlider from "@/components/ImagePreviewSlider";
 import PhotoUploader from "@/components/PhotoUploader";
 import { useToast } from "@/components/Toast";
-import { createClient } from "@/lib/supabaseClient";
+import { createClient } from "../lib/supabaseClient";
 
 type Listing = {
   id: string;

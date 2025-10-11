@@ -1,4 +1,4 @@
-import ListingCard from "@/components/ListingCard";
+import ListingCard from "../../components/ListingCard";
 import { getBaseUrl } from "@/lib/getBaseUrl";
 import type { Listing } from "@/lib/types";
 

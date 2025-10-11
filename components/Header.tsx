@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { createClient } from "@/lib/supabaseClient";
+import { createClient } from "../lib/supabaseClient";
 import { useUnreadBids } from "@/lib/useUnreadBids";
 import { useUnreadChats } from "@/lib/useUnreadChats";
 import { useUnreadReviews } from "@/lib/useUnreadReviews";

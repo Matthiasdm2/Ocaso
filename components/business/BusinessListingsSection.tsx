@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
-import ListingCard from "@/components/ListingCard";
+import ListingCard from "../ListingCard";
 
 export interface BusinessListing {
   id: string;

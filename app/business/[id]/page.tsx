@@ -6,7 +6,7 @@ import BusinessRatingBadge from "@/components/BusinessRatingBadge";
 import BusinessReviewsSection from "@/components/BusinessReviewsSection";
 import BusinessSectionNav from "@/components/BusinessSectionNav";
 import BusinessStatsLive from "@/components/BusinessStatsLive";
-import ListingCard from "@/components/ListingCard";
+import ListingCard from "../../../components/ListingCard";
 import Tooltip from "@/components/Tooltip";
 import { supabaseServer } from "@/lib/supabaseServer";
 

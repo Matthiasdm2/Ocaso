@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRef, useState } from "react";
 
-import { createClient } from "@/lib/supabaseClient";
+import { createClient } from "../../lib/supabaseClient";
 
 const OAUTH_ENABLED = process.env.NEXT_PUBLIC_ENABLE_OAUTH !== "false";
 

@@ -11,7 +11,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 
-import { createClient } from "@/lib/supabaseClient";
+import { createClient } from "../lib/supabaseClient";
 
 type Category = { id: string | number; name: string };
 type Subcategory = {

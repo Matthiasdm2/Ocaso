@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 
-import { createClient } from "@/lib/supabaseClient";
+import { createClient } from "../../lib/supabaseClient";
 
 /** OAuth-knoppen tonen? Zet in .env.local eventueel:
  * NEXT_PUBLIC_ENABLE_OAUTH=false   // om ze te verbergen tijdens dev

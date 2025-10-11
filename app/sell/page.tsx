@@ -13,7 +13,7 @@ import ShippingFields from "@/components/ShippingFields";
 import { useToast } from "@/components/Toast";
 import Toggle from "@/components/Toggle";
 import { detectCategorySmart } from "@/lib/categoryDetection";
-import { createClient } from "@/lib/supabaseClient";
+import { createClient } from "../../lib/supabaseClient";
 
 const supabase = createClient();
 const MIN_PHOTOS = 1;

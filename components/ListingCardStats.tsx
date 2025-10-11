@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 
-import { createClient } from "@/lib/supabaseClient";
+import { createClient } from "../lib/supabaseClient";
 
 export default function ListingCardStats({ id, initViews = 0, initFavorites = 0 }: { id: string; initViews?: number; initFavorites?: number }) {
   const supabase = createClient();

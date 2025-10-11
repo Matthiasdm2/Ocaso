@@ -60,8 +60,20 @@ const getBankAppScheme = (bank: string): string | null => {
   }
 };
 
-// Helper function to open bank app
-const openBankApp = (iban: string) => {
+// Helper function to open bank app with payment data
+const openBankApp = (iban: string, amount?: string) => {
+  // First try payto:// URL which some bank apps support
+  if (amount) {
+    const paytoUrl = `payto://iban/${iban}?amount=${amount.replace('EUR', '')}&currency=EUR&creditor-name=Verkoper&remittance=Ocaso%20betaling`;
+    try {
+      window.location.href = paytoUrl;
+      return true;
+    } catch (e) {
+      // payto not supported, continue to bank app
+    }
+  }
+
+  // Fallback to bank-specific app scheme
   const bank = getBankFromIban(iban);
   if (!bank) return false;
   const scheme = getBankAppScheme(bank);
@@ -966,7 +978,7 @@ export default function ChatDock({
                               <div className="flex justify-center">
                                 <button
                                   onClick={() => {
-                                    if (iban && openBankApp(iban)) {
+                                    if (iban && openBankApp(iban, amount || undefined)) {
                                       // Bank app opened successfully
                                     } else {
                                       // Fallback: open image in new tab

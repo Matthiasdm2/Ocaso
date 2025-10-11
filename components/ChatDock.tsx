@@ -48,14 +48,17 @@ const getBankFromIban = (iban: string): string | null => {
   return null;
 };
 
-// Helper function to get bank app URL scheme
-const getBankAppScheme = (bank: string): string | null => {
+// Helper function to get bank app URL scheme with payment data
+const getBankAppScheme = (bank: string, iban: string, amount?: string): string | null => {
+  const baseAmount = amount ? amount.replace('EUR', '') : '';
+  const message = 'Ocaso%20betaling';
+  
   switch (bank) {
-    case 'kbc': return 'kbc-mobile://';
-    case 'belfius': return 'belfius://';
-    case 'bnp': return 'bnp://'; // May not work, BNP uses different scheme
-    case 'ing': return 'ing://'; // May not work
-    case 'argenta': return 'argenta://'; // May not work
+    case 'kbc': return `kbc-mobile://pay?iban=${iban}&amount=${baseAmount}&message=${message}`;
+    case 'belfius': return `belfius://pay?iban=${iban}&amount=${baseAmount}&message=${message}`;
+    case 'bnp': return `bnp://pay?iban=${iban}&amount=${baseAmount}&message=${message}`;
+    case 'ing': return `ing://pay?iban=${iban}&amount=${baseAmount}&message=${message}`;
+    case 'argenta': return `argenta://pay?iban=${iban}&amount=${baseAmount}&message=${message}`;
     default: return null;
   }
 };
@@ -64,7 +67,7 @@ const getBankAppScheme = (bank: string): string | null => {
 const openBankApp = (iban: string, amount?: string) => {
   // First try payto:// URL which some bank apps support
   if (amount) {
-    const paytoUrl = `payto://iban/${iban}?amount=${amount.replace('EUR', '')}&currency=EUR&creditor-name=Verkoper&remittance=Ocaso%20betaling`;
+    const paytoUrl = `payto://iban/${iban}?amount=${amount.replace('EUR', '')}&currency=EUR&creditor-name=Verkoper&remittance-information=Ocaso%20betaling`;
     try {
       window.location.href = paytoUrl;
       return true;
@@ -76,7 +79,7 @@ const openBankApp = (iban: string, amount?: string) => {
   // Fallback to bank-specific app scheme
   const bank = getBankFromIban(iban);
   if (!bank) return false;
-  const scheme = getBankAppScheme(bank);
+  const scheme = getBankAppScheme(bank, iban, amount);
   if (!scheme) return false;
   try {
     window.location.href = scheme;

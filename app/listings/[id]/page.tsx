@@ -216,17 +216,17 @@ export default async function ListingPage({ params }: { params: { id: string } }
   <MarkBidsSeen listingId={listing.id} count={bidCount} />
       {/* Lint bovenaan met terugknop als Client Component */}
       <BackBar />
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 items-start">
         {/* Linker hoofdcontainer */}
         <div className="md:col-span-2 flex flex-col gap-8">
           {/* Afbeeldingen container */}
-          <div className="relative rounded-2xl border bg-white shadow p-6 w-full mb-2">
+          <div className="relative rounded-2xl border bg-white shadow p-4 md:p-6 w-full mb-2">
             <ImageGallery images={images} title={listing.title} main_photo={listing.main_photo} />
             <div className="absolute top-4 right-4 z-10">
               <ListingStats id={listing.id} views={listing.views ?? 0} favorites={(listing as { favorites_count?: number }).favorites_count ?? 0} />
             </div>
           </div>
-          <section className="rounded-xl border bg-white shadow p-4 w-full flex flex-col gap-4">
+          <section className="rounded-xl border bg-white shadow p-4 md:p-6 w-full flex flex-col gap-4 md:gap-6">
             {/* Product info */}
             <div className="flex items-center flex-wrap gap-4 mb-4">
               <div className="flex items-center gap-4">
@@ -295,7 +295,7 @@ export default async function ListingPage({ params }: { params: { id: string } }
               <p className="text-gray-700 whitespace-pre-line text-base">{listing.description ?? "Geen beschrijving opgegeven."}</p>
             </div>
             {/* Details */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 border-b pb-6 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-8 border-b pb-4 md:pb-6 mb-4 md:mb-6">
               <div>
                 <span className="block text-sm text-gray-500 mb-2">Staat</span>
                 <span className="text-base text-gray-700">{listing.state ?? "Onbekend"}</span>
@@ -320,7 +320,7 @@ export default async function ListingPage({ params }: { params: { id: string } }
           </section>
         </div>
     {/* Verkoper info rechts */}
-  <div className="md:col-span-1 md:sticky md:top-24 self-start flex flex-col gap-4">
+  <div className="md:col-span-1 md:sticky md:top-24 self-start flex flex-col gap-4 md:gap-6">
           {(() => {
             type RawSeller = { id?: string; name?: string; full_name?: string; display_name?: string; avatar_url?: string } | null;
             // listing.seller komt uit de join (alias seller:profiles...) zie select hierboven
@@ -389,7 +389,7 @@ export default async function ListingPage({ params }: { params: { id: string } }
         </div>
       </div>
       {/* Social share panel */}
-      <div className="mt-8">
+      <div className="mt-6 md:mt-8">
         <SharePanel
           title={listing.title}
           url={`/listings/${listing.id}`}

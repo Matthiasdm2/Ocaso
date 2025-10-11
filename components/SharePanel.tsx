@@ -65,7 +65,7 @@ export default function SharePanel({ title, url, className = "" }: Props) {
         </div>
       </div>
 
-      <div className="mt-3 grid grid-cols-5 gap-2">
+      <div className="mt-3 grid grid-cols-3 sm:grid-cols-5 gap-2">
         <button onClick={() => open(links.facebook)} className="group flex flex-col items-center gap-1 rounded-lg border bg-white p-2 hover:bg-blue-50">
           <div className="h-8 w-8 rounded-full bg-blue-600 text-white flex items-center justify-center">
             <span className="font-bold">f</span>

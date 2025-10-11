@@ -1,71 +1,76 @@
+"use client";
+
 import Link from "next/link";
 
-export default function Footer() {
+export default function MorePage() {
   return (
-    <footer className="border-t border-gray-200 bg-white mt-12">
-      <div className="container py-8 md:py-10 grid gap-6 md:gap-8 grid-cols-1 sm:grid-cols-2 md:grid-cols-4">
-        <div>
-          <div className="font-semibold mb-3">OCASO</div>
-          <p className="text-sm text-gray-600">
-            Slim tweedehands kopen en verkopen. Met AI‑zoek en prijscontrole.
-          </p>
-        </div>
-        <div>
-          <div className="font-semibold mb-3">Navigatie</div>
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Meer informatie</h1>
+        <p className="text-gray-600">
+          Hier vind je links naar nuttige informatie over OCASO.
+        </p>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        <div className="rounded-xl border bg-white p-6">
+          <h2 className="text-lg font-semibold mb-3">Navigatie</h2>
           <ul className="space-y-2 text-sm">
             <li>
-              <Link href="/explore" className="hover:underline">
+              <Link href="/explore" className="text-primary hover:underline">
                 Ontdekken
               </Link>
             </li>
             <li>
-              <Link href="/categories" className="hover:underline">
+              <Link href="/categories" className="text-primary hover:underline">
                 Marktplaats
               </Link>
             </li>
             <li>
-              <Link href="/sell" className="hover:underline">
+              <Link href="/sell" className="text-primary hover:underline">
                 Plaats zoekertje
               </Link>
             </li>
             <li>
-              <Link href="/business" className="hover:underline">
+              <Link href="/business" className="text-primary hover:underline">
                 Zakelijke oplossingen
               </Link>
             </li>
           </ul>
         </div>
-        <div>
-          <div className="font-semibold mb-3">Support</div>
+
+        <div className="rounded-xl border bg-white p-6">
+          <h2 className="text-lg font-semibold mb-3">Support</h2>
           <ul className="space-y-2 text-sm">
             <li>
-              <Link href="/help" className="hover:underline">
+              <Link href="/help" className="text-primary hover:underline">
                 Help & FAQ
               </Link>
             </li>
             <li>
-              <Link href="/safety" className="hover:underline">
+              <Link href="/safety" className="text-primary hover:underline">
                 Veilig handelen
               </Link>
             </li>
             <li>
-              <Link href="/contact" className="hover:underline">
+              <Link href="/contact" className="text-primary hover:underline">
                 Contact
               </Link>
             </li>
             <li>
-              <Link href="/terms" className="hover:underline">
+              <Link href="/terms" className="text-primary hover:underline">
                 Voorwaarden
               </Link>
             </li>
           </ul>
         </div>
-        <div>
-          <div className="font-semibold mb-3">Nieuwsbrief</div>
+
+        <div className="rounded-xl border bg-white p-6 md:col-span-2">
+          <h2 className="text-lg font-semibold mb-3">Nieuwsbrief</h2>
           <p className="text-sm text-gray-600 mb-3">
-            Ontvang tips, deals en updates.
+            Ontvang tips, deals en updates over OCASO.
           </p>
-          <form className="flex flex-col gap-2">
+          <form className="flex flex-col sm:flex-row gap-2 max-w-md">
             <input
               placeholder="jouw@email.com"
               className="flex-1 rounded-xl border border-gray-200 px-3 py-2 text-sm"
@@ -76,8 +81,9 @@ export default function Footer() {
           </form>
         </div>
       </div>
-      <div className="border-t border-gray-100">
-        <div className="container py-4 text-sm text-gray-500 flex flex-col sm:flex-row items-center justify-between gap-2">
+
+      <div className="text-sm text-gray-500 border-t pt-6">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
           <span>
             © {new Date().getFullYear()} OCASO. Alle rechten voorbehouden.
           </span>
@@ -91,6 +97,6 @@ export default function Footer() {
           </div>
         </div>
       </div>
-    </footer>
+    </div>
   );
 }

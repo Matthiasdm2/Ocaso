@@ -17,6 +17,7 @@ const TABS = [
   { href: "/profile/listings", label: "Mijn zoekertjes" },
   { href: "/profile/favorites", label: "Mijn favorieten" },
   { href: "/profile/reviews", label: "Mijn reviews" },
+  { href: "/profile/more", label: "Meer" },
 ];
 
 export default function ProfileLayout({ children }: { children: React.ReactNode }) {

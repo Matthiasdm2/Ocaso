@@ -306,17 +306,16 @@ export default async function ListingPage({ params }: { params: { id: string } }
               </div>
             </div>
             {/* Acties */}
-            <div className="mb-6 hidden md:block">{/* hide inline on mobile, use sticky bar */}
               <ClientActions
                 listingId={listing.id}
                 price={listing.price}
-                sellerId={listing.seller?.id ?? null}
+                sellerId={listing.seller?.id ?? (listing as { seller_id?: string }).seller_id ?? null}
                 sellerKycCompleted={sellerKycCompleted}
                 allowOffers={listing.allowOffers}
                 min_bid={listing.min_bid}
                 stock={listing.stock ?? 1}
+                isSeller={isSeller}
               />
-            </div>
           </section>
         </div>
     {/* Verkoper info rechts */}
@@ -374,17 +373,16 @@ export default async function ListingPage({ params }: { params: { id: string } }
               <div className="text-sm text-gray-500">Prijs</div>
               <div className="text-lg font-semibold text-emerald-700">€ {listing.price}</div>
             </div>
-            <div className="flex-1">
               <ClientActions
                 listingId={listing.id}
                 price={listing.price}
-                sellerId={listing.seller?.id ?? null}
+                sellerId={listing.seller?.id ?? (listing as { seller_id?: string }).seller_id ?? null}
                 sellerKycCompleted={sellerKycCompleted}
                 allowOffers={listing.allowOffers}
                 min_bid={listing.min_bid}
                 stock={listing.stock ?? 1}
+                isSeller={isSeller}
               />
-            </div>
           </div>
         </div>
       </div>

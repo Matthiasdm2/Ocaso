@@ -12,6 +12,7 @@ interface Props {
   allowOffers?: boolean;
   min_bid?: number;
   stock?: number;
+  isSeller?: boolean;
 }
 
 export default function ClientActions({
@@ -22,6 +23,7 @@ export default function ClientActions({
   allowOffers,
   min_bid,
   stock = 1,
+  isSeller = false,
 }: Props) {
   // Zorg dat allowOffers altijd als boolean werkt
   const offersAllowed = !!allowOffers && (allowOffers === true || String(allowOffers).toLowerCase() === "true" || String(allowOffers) === "1" || String(allowOffers).toLowerCase() === "yes");
@@ -201,10 +203,17 @@ export default function ClientActions({
 
         <button
           type="button"
-          disabled={contactLoading}
+          disabled={contactLoading || isSeller}
           onClick={useCallback(async () => {
             if (contactLoading) return;
-            if (!sellerId) return;
+            if (!sellerId) {
+              alert('Kan verkoper niet vinden voor dit zoekertje.');
+              return;
+            }
+            if (!listingId) {
+              alert('Listing informatie ontbreekt.');
+              return;
+            }
             if (!profile) {
               if (!loading) {
                 window.location.href = '/login';
@@ -232,6 +241,10 @@ export default function ClientActions({
                 window.location.href = '/login';
                 return;
               }
+              if (!res.ok) {
+                alert(`API fout (${res.status}): ${d.error || d.detail || 'Onbekende fout'}`);
+                return;
+              }
               if (d.conversation?.id) {
                 window.dispatchEvent(new CustomEvent('ocaso:open-chat-dock', { detail: { conversationId: d.conversation.id } }));
                 window.dispatchEvent(new CustomEvent('ocaso:conversation-started', {
@@ -247,6 +260,10 @@ export default function ClientActions({
                     }
                   }
                 }));
+              } else {
+                // Handle API errors that don't have conversation
+                const errorMsg = d.error || d.detail || 'Onbekende fout bij starten gesprek';
+                alert(`Kon gesprek niet starten: ${errorMsg}`);
               }
             } catch (e) {
               // eslint-disable-next-line no-console

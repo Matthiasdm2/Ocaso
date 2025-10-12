@@ -48,8 +48,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   // Get conversations with last message and unread count
-  // Replace RPC function with direct query for better reliability
-  // Use a safer approach to filter conversations by participants
+  // Use a more efficient query with proper filtering
   const { data: conversationsData, error: convError } = await supabase
     .from("conversations")
     .select(`
@@ -57,23 +56,21 @@ export async function GET(request: Request) {
       participants,
       updated_at,
       listing_id,
-      messages(
+      messages!inner(
         id,
         body,
         created_at,
         sender_id
       )
     `)
-    .order("updated_at", { ascending: false });
+    .contains("participants", [user.id])
+    .order("updated_at", { ascending: false })
+    .limit(50); // Limit to prevent excessive data
 
   if (convError) {
-    return NextResponse.json({ error: convError.message }, { status: 400 });
+    console.error("Messages API error:", convError);
+    return NextResponse.json({ error: convError.message }, { status: 500 });
   }
-
-  // Filter conversations where user is a participant (safer than database contains)
-  const userConversations = (conversationsData || []).filter((conv: RawConversation) => {
-    return Array.isArray(conv.participants) && conv.participants.includes(user.id);
-  });
 
   interface ConversationOverviewRow {
     id: string;
@@ -97,11 +94,11 @@ export async function GET(request: Request) {
       body: string;
       created_at: string;
       sender_id: string;
-    }> | null;
+    }>;
   }
 
     // Process conversations to get last message and unread count
-  const processedConversations: ConversationOverviewRow[] = (userConversations as RawConversation[] || []).map((conv) => {
+  const processedConversations: ConversationOverviewRow[] = (conversationsData as RawConversation[] || []).map((conv) => {
     const messages = conv.messages || [];
     const sortedMessages = messages.sort((a, b) =>
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime()

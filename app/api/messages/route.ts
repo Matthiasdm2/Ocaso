@@ -2,7 +2,6 @@ import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
 import { supabaseServer } from "@/lib/supabaseServer";
-import { supabaseServiceRole } from "@/lib/supabaseServiceRole";
 
 // Ensure this route never attempts static optimization
 export const runtime = "nodejs";
@@ -271,15 +270,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ conversation: existing, created: false });
   }
   try {
-    // Graceful guard: if service role key is missing in env, return a clear 503 instead of throwing
-    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      return NextResponse.json({ error: "service_role_missing" }, {
-        status: 503,
-      });
-    }
-    const elevated = supabaseServiceRole();
-    // With unique index in place this will error if duplicate creation races; we then refetch.
-    const { data: conv, error } = await elevated
+    // Use regular authenticated client instead of service role
+    // RLS policies will ensure users can only create conversations they're participants in
+    const { data: conv, error } = await supabase
       .from("conversations")
       .insert({ participants, listing_id: listingId })
       .select("id, participants, listing_id, created_at")

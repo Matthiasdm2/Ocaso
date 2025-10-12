@@ -309,7 +309,7 @@ export default async function ListingPage({ params }: { params: { id: string } }
               <ClientActions
                 listingId={listing.id}
                 price={listing.price}
-                sellerId={listing.seller?.id ?? (listing as { seller_id?: string }).seller_id ?? null}
+                sellerId={listing.seller_id}
                 sellerKycCompleted={sellerKycCompleted}
                 allowOffers={listing.allowOffers}
                 min_bid={listing.min_bid}
@@ -376,7 +376,7 @@ export default async function ListingPage({ params }: { params: { id: string } }
               <ClientActions
                 listingId={listing.id}
                 price={listing.price}
-                sellerId={listing.seller?.id ?? (listing as { seller_id?: string }).seller_id ?? null}
+                sellerId={listing.seller_id}
                 sellerKycCompleted={sellerKycCompleted}
                 allowOffers={listing.allowOffers}
                 min_bid={listing.min_bid}

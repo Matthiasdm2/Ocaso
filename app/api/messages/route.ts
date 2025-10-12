@@ -49,6 +49,7 @@ export async function GET(request: Request) {
   }
   // Get conversations with last message and unread count
   // Replace RPC function with direct query for better reliability
+  // Use a safer approach to filter conversations by participants
   const { data: conversationsData, error: convError } = await supabase
     .from("conversations")
     .select(`
@@ -63,12 +64,16 @@ export async function GET(request: Request) {
         sender_id
       )
     `)
-    .contains("participants", [user.id]) // Check if user is in participants array
     .order("updated_at", { ascending: false });
 
   if (convError) {
     return NextResponse.json({ error: convError.message }, { status: 400 });
   }
+
+  // Filter conversations where user is a participant (safer than database contains)
+  const userConversations = (conversationsData || []).filter((conv: RawConversation) => {
+    return Array.isArray(conv.participants) && conv.participants.includes(user.id);
+  });
 
   interface ConversationOverviewRow {
     id: string;
@@ -96,7 +101,7 @@ export async function GET(request: Request) {
   }
 
     // Process conversations to get last message and unread count
-  const processedConversations: ConversationOverviewRow[] = (conversationsData as RawConversation[] || []).map((conv) => {
+  const processedConversations: ConversationOverviewRow[] = (userConversations as RawConversation[] || []).map((conv) => {
     const messages = conv.messages || [];
     const sortedMessages = messages.sort((a, b) =>
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime()

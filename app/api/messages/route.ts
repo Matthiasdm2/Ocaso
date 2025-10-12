@@ -47,10 +47,29 @@ export async function GET(request: Request) {
   if (!user) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
-  const { data, error } = await supabase.rpc("conversation_overview");
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
+  // Get conversations with last message and unread count
+  // Replace RPC function with direct query for better reliability
+  const { data: conversationsData, error: convError } = await supabase
+    .from("conversations")
+    .select(`
+      id,
+      participants,
+      updated_at,
+      listing_id,
+      messages(
+        id,
+        body,
+        created_at,
+        sender_id
+      )
+    `)
+    .contains("participants", [user.id]) // Check if user is in participants array
+    .order("updated_at", { ascending: false });
+
+  if (convError) {
+    return NextResponse.json({ error: convError.message }, { status: 400 });
   }
+
   interface ConversationOverviewRow {
     id: string;
     participants: string[];
@@ -62,7 +81,45 @@ export async function GET(request: Request) {
     unread_count: number | null;
     listing_id?: string | null;
   }
-  const rows: ConversationOverviewRow[] = Array.isArray(data) ? data : [];
+
+  interface RawConversation {
+    id: string;
+    participants: string[];
+    updated_at: string;
+    listing_id: string | null;
+    messages: Array<{
+      id: string;
+      body: string;
+      created_at: string;
+      sender_id: string;
+    }> | null;
+  }
+
+    // Process conversations to get last message and unread count
+  const processedConversations: ConversationOverviewRow[] = (conversationsData as RawConversation[] || []).map((conv) => {
+    const messages = conv.messages || [];
+    const sortedMessages = messages.sort((a, b) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+    const lastMessage = sortedMessages[0];
+
+    // For now, set unread_count to 0 - we can implement this later if needed
+    const unread_count = 0;
+
+    return {
+      id: conv.id,
+      participants: conv.participants,
+      updated_at: conv.updated_at,
+      last_message_id: lastMessage?.id || null,
+      last_message_body: lastMessage?.body || null,
+      last_message_created_at: lastMessage?.created_at || null,
+      last_message_sender: lastMessage?.sender_id || null,
+      unread_count,
+      listing_id: conv.listing_id,
+    };
+  });
+
+  const rows: ConversationOverviewRow[] = processedConversations;
   // Fetch listing snippets for all listing-linked conversations to enrich UI (single roundtrip)
   const listingIds = Array.from(
     new Set(

@@ -2,7 +2,7 @@
 
 // Avoid static prerendering for this page so hooks like useSearchParams can run safely at runtime
 export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+export const revalidate = false;
 
 import Image from 'next/image';
 import React, { useEffect, useRef, useState } from 'react';

@@ -1,7 +1,10 @@
 'use client';
 
+// Avoid static prerendering for this page so hooks like useSearchParams can run safely at runtime
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 import Image from 'next/image';
-import { useSearchParams } from 'next/navigation';
 import React, { useEffect, useRef, useState } from 'react';
 
 import { ConsentModal } from '@/components/ConsentModal';
@@ -69,11 +72,13 @@ export default function InfoPage() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
   const { push } = useToast();
-  const searchParams = useSearchParams();
 
   // Handle credits success
   useEffect(() => {
-    if (searchParams.get('credits_success') === 'true') {
+    // Use window.location to avoid Next.js Suspense requirements for useSearchParams
+    if (typeof window === 'undefined') return;
+    const sp = new URLSearchParams(window.location.search);
+    if (sp.get('credits_success') === 'true') {
       push('Credits succesvol toegevoegd! Je saldo is bijgewerkt.');
       // Trigger profile refresh
       window.dispatchEvent(new CustomEvent('ocaso:profile-updated', { detail: { refetch: true } }));
@@ -83,7 +88,7 @@ export default function InfoPage() {
       url.searchParams.delete('session_id');
       window.history.replaceState({}, '', url.toString());
     }
-  }, [searchParams, push]);
+  }, [push]);
 
   useEffect(() => {
     (async () => {

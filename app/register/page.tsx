@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-import { createClient } from "../../lib/supabaseClient";
+import { getBaseUrl } from "@/lib/getBaseUrl";
+import { createClient } from "@/lib/supabaseClient";
 
 /** OAuth-knoppen tonen? Zet in .env.local eventueel:
  * NEXT_PUBLIC_ENABLE_OAUTH=false   // om ze te verbergen tijdens dev
@@ -70,6 +71,7 @@ function IconApple(props: React.SVGProps<SVGSVGElement>) {
 export default function RegisterPage() {
   const supabase = createClient();
   const router = useRouter();
+  const siteUrl = getBaseUrl();
 
   // Basis
   const [name, setName] = useState("");
@@ -162,10 +164,7 @@ export default function RegisterPage() {
             iban: isBusiness ? iban : "",
             marketing_opt_in: marketingOptIn,
           },
-          emailRedirectTo:
-            typeof window !== "undefined"
-              ? `${window.location.origin}/auth/callback`
-              : undefined,
+          emailRedirectTo: `${siteUrl}/auth/callback`,
         },
       });
 
@@ -190,7 +189,7 @@ export default function RegisterPage() {
     setOk(null);
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+  options: { redirectTo: `${siteUrl}/auth/callback` },
     });
     if (error) setErr(error.message);
   }
@@ -475,7 +474,7 @@ export default function RegisterPage() {
                 type: "signup",
                 email,
                 options: {
-                  emailRedirectTo: `${window.location.origin}/auth/callback`,
+                  emailRedirectTo: `${siteUrl}/auth/callback`,
                 },
               });
               if (error) {

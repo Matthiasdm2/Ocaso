@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useRef, useState } from "react";
 
-import { createClient } from "../../lib/supabaseClient";
+import { getBaseUrl } from "@/lib/getBaseUrl";
+import { createClient } from "@/lib/supabaseClient";
 
 const OAUTH_ENABLED = process.env.NEXT_PUBLIC_ENABLE_OAUTH !== "false";
 
@@ -53,6 +54,7 @@ function IconApple(props: React.SVGProps<SVGSVGElement>) {
 
 export default function LoginPage() {
   const supabase = createClient();
+  const siteUrl = getBaseUrl();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -138,7 +140,7 @@ export default function LoginPage() {
     setInfo(null);
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+  options: { redirectTo: `${siteUrl}/auth/callback` },
     });
     if (error) setErr(error.message);
   }
@@ -152,7 +154,7 @@ export default function LoginPage() {
       const target = resetEmail || email;
       if (!target) throw new Error("Vul je e-mailadres in.");
       const { error } = await supabase.auth.resetPasswordForEmail(target, {
-        redirectTo: `${window.location.origin}/auth/reset`,
+        redirectTo: `${siteUrl}/auth/reset`,
       });
       if (error) throw error;
       setInfo("Reset-mail verstuurd! Check je mailbox.");

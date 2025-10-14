@@ -2,6 +2,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { getBaseUrl } from "@/lib/getBaseUrl";
 import { createClient } from "@/lib/supabaseClient";
 
 export default function RegisterPage() {
@@ -12,6 +13,7 @@ export default function RegisterPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const supabase = createClient();
+  const siteUrl = getBaseUrl();
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,7 +24,7 @@ export default function RegisterPage() {
       password,
       options: {
         data: { first_name: firstName },
-        emailRedirectTo: `${window.location.origin}/auth/confirm`,
+  emailRedirectTo: `${siteUrl}/auth/callback`,
       },
     });
     if (error) setErr(error.message);

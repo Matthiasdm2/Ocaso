@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { Autocomplete } from "@/components/Autocomplete";
 import { getBaseUrl } from "@/lib/getBaseUrl";
 import { createClient } from "@/lib/supabaseClient";
 
@@ -209,6 +210,70 @@ export default function RegisterPage() {
     </button>
   );
 
+  // Address suggestion helpers (OpenStreetMap Nominatim)
+  async function fetchStreetOptions(q: string) {
+    const url = new URL("https://nominatim.openstreetmap.org/search");
+    // Belgian addresses only, street query; append postal/city to improve relevance
+    const qParts = [q];
+    if (postal) qParts.push(postal);
+    if (city) qParts.push(city);
+    url.searchParams.set("q", qParts.join(" "));
+    url.searchParams.set("countrycodes", "be");
+    url.searchParams.set("addressdetails", "1");
+    url.searchParams.set("format", "jsonv2");
+    url.searchParams.set("limit", "8");
+    const res = await fetch(url.toString(), { headers: { "Accept-Language": "nl" } });
+  const data = (await res.json()) as unknown;
+  if (!Array.isArray(data)) return [];
+  return data
+      .filter((d) => d?.address?.road)
+      .map((d) => ({
+        label: `${d.address.road}${d.address.house_number ? ' ' + d.address.house_number : ''} – ${d.address.postcode ?? ''} ${d.address.city ?? d.address.town ?? d.address.village ?? ''}`.trim(),
+        value: d.address.road as string,
+        meta: {
+          postcode: d.address.postcode || '',
+          city: d.address.city || d.address.town || d.address.village || '',
+        },
+      }));
+  }
+  async function fetchCityOptions(q: string) {
+    const url = new URL("https://nominatim.openstreetmap.org/search");
+    url.searchParams.set("q", q + (postal ? ` ${postal}` : ""));
+    url.searchParams.set("countrycodes", "be");
+    url.searchParams.set("addressdetails", "1");
+    url.searchParams.set("format", "jsonv2");
+    url.searchParams.set("limit", "8");
+    url.searchParams.set("featuretype", "city");
+    const res = await fetch(url.toString(), { headers: { "Accept-Language": "nl" } });
+  const data = (await res.json()) as unknown;
+  if (!Array.isArray(data)) return [];
+  return data
+      .map((d) => ({
+        label: `${d.address.city || d.address.town || d.address.village || ''} ${d.address.postcode ? '(' + d.address.postcode + ')' : ''}`.trim(),
+        value: (d.address.city || d.address.town || d.address.village || '') as string,
+        meta: { postcode: d.address.postcode || '' },
+      }))
+      .filter((o) => o.value);
+  }
+  async function fetchPostalOptions(q: string) {
+    const url = new URL("https://nominatim.openstreetmap.org/search");
+    url.searchParams.set("q", q);
+    url.searchParams.set("countrycodes", "be");
+    url.searchParams.set("addressdetails", "1");
+    url.searchParams.set("format", "jsonv2");
+    url.searchParams.set("limit", "8");
+    const res = await fetch(url.toString(), { headers: { "Accept-Language": "nl" } });
+  const data = (await res.json()) as unknown;
+  if (!Array.isArray(data)) return [];
+  return data
+      .filter((d) => d?.address?.postcode)
+      .map((d) => ({
+        label: `${d.address.postcode} ${d.address.city || d.address.town || d.address.village || ''}`.trim(),
+        value: d.address.postcode as string,
+        meta: { city: d.address.city || d.address.town || d.address.village || '' },
+      }));
+  }
+
   return (
     <div className="container max-w-3xl mx-auto py-10">
       <h1 className="text-2xl font-semibold mb-6">Account aanmaken</h1>
@@ -318,10 +383,11 @@ export default function RegisterPage() {
           <div className="grid md:grid-cols-6 gap-3">
             <div className="md:col-span-3">
               <label className="block text-sm mb-1">Straat</label>
-              <input
-                className="w-full rounded-xl border border-gray-200 px-3 py-2"
+              <Autocomplete
                 value={street}
-                onChange={(e) => setStreet(e.target.value)}
+                onChange={setStreet}
+                fetchOptions={fetchStreetOptions}
+                placeholder="Straatnaam"
               />
             </div>
             <div>
@@ -342,18 +408,28 @@ export default function RegisterPage() {
             </div>
             <div>
               <label className="block text-sm mb-1">Postcode</label>
-              <input
-                className="w-full rounded-xl border border-gray-200 px-3 py-2"
+              <Autocomplete
                 value={postal}
-                onChange={(e) => setPostal(e.target.value)}
+                onChange={(v) => setPostal(v)}
+                onPick={(opt) => {
+                  const c = String(opt.meta?.city || '');
+                  if (c) setCity(c);
+                }}
+                fetchOptions={fetchPostalOptions}
+                placeholder="vb. 9000"
               />
             </div>
             <div className="md:col-span-2">
               <label className="block text-sm mb-1">Gemeente / Stad</label>
-              <input
-                className="w-full rounded-xl border border-gray-200 px-3 py-2"
+              <Autocomplete
                 value={city}
-                onChange={(e) => setCity(e.target.value)}
+                onChange={(v) => setCity(v)}
+                onPick={(opt) => {
+                  const pc = String(opt.meta?.postcode || '');
+                  if (pc) setPostal(pc);
+                }}
+                fetchOptions={fetchCityOptions}
+                placeholder="vb. Gent"
               />
             </div>
           </div>

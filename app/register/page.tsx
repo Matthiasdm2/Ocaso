@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { createClient } from "../../lib/supabaseClient";
@@ -68,6 +69,7 @@ function IconApple(props: React.SVGProps<SVGSVGElement>) {
 
 export default function RegisterPage() {
   const supabase = createClient();
+  const router = useRouter();
 
   // Basis
   const [name, setName] = useState("");
@@ -167,11 +169,10 @@ export default function RegisterPage() {
         },
       });
 
-      if (error) throw error;
-
-      setOk(
-        "Account aangemaakt ✅ Check je mailbox om te bevestigen (of log in).",
-      );
+  if (error) throw error;
+  // Redirect naar login na registreren
+  router.push("/login");
+  return;
     } catch (e: unknown) {
       console.error("signup error", e);
       if (e instanceof Error) {

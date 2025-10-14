@@ -1,9 +1,11 @@
 "use client";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { createClient } from "@/lib/supabaseClient";
 
 export default function RegisterPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
@@ -24,7 +26,10 @@ export default function RegisterPage() {
       },
     });
     if (error) setErr(error.message);
-    else setMessage("Check je e-mail om te bevestigen.");
+    else {
+      router.push("/login");
+      return;
+    }
   };
 
   return (

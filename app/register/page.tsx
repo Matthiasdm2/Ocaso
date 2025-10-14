@@ -74,7 +74,8 @@ export default function RegisterPage() {
   const siteUrl = getBaseUrl();
 
   // Basis
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -105,7 +106,8 @@ export default function RegisterPage() {
   function saveDraftProfile() {
     const draft = {
       isBusiness,
-      name,
+  firstName,
+  lastName,
       email,
       phone,
       address: { street, number, bus, postal, city, country },
@@ -129,7 +131,8 @@ export default function RegisterPage() {
     setOk(null);
 
     // Validatie
-    if (!required(name)) return setErr("Vul je naam in.");
+  if (!required(firstName)) return setErr("Vul je voornaam in.");
+  if (!required(lastName)) return setErr("Vul je achternaam in.");
     if (!validateEmail(email)) return setErr("E-mailadres is ongeldig.");
     if (!validatePassword(password))
       return setErr("Wachtwoord moet minstens 8 tekens zijn.");
@@ -154,7 +157,9 @@ export default function RegisterPage() {
         password,
         options: {
           data: {
-            full_name: name,
+            first_name: firstName,
+            last_name: lastName,
+            full_name: [firstName, lastName].filter(Boolean).join(" "),
             phone,
             address: { street, number, bus, postal, city, country },
             is_business: isBusiness,
@@ -235,11 +240,20 @@ export default function RegisterPage() {
           <h2 className="font-medium">Accountgegevens</h2>
           <div className="grid md:grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm mb-1">Naam</label>
+              <label className="block text-sm mb-1">Voornaam</label>
               <input
                 className="w-full rounded-xl border border-gray-200 px-3 py-2"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm mb-1">Achternaam</label>
+              <input
+                className="w-full rounded-xl border border-gray-200 px-3 py-2"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
                 required
               />
             </div>

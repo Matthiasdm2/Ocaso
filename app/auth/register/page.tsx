@@ -10,6 +10,7 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const supabase = createClient();
@@ -19,12 +20,12 @@ export default function RegisterPage() {
     e.preventDefault();
     setErr(null);
     setMessage(null);
-    const { error } = await supabase.auth.signUp({
+  const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { first_name: firstName },
-  emailRedirectTo: `${siteUrl}/auth/callback`,
+    data: { first_name: firstName, last_name: lastName, full_name: [firstName, lastName].filter(Boolean).join(" ") },
+    emailRedirectTo: `${siteUrl}/auth/callback`,
       },
     });
     if (error) setErr(error.message);
@@ -43,6 +44,12 @@ export default function RegisterPage() {
           placeholder="Voornaam"
           value={firstName}
           onChange={(e) => setFirstName(e.target.value)}
+        />
+        <input
+          className="w-full border rounded px-3 py-2"
+          placeholder="Achternaam"
+          value={lastName}
+          onChange={(e) => setLastName(e.target.value)}
         />
         <input
           className="w-full border rounded px-3 py-2"

@@ -3,22 +3,44 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-import { supabase } from "../lib/supabaseClient";
+import { createClient } from "@/lib/supabaseClient";
 
 export default function HeaderAdminLink() {
-  const [show, setShow] = useState(false);
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+
   useEffect(() => {
-    let mounted = true;
-    supabase.auth.getUser().then(({ data }) => {
-      type UserMetadata = { is_admin?: boolean };
-      const userMetadata = data.user?.user_metadata as UserMetadata | undefined;
-      const isAdmin = userMetadata?.is_admin === true;
-      if (mounted) setShow(!!isAdmin);
-    });
-    return () => { mounted = false; };
+    const checkAdmin = async () => {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (!user) {
+          setIsAdmin(false);
+          return;
+        }
+
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("is_admin")
+          .eq("id", user.id)
+          .single();
+
+        setIsAdmin(!!profile?.is_admin);
+      } catch (error) {
+        console.error('Error checking admin status:', error);
+        setIsAdmin(false);
+      }
+    };
+
+    checkAdmin();
   }, []);
-  if (!show) return null;
+
+  // Only show if we know the user is admin
+  if (isAdmin !== true) return null;
+
   return (
-    <Link href="/admin/categories" className="btn-secondary">Admin</Link>
+    <Link href="/admin" className="px-3 py-2 rounded-lg hover:bg-gray-50 text-sm">
+      Admin
+    </Link>
   );
 }

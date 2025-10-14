@@ -2,7 +2,6 @@
 import { useState } from "react";
 
 import { createClient } from "../lib/supabaseClient";
-
 import LoginPrompt from "./LoginPrompt";
 import ReviewModal from "./ReviewModal";
 

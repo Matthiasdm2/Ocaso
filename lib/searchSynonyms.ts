@@ -564,12 +564,15 @@ export function buildSynonymOrFilter(term: string): string | undefined {
     if (t.length > 1) terms.add(t);
   });
 
-  // Voeg synoniemen toe gebaseerd op gevonden keywords
+  // Voeg synoniemen toe - beide kanten op
   Object.entries(categorySynonyms).forEach(([key, synonyms]) => {
-    if (tNorm.includes(key)) {
-      synonyms.forEach((synonym: string) => terms.add(synonym));
+    const allTerms = [key, ...synonyms];
+    if (allTerms.some((syn) => tNorm.includes(syn) || syn.includes(tNorm))) {
+      allTerms.forEach((synonym: string) => terms.add(synonym));
     }
-  }); // Filter en limiet voor performance
+  });
+
+  // Filter en limiet voor performance
   const termList = Array.from(terms)
     .filter((x) => x.length > 1)
     .slice(0, 15); // Max 15 termen om query niet te complex te maken
@@ -606,10 +609,11 @@ export function getSynonymTerms(term: string): string[] {
     if (t.length > 1) terms.add(t);
   });
 
-  // Voeg synoniemen toe
+  // Voeg synoniemen toe - beide kanten op
   Object.entries(categorySynonyms).forEach(([key, synonyms]) => {
-    if (tNorm.includes(key)) {
-      synonyms.forEach((synonym: string) => terms.add(synonym));
+    const allTerms = [key, ...synonyms];
+    if (allTerms.some((syn) => tNorm.includes(syn) || syn.includes(tNorm))) {
+      allTerms.forEach((synonym: string) => terms.add(synonym));
     }
   });
 

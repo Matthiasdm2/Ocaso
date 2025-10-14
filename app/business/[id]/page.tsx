@@ -6,9 +6,10 @@ import BusinessRatingBadge from "@/components/BusinessRatingBadge";
 import BusinessReviewsSection from "@/components/BusinessReviewsSection";
 import BusinessSectionNav from "@/components/BusinessSectionNav";
 import BusinessStatsLive from "@/components/BusinessStatsLive";
-import ListingCard from "../../../components/ListingCard";
 import Tooltip from "@/components/Tooltip";
 import { supabaseServer } from "@/lib/supabaseServer";
+
+import ListingCard from "../../../components/ListingCard";
 
 interface ListingRow { id: string; title?: string | null; price?: number | null; images?: string[] | null; created_at?: string | null; views?: number | null; favorites?: number | null; favorites_count?: number | null; category?: string | null; subcategory?: string | null; seller_id?: string | null; status?: string | null }
 interface ProfileRow { id: string; full_name?: string | null; display_name?: string | null; shop_name?: string | null; shop_slug?: string | null; business_logo_url?: string | null; business_banner_url?: string | null; business_bio?: string | null; website?: string | null; social_instagram?: string | null; social_facebook?: string | null; social_tiktok?: string | null; public_show_email?: boolean | null; public_show_phone?: boolean | null; address?: { street: string; city: string; zip: string; country: string } | null; invoice_address?: string | null; is_business?: boolean | null; company_name?: string | null; vat?: string | null; registration_nr?: string | null; invoice_email?: string | null; business_plan?: string | null; business_billing_cycle?: string | null; avatar_url?: string | null; stripe_account_id?: string | null }

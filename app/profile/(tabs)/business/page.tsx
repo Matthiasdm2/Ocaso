@@ -5,11 +5,17 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import KycForm from '@/components/KycForm';
 import { CATEGORIES } from '@/lib/categories';
-import type { BillingCycle, Profile } from '@/lib/profiletypes';
+import type { BillingCycle, BusinessPlan, Profile } from '@/lib/profiletypes';
 import { createClient } from '@/lib/supabaseClient';
 // Nieuwe API integratie voor business update
 
-/* -------------------------------- helpers -------------------------------- */
+// Type for business subscription data from database
+interface BusinessSubscriptionData {
+  plan?: string;
+  billing_cycle?: string;
+  subscription_active?: boolean;
+  subscription_updated_at?: string;
+}
 function splitName(full?: string) {
   const s = (full || '').trim();
   if (!s) return { firstName: '', lastName: '' };
@@ -46,6 +52,8 @@ const emptyProfile: Profile = {
     bank: { iban: '', bic: '' },
     invoiceAddress: { street: '', city: '', zip: '', country: 'België' },
     plan: 'basic',
+    billingCycle: 'monthly',
+    subscriptionActive: false,
     shopName: '',
     shopSlug: '',
     logoUrl: '',
@@ -77,7 +85,7 @@ export default function BusinessProfilePage() {
 
   // NEW: modal state voor preview
   const [showPreview, setShowPreview] = useState(false);
-  // Abonnement: keuze maand/jaar (jaarlijks = 20% korting)
+  // Abonnement: keuze maand/jaar (vaste jaarlijkse prijzen)
   const [billingCycle, setBillingCycle] = useState<BillingCycle>('monthly');
 
   // Stripe KYC status
@@ -88,6 +96,9 @@ export default function BusinessProfilePage() {
 
   const searchParams = useSearchParams();
   const openSection = searchParams.get('open');
+  const checkoutSuccess = searchParams.get('success') === 'true';
+  const _checkoutPlan = searchParams.get('plan');
+  const _checkoutBilling = searchParams.get('billing');
   console.log('openSection:', openSection);
 
   // Scroll to section if specified
@@ -120,16 +131,103 @@ export default function BusinessProfilePage() {
     }
   }, [profile?.business?.billingCycle]);
 
+  // Ververs profiel na succesvolle checkout om nieuwe subscription data te laden
+  useEffect(() => {
+    if (checkoutSuccess) {
+      // Wacht even voor webhook processing en laad profiel opnieuw
+      const timer = setTimeout(async () => {
+        setLoading(true);
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) return;
+
+          const { data: r } = await supabase
+            .from('profiles')
+            .select(`
+              id, email, full_name, phone,
+              is_business, company_name, vat, registration_nr, website, invoice_email,
+              bank, invoice_address,
+              shop_name, shop_slug,
+              business_logo_url, business_banner_url,
+              business_bio,
+              social_instagram, social_facebook, social_tiktok,
+              public_show_email, public_show_phone,
+              business
+            `)
+            .eq('id', user.id)
+            .maybeSingle();
+
+          if (r) {
+            const name = splitName(r.full_name);
+            const ui: Profile = {
+              ...profile,
+              firstName: name.firstName,
+              lastName: name.lastName,
+              email: r.email ?? user.email ?? '',
+              phone: r.phone ?? '',
+              business: {
+                ...profile.business,
+                isBusiness: !!r.is_business,
+                companyName: r.company_name ?? '',
+                vatNumber: r.vat ?? '',
+                registrationNr: r.registration_nr ?? '',
+                website: r.website ?? '',
+                invoiceEmail: r.invoice_email ?? '',
+                bank: { iban: r.bank?.iban ?? '', bic: r.bank?.bic ?? '' },
+                invoiceAddress: {
+                  street: r.invoice_address?.street ?? '',
+                  city: r.invoice_address?.city ?? '',
+                  zip: r.invoice_address?.zip ?? '',
+                  country: r.invoice_address?.country ?? 'België',
+                },
+                shopName: r.shop_name ?? '',
+                shopSlug: r.shop_slug ?? '',
+                logoUrl: r.business_logo_url ?? '',
+                bannerUrl: r.business_banner_url ?? '',
+                description: r.business_bio ?? '',
+                socials: {
+                  instagram: r.social_instagram ?? '',
+                  facebook: r.social_facebook ?? '',
+                  tiktok: r.social_tiktok ?? '',
+                },
+                public: {
+                  showEmail: !!r.public_show_email,
+                  showPhone: !!r.public_show_phone,
+                },
+                // Business subscription data
+                plan: ((r.business as BusinessSubscriptionData)?.plan as BusinessPlan) ?? 'basic',
+                billingCycle: ((r.business as BusinessSubscriptionData)?.billing_cycle as BillingCycle) ?? 'monthly',
+                subscriptionActive: (r.business as BusinessSubscriptionData)?.subscription_active ?? false,
+                subscriptionUpdatedAt: (r.business as BusinessSubscriptionData)?.subscription_updated_at,
+              },
+            };
+            setProfile(ui);
+          }
+        } catch (e) {
+          console.error('Profiel verversen na checkout mislukt:', e);
+        } finally {
+          setLoading(false);
+        }
+      }, 2000); // 2 second delay voor webhook processing
+
+      return () => clearTimeout(timer);
+    }
+  }, [checkoutSuccess, supabase, profile]);
+
   // Helper: euro weergave
   function fmtEUR(v: number) {
     return new Intl.NumberFormat('nl-BE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(v);
   }
 
   // Basisprijzen per maand
-  const MONTHLY_PRICES: Record<string, number> = { basic: 20, pro: 50 };
+  const MONTHLY_PRICES: Record<string, number> = { basic: 15, pro: 25 };
+  const YEARLY_PRICES: Record<string, number> = { basic: 150, pro: 240 };
+
+  // Externe Stripe-betaallinks verwijderd; gebruik de embedded checkout pagina
 
   // Load huidige gebruiker + profiel
   useEffect(() => {
+    console.log('BusinessProfilePage component mounted');
     (async () => {
       setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
@@ -148,7 +246,8 @@ export default function BusinessProfilePage() {
             business_logo_url, business_banner_url,
             business_bio,
             social_instagram, social_facebook, social_tiktok,
-            public_show_email, public_show_phone
+            public_show_email, public_show_phone,
+            business
           `)
           .eq('id', user.id)
           .maybeSingle();
@@ -199,6 +298,11 @@ export default function BusinessProfilePage() {
                 showEmail: !!r.public_show_email,
                 showPhone: !!r.public_show_phone,
               },
+              // Business subscription data
+              plan: ((r.business as BusinessSubscriptionData)?.plan as BusinessPlan) ?? 'basic',
+              billingCycle: ((r.business as BusinessSubscriptionData)?.billing_cycle as BillingCycle) ?? 'monthly',
+              subscriptionActive: (r.business as BusinessSubscriptionData)?.subscription_active ?? false,
+              subscriptionUpdatedAt: (r.business as BusinessSubscriptionData)?.subscription_updated_at,
             },
           };
         }
@@ -477,8 +581,22 @@ export default function BusinessProfilePage() {
           <div className="rounded-2xl border bg-white p-6 shadow-sm">Je bent niet aangemeld.</div>
         ) : (
           <div className="space-y-10">
-            {/* Abonnement keuze */}
-            <Section overline="Abonnement" title="Kies je abonnement" subtitle="Selecteer een pakket voor je zakelijke profiel." collapsible={true} defaultCollapsed={true}>
+            {checkoutSuccess && (
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800 p-4 flex items-start gap-3">
+                <svg className="w-5 h-5 mt-0.5 text-emerald-600 flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                </svg>
+                <div>
+                  <div className="font-semibold">Abonnement geactiveerd</div>
+                  <div className="text-sm">
+                    Je betaling is voltooid. Je {_checkoutPlan ? `${_checkoutPlan.charAt(0).toUpperCase() + _checkoutPlan.slice(1)}` : 'zakelijke'} abonnement{_checkoutBilling ? ` (${_checkoutBilling === 'yearly' ? 'jaarlijks' : 'maandelijks'})` : ''} is nu actief.
+                  </div>
+                </div>
+              </div>
+            )}
+            {/* Abonnement keuze - verberg alleen als er een actief abonnement is en geen recente checkout */}
+            {!(profile.business?.subscriptionActive && !checkoutSuccess) && (
+              <Section overline="Abonnement" title="Kies je abonnement" subtitle="Selecteer een pakket voor je zakelijke profiel." collapsible={true} defaultCollapsed={true}>
                 <div className="flex items-center justify-between mb-4">
                   <div className="text-sm text-neutral-600">Betaling</div>
                   <div className="flex items-center gap-3">
@@ -490,7 +608,7 @@ export default function BusinessProfilePage() {
                     >
                       <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${billingCycle === 'yearly' ? 'translate-x-6' : 'translate-x-1'}`} />
                     </button>
-                    <div className="text-sm">Jaarlijks (20% korting)</div>
+                    <div className="text-sm">Jaarlijks</div>
                   </div>
                 </div>
 
@@ -505,7 +623,7 @@ export default function BusinessProfilePage() {
                     {billingCycle === 'monthly' ? (
                       <>{fmtEUR(MONTHLY_PRICES.basic)}<span className="text-lg font-normal text-neutral-600">/maand</span></>
                     ) : (
-                      <>{fmtEUR(Math.round(MONTHLY_PRICES.basic * 12 * 0.8))}<span className="text-lg font-normal text-neutral-600">/jaar</span></>
+                      <>{fmtEUR(YEARLY_PRICES.basic)}<span className="text-lg font-normal text-neutral-600">/jaar</span></>
                     )}
                   </div>
                   <p className="text-base text-neutral-600 mb-2 text-center">Voor bedrijven die willen starten op OCASO. Inclusief alle standaard functionaliteiten.</p>
@@ -518,7 +636,21 @@ export default function BusinessProfilePage() {
                   </ul>
                   <div className="mb-4 text-sm text-neutral-500 text-center w-full">{billingCycle === 'monthly' ? 'Maandelijks opzegbaar' : ''}</div>
                   <div className="mt-auto w-full flex justify-center">
-                    <button className="rounded-xl bg-emerald-600 px-6 py-3 text-base font-semibold text-white shadow-md transition hover:bg-emerald-700">Activeer</button>
+                    {profile.business?.plan === 'basic' && profile.business?.subscriptionActive ? (
+                      <div className="rounded-xl bg-neutral-100 px-6 py-3 text-base font-semibold text-neutral-600">
+                        Huidig actief
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          const url = `/checkout/embedded?plan=basic&billing=${billingCycle}`;
+                          window.location.href = url;
+                        }}
+                        className="rounded-xl bg-emerald-600 px-6 py-3 text-base font-semibold text-white shadow-md transition hover:bg-emerald-700"
+                      >
+                        Activeer
+                      </button>
+                    )}
                   </div>
                 </div>
                 {/* Pro abonnement */}
@@ -531,7 +663,7 @@ export default function BusinessProfilePage() {
                     {billingCycle === 'monthly' ? (
                       <>{fmtEUR(MONTHLY_PRICES.pro)}<span className="text-lg font-normal text-neutral-600">/maand</span></>
                     ) : (
-                      <>{fmtEUR(Math.round(MONTHLY_PRICES.pro * 12 * 0.8))}<span className="text-lg font-normal text-neutral-600">/jaar</span></>
+                      <>{fmtEUR(YEARLY_PRICES.pro)}<span className="text-lg font-normal text-neutral-600">/jaar</span></>
                     )}
                   </div>
                   <p className="text-base text-neutral-600 mb-2 text-center">Voor bedrijven die onbeperkt willen groeien op OCASO. Inclusief alle standaard functionaliteiten.</p>
@@ -544,11 +676,36 @@ export default function BusinessProfilePage() {
                   </ul>
                   <div className="mb-4 text-sm text-neutral-500 text-center w-full">{billingCycle === 'monthly' ? 'Maandelijks opzegbaar' : ''}</div>
                   <div className="mt-auto w-full flex justify-center">
-                    <button className="rounded-xl bg-emerald-700 px-6 py-3 text-base font-semibold text-white shadow-md transition hover:bg-emerald-800">Activeer</button>
+                    {profile.business?.plan === 'pro' && profile.business?.subscriptionActive ? (
+                      <div className="rounded-xl bg-neutral-100 px-6 py-3 text-base font-semibold text-neutral-600">
+                        Huidig actief
+                      </div>
+                    ) : profile.business?.plan === 'basic' && profile.business?.subscriptionActive ? (
+                      <button
+                        onClick={() => {
+                          const url = `/checkout/embedded?plan=pro&billing=${billingCycle}`;
+                          window.location.href = url;
+                        }}
+                        className="rounded-xl bg-emerald-700 px-6 py-3 text-base font-semibold text-white shadow-md transition hover:bg-emerald-800"
+                      >
+                        Upgraden naar Pro
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          const url = `/checkout/embedded?plan=pro&billing=${billingCycle}`;
+                          window.location.href = url;
+                        }}
+                        className="rounded-xl bg-emerald-700 px-6 py-3 text-base font-semibold text-white shadow-md transition hover:bg-emerald-800"
+                      >
+                        Activeer
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
             </Section>
+            )}
             {/* Branding */}
             <Section overline="Branding" title="Logo & banner" subtitle="Upload je bedrijfslogo en header-afbeelding.">
               <div className="grid gap-6 md:grid-cols-[1fr_1fr]">

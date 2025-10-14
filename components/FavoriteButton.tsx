@@ -4,7 +4,6 @@ import { Heart } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { createClient } from "../lib/supabaseClient";
-
 import LoginPrompt from "./LoginPrompt";
 
 type Props = { id: string; onFavorite?: (favorited: boolean) => void };

@@ -43,7 +43,7 @@ export default function ListingCard({ listing, item, reviewAvg, reviewCount, com
           Pro
         </div>
       )}
-      <div className={["w-full overflow-hidden bg-neutral-100", compact ? "aspect-square rounded-t-xl" : "aspect-[4/3] rounded-t-2xl"].join(" ") }>
+      <div className={["w-full overflow-hidden bg-neutral-100", compact ? "aspect-square rounded-t-xl" : "aspect-square rounded-t-2xl"].join(" ") }>
         {firstImage ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -62,14 +62,14 @@ export default function ListingCard({ listing, item, reviewAvg, reviewCount, com
         )}
       </div>
       <div className={[
-        "flex items-start justify-between gap-3",
-        compact ? "p-2.5" : "p-4 md:p-3"
+        "flex flex-col gap-3",
+        compact ? "p-2.5" : "p-5 md:p-4"
       ].join(" ")}>
         <div className="min-w-0 flex-1">
           <h3 className={[
             "font-medium text-neutral-900 mb-1",
-            compact ? "text-[11px] leading-tight" : "text-base md:text-sm leading-tight",
-            noClampTitle ? "" : "line-clamp-2"
+            compact ? "text-[11px] leading-tight" : "text-lg md:text-base leading-tight",
+            noClampTitle ? "" : "line-clamp-3"
           ].join(" ") }>
             {listingData.title}
           </h3>
@@ -91,7 +91,7 @@ export default function ListingCard({ listing, item, reviewAvg, reviewCount, com
           </div>
         </div>
         <div className={[
-          "shrink-0 rounded-lg bg-neutral-900 font-semibold text-white text-center",
+          "shrink-0 rounded-lg bg-neutral-900 font-semibold text-white text-center self-start",
           compact ? "px-1.5 py-0.5 text-sm" : "px-2 py-1 text-sm"
         ].join(" ")}>{toCurrency(listingData.price)}</div>
       </div>

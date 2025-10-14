@@ -6,6 +6,7 @@ import CategorySelect from "@/components/CategorySelect";
 import ImagePreviewSlider from "@/components/ImagePreviewSlider";
 import PhotoUploader from "@/components/PhotoUploader";
 import { useToast } from "@/components/Toast";
+
 import { createClient } from "../lib/supabaseClient";
 
 type Listing = {
@@ -598,7 +599,7 @@ export default function EditListingModal({ listing, open, onClose, onSave }: Pro
                 <div className="flex items-center justify-between">
                   <div>
                     <label className="text-sm font-medium text-gray-700">Verzenden via Ocaso</label>
-                    <p className="text-sm text-gray-500 mt-1">Laat Ocaso je product verzenden</p>
+                    <p className="text-sm text-gray-500 mt-1">Aan de integratie wordt gewerkt - binnenkort beschikbaar</p>
                   </div>
                   <button
                     type="button"

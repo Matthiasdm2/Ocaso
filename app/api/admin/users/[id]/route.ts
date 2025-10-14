@@ -84,6 +84,39 @@ export async function DELETE(
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    // Try to delete the Supabase Auth user first (requires service role)
+    // This must be done before deleting the profile due to foreign key constraints
+    console.log(`Attempting to delete auth user: ${params.id}`);
+    let authUserDeleted = false;
+    try {
+        const service = supabaseServiceRole();
+        console.log('Service role client created, key available:', !!process.env.SUPABASE_SERVICE_ROLE_KEY);
+        
+        // Test if service role works by trying to get user info
+        const { data: userInfo, error: getError } = await service.auth.admin.getUserById(params.id);
+        console.log('Get user test:', { userExists: !!userInfo?.user, error: getError });
+        
+        if (!getError && userInfo?.user) {
+            const { data, error: authError } = await service.auth.admin.deleteUser(params.id);
+            console.log('deleteUser result:', { data, error: authError });
+            if (!authError) {
+                authUserDeleted = true;
+                console.log('Auth user deleted successfully');
+            } else {
+                console.error("Error deleting auth user:", authError);
+            }
+        } else {
+            console.log('Auth user not found or cannot access admin API');
+        }
+    } catch (error) {
+        console.error("Exception deleting auth user:", error);
+        // Continue with profile deletion even if auth user deletion fails
+    }
+
+    if (!authUserDeleted) {
+        console.log('Warning: Auth user was not deleted, but continuing with profile deletion');
+    }
+
     // Delete profile
     const { error: profileError } = await supabase
         .from("profiles")
@@ -96,8 +129,56 @@ export async function DELETE(
         });
     }
 
-    // Optionally delete auth user, but requires service role
-    // For now, just delete profile
+    // Delete all listings associated with this user
+    const { error: listingsError } = await supabase
+        .from("listings")
+        .delete()
+        .eq("seller_id", params.id);
+
+    if (listingsError) {
+        console.error("Error deleting user listings:", listingsError);
+    }
+
+    // Delete all bids placed by this user
+    const { error: bidsError } = await supabase
+        .from("bids")
+        .delete()
+        .eq("bidder_id", params.id);
+
+    if (bidsError) {
+        console.error("Error deleting user bids:", bidsError);
+    }
+
+    // Delete all orders where this user is buyer or seller
+    const { error: ordersError } = await supabase
+        .from("orders")
+        .delete()
+        .or(`buyer_id.eq.${params.id},seller_id.eq.${params.id}`);
+
+    if (ordersError) {
+        console.error("Error deleting user orders:", ordersError);
+    }
+
+    // Delete all messages sent by this user
+    const { error: messagesError } = await supabase
+        .from("messages")
+        .delete()
+        .eq("sender_id", params.id);
+
+    if (messagesError) {
+        console.error("Error deleting user messages:", messagesError);
+    }
+
+    // Delete conversations where this user is the only participant
+    // (conversations with multiple participants should be handled differently)
+    const { error: conversationsError } = await supabase
+        .from("conversations")
+        .delete()
+        .contains("participants", [params.id]);
+
+    if (conversationsError) {
+        console.error("Error deleting user conversations:", conversationsError);
+    }
 
     return NextResponse.json({ success: true });
 }

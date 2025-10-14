@@ -1,5 +1,5 @@
 export const runtime = "nodejs";
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { type CookieOptions, createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
@@ -116,7 +116,24 @@ export async function POST(req: Request) {
     }
 
     // Authenticated user (server client using cookies)
-    const supaAuth = createRouteHandlerClient({ cookies });
+    const cookieStore = cookies();
+    const supaAuth = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value;
+          },
+          set(name: string, value: string, options: CookieOptions) {
+            cookieStore.set({ name, value, ...options });
+          },
+          remove(name: string, options: CookieOptions) {
+            cookieStore.set({ name, value: "", ...options });
+          },
+        },
+      },
+    );
     const { data: userData } = await supaAuth.auth.getUser();
     const user = userData.user;
     if (!user) {

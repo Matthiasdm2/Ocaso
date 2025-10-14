@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect,useState } from "react";
 
 import { useProfile } from "@/lib/useProfile";
 
@@ -37,6 +37,7 @@ export default function ClientActions({
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [shippingMode, setShippingMode] = useState<"pickup" | "ship">("pickup");
+  const [paymentMethod, setPaymentMethod] = useState<"qr" | "terminal">("terminal");
   const [contactName, setContactName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [contactPhone, setContactPhone] = useState("");
@@ -44,6 +45,78 @@ export default function ClientActions({
   const [addrPostal, setAddrPostal] = useState("");
   const [addrCity, setAddrCity] = useState("");
   const [addrCountry, setAddrCountry] = useState("BE");
+
+  // Check buyer KYC status (voor debugging, niet meer gebruikt in UI)
+  useEffect(() => {
+    const checkBuyerKycStatus = async () => {
+      console.log('Starting buyer KYC check, profile:', profile);
+      if (!profile?.id) {
+        console.log('No profile ID, skipping KYC check');
+        return;
+      }
+
+      try {
+        const { createClient } = await import("@/lib/supabaseClient");
+        const supabase = createClient();
+
+        // Get buyer profile with stripe account info
+        const { data: buyerProfile, error: profileError } = await supabase
+          .from("profiles")
+          .select("id, account_type, stripe_account_id")
+          .eq("id", profile.id)
+          .maybeSingle();
+
+        if (profileError || !buyerProfile) {
+          console.log('No buyer profile found or error:', profileError);
+          return;
+        }
+
+        const isBusiness =
+          (buyerProfile.account_type && (
+            String(buyerProfile.account_type).toLowerCase().includes("business") ||
+            String(buyerProfile.account_type).toLowerCase().includes("zakelijk") ||
+            String(buyerProfile.account_type).toLowerCase().includes("company")
+          )) ||
+          !!buyerProfile.stripe_account_id;
+
+        let kycApproved = false;
+        if (isBusiness && buyerProfile.stripe_account_id) {
+          try {
+            // Check KYC status via API
+            const response = await fetch('/api/stripe/custom/status', {
+              headers: {
+                'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+              },
+            });
+            if (response.ok) {
+              const statusData = await response.json();
+              kycApproved = statusData.status === 'approved';
+              console.log('Buyer KYC status:', statusData);
+            } else {
+              console.warn('Failed to check buyer KYC status:', response.status);
+            }
+          } catch (error) {
+            console.warn('Error checking buyer KYC status:', error);
+          }
+        }
+
+        console.log('Buyer KYC check result:', { isBusiness, stripeAccountId: buyerProfile.stripe_account_id, kycApproved });
+      } catch (error) {
+        console.error('Error in buyer KYC check:', error);
+      }
+    };
+
+    checkBuyerKycStatus();
+  }, [profile]);
+
+  // Set default payment method based on seller KYC status
+  useEffect(() => {
+    if (sellerKycCompleted) {
+      setPaymentMethod('terminal');
+    } else {
+      setPaymentMethod('qr');
+    }
+  }, [sellerKycCompleted]);
 
   type ShippingPayload = {
     mode: "pickup" | "ship";
@@ -96,6 +169,36 @@ export default function ClientActions({
       setPayBusy(false);
     }
   }, [listingId, shippingMode, contactName, contactEmail, contactPhone, addrLine1, addrPostal, addrCity, addrCountry, quantity, stock]);
+
+  // Generate QR payment and send via chat
+  const generateQrPayment = useCallback(async () => {
+    if (!listingId) return;
+    try {
+      setPayBusy(true);
+      // Ensure user logged in
+      const accessToken = await getAccessToken();
+      if (!accessToken) { window.location.href = '/login'; return; }
+      const res = await fetch('/api/payments/qr', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify({ listingId: String(listingId) }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data?.ok) {
+        const detail = data?.detail ? `: ${String(data.detail)}` : '';
+        throw new Error((data?.error || 'Kon QR-code niet genereren') + detail);
+      }
+      const conversationId: string = data.conversationId;
+      try {
+        window.dispatchEvent(new CustomEvent('ocaso:open-chat-dock', { detail: { conversationId } }));
+      } catch { /* ignore */ }
+      setShowCheckoutModal(false);
+    } catch (e) {
+      alert((e as Error)?.message || 'QR-code genereren mislukt');
+    } finally {
+      setPayBusy(false);
+    }
+  }, [listingId]);
 
   // Vraag betaalverzoek via chat als er geen Stripe is
   const requestPaymentViaChat = useCallback(async () => {
@@ -404,6 +507,57 @@ export default function ClientActions({
               </label>
             </div>
 
+            {/* Betaalmethode keuze */}
+            <div className="mt-6">
+              <div className="text-sm font-medium text-gray-700 mb-2">Kies betaalmethode</div>
+              <div className="flex items-center gap-3">
+                {sellerKycCompleted ? (
+                  // Als verkoper KYC-geverifieerd is, alleen betaalterminal beschikbaar
+                  <label className="inline-flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="paymethod"
+                      value="terminal"
+                      checked={true}
+                      disabled={true}
+                    />
+                    <span>Open betaalterminal</span>
+                  </label>
+                ) : (
+                  // Als verkoper niet KYC-geverifieerd is, beide opties beschikbaar
+                  <>
+                    <label className="inline-flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="paymethod"
+                        value="terminal"
+                        checked={paymentMethod === 'terminal'}
+                        onChange={() => setPaymentMethod('terminal')}
+                        disabled={true} // Altijd disabled als verkoper niet verified is
+                      />
+                      <span className="text-gray-400">Open betaalterminal</span>
+                    </label>
+                    <label className="inline-flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="paymethod"
+                        value="qr"
+                        checked={paymentMethod === 'qr'}
+                        onChange={() => setPaymentMethod('qr')}
+                      />
+                      <span>Scan QR code</span>
+                    </label>
+                  </>
+                )}
+              </div>
+              {!sellerKycCompleted && (
+                <div className="mt-1 text-xs text-gray-500">Betaalterminal is alleen beschikbaar voor geverifieerde zakelijke verkopers.</div>
+              )}
+              {sellerKycCompleted && (
+                <div className="mt-1 text-xs text-gray-500">Deze verkoper accepteert alleen veilige betalingen via de betaalterminal.</div>
+              )}
+            </div>
+
             {shippingMode === "ship" && (
               <div className="mt-6 grid grid-cols-1 gap-3">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -460,9 +614,13 @@ export default function ClientActions({
                 type="button"
                 className="ml-auto rounded-lg bg-primary text-black px-4 py-2 font-medium hover:opacity-90 disabled:opacity-60"
                 disabled={payBusy}
-                onClick={sellerKycCompleted ? proceedToPayment : requestPaymentViaChat}
+                onClick={paymentMethod === 'terminal' ? (sellerKycCompleted ? proceedToPayment : requestPaymentViaChat) : generateQrPayment}
               >
-                {payBusy ? "Even geduld…" : (sellerKycCompleted ? "Ga naar betalen" : "Stuur betaalverzoek")}
+                {payBusy
+                  ? "Even geduld…"
+                  : paymentMethod === 'terminal'
+                    ? (sellerKycCompleted ? "Ga naar betalen" : "Stuur betaalverzoek")
+                    : "Genereer QR-code"}
               </button>
             </div>
           </div>

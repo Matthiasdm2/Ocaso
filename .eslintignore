@@ -4,3 +4,11 @@ frontend/
 # Ignore utility scripts
 count-subs.js
 test-import.js
+
+# Ignore debug and test scripts
+debug-production-detailed.js
+diagnose-listing.js
+test-production-api.js
+test-production-listing.js
+test-production-page.js
+public/chat-diagnostic.js

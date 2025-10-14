@@ -2,9 +2,11 @@ import Link from "next/link";
 
 import BackBar from "@/components/BackBar";
 import CategorySidebar from "@/components/CategorySidebar";
-import ListingCard from "../../components/ListingCard";
 import SearchHeader from "@/components/SearchHeader";
+import { getSynonymTerms } from "@/lib/searchSynonyms";
 import { supabaseServer } from "@/lib/supabaseServer";
+
+import ListingCard from "../../components/ListingCard";
 
 type SimpleListing = { id: string; title: string; price: number | string; images?: string[]; created_at?: string };
 
@@ -17,13 +19,16 @@ async function fetchListingsDirect(q?: string, catSlug?: string, subSlug?: strin
     .order('created_at', { ascending: false })
     .limit(24);
   if (q) {
-    query = query.or(`title.ilike.%${q}%,description.ilike.%${q}%`);
+    const synonymTerms = getSynonymTerms(q);
+    const searchTerms = [q, ...synonymTerms];
+    const orConditions = searchTerms.flatMap(term => [`title.ilike.%${term}%`, `description.ilike.%${term}%`]);
+    query = query.or(orConditions.join(','));
   }
   if (catSlug) {
-    query = query.eq('categories.slug', catSlug);
+    query = query.or(`categories.slug.eq.${catSlug},categories.parent_slug.eq.${catSlug}`);
   }
   if (subSlug) {
-    query = query.eq('categories.parent_slug', subSlug);
+    query = query.eq('categories.slug', subSlug);
   }
   const { data } = await query;
   return { items: (data || []) as SimpleListing[] };
@@ -38,10 +43,10 @@ async function fetchListingsByIds(ids: string[], catSlug?: string, subSlug?: str
     .in('id', ids)
     .eq('status', 'actief');
   if (catSlug) {
-    query = query.eq('categories.slug', catSlug);
+    query = query.or(`categories.slug.eq.${catSlug},categories.parent_slug.eq.${catSlug}`);
   }
   if (subSlug) {
-    query = query.eq('categories.parent_slug', subSlug);
+    query = query.eq('categories.slug', subSlug);
   }
   const { data } = await query;
   const items = (data || []) as SimpleListing[];
@@ -55,10 +60,13 @@ async function fetchBusinessProfiles(q?: string) {
   if (!q || q.length < 3) return [] as Array<{ id: string; full_name: string | null; avatar_url: string | null; is_business: boolean }>;
   const supabase = supabaseServer();
   // Stap 1: vind user_id's van listings met matchende title of description
+  const synonymTerms = getSynonymTerms(q);
+  const searchTerms = [q, ...synonymTerms];
+  const orConditions = searchTerms.flatMap(term => [`title.ilike.%${term}%`, `description.ilike.%${term}%`]);
   const { data: listingMatches, error: lErr } = await supabase
     .from('listings')
     .select('user_id,title,description')
-    .or(`title.ilike.%${q}%,description.ilike.%${q}%`)
+    .or(orConditions.join(','))
     .limit(300);
   if (lErr || !listingMatches) return [];
   interface ListingMatch { user_id: string | null }

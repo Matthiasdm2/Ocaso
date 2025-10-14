@@ -13,6 +13,7 @@ import ShippingFields from "@/components/ShippingFields";
 import { useToast } from "@/components/Toast";
 import Toggle from "@/components/Toggle";
 import { detectCategorySmart } from "@/lib/categoryDetection";
+
 import { createClient } from "../../lib/supabaseClient";
 
 const supabase = createClient();
@@ -212,6 +213,10 @@ export default function SellPage() {
       // Als gebruiker niet zakelijk is of KYC niet approved, zet veilig betalen uit
       if (!business || !kycApproved) {
         setAllowSecurePay(false);
+      }
+      // Als gebruiker KYC approved is, zet verzenden uit (ze gebruiken alleen veilig betalen)
+      if (kycApproved) {
+        setAllowShipping(false);
       }
     };
 
@@ -843,9 +848,11 @@ export default function SellPage() {
                 />
               </div>
             )}
-            {userEmail && <Toggle checked={allowSecurePay} onChange={handleSecurePayToggle} label="Veilig betalen via OCASO (3% transactiekosten)" />}
-            <Toggle checked={allowShipping} onChange={setAllowShipping} label="Verzenden via OCASO (6,00€)" />
-            {allowShipping && (
+            {userEmail && <Toggle checked={allowSecurePay} onChange={handleSecurePayToggle} label="Veilig betalen via OCASO" />}
+            {/* Verzenden via OCASO alleen tonen voor niet-KYC geverifieerde gebruikers */}
+            {!kycApproved && <Toggle checked={allowShipping} onChange={setAllowShipping} label="Verzenden via OCASO" />}
+            {!kycApproved && <p className="text-sm text-gray-500 mt-1">Aan de integratie wordt gewerkt - binnenkort beschikbaar</p>}
+            {!kycApproved && allowShipping && (
               <div className="mt-2">
                 <ShippingFields
                   onChange={(vals: { length?: string; width?: string; height?: string; weight?: string }) =>

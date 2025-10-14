@@ -1,6 +1,7 @@
-import ListingCard from "../../components/ListingCard";
 import { getBaseUrl } from "@/lib/getBaseUrl";
 import type { Listing } from "@/lib/types";
+
+import ListingCard from "../../components/ListingCard";
 
 async function getData(): Promise<{ items: Listing[] }> {
   const base = getBaseUrl();

@@ -49,6 +49,8 @@ export type Profile = {
     // Abonnement
     plan: BusinessPlan; // 'basic' | 'pro' | 'premium'
     billingCycle?: BillingCycle; // 'monthly' | 'yearly' (optioneel; sliderkeuze)
+    subscriptionActive?: boolean;
+    subscriptionUpdatedAt?: string;
 
     // Shop-profiel
     shopName: string;

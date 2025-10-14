@@ -89,14 +89,6 @@ export default function ListingManagement() {
     }
   };
 
-  const deleteListing = async (id: string) => {
-    if (!confirm("Weet je het zeker?")) return;
-    const res = await fetch(`/api/admin/listings/${id}`, { method: "DELETE" });
-    if (res.ok) {
-      setListings(listings.filter(l => l.id !== id));
-    }
-  };
-
   const toggleStatus = async (id: string, current: string) => {
     const newStatus = current === "actief" ? "inactief" : "actief";
     const res = await fetch(`/api/admin/listings/${id}`, {
@@ -106,6 +98,16 @@ export default function ListingManagement() {
     });
     if (res.ok) {
       setListings(listings.map(l => l.id === id ? { ...l, status: newStatus } : l));
+    }
+  };
+
+  const deleteListing = async (id: string) => {
+    if (!confirm("Weet je het zeker? Dit zoekertje wordt permanent verwijderd.")) return;
+    const res = await fetch(`/api/admin/listings/${id}`, { method: "DELETE" });
+    if (res.ok) {
+      setListings(listings.filter(l => l.id !== id));
+    } else {
+      alert("Er ging iets mis bij het verwijderen van het zoekertje.");
     }
   };
 

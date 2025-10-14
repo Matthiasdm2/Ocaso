@@ -1,9 +1,10 @@
 import HeroSearch from "@/components/HeroSearch";
 import HomeCategoryRibbons from "@/components/HomeCategoryRibbons";
 import InfiniteGrid from "@/components/InfiniteGrid";
-import ListingCard from "../components/ListingCard";
 import { getBaseUrl } from "@/lib/getBaseUrl";
 import type { Listing } from "@/lib/types";
+
+import ListingCard from "../components/ListingCard";
 
 async function getHomeData(): Promise<{
   sponsored: Listing[];

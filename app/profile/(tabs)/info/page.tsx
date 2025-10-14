@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { useSearchParams } from 'next/navigation';
 import React, { useEffect, useRef, useState } from 'react';
 
 import { ConsentModal } from '@/components/ConsentModal';
@@ -68,6 +69,21 @@ export default function InfoPage() {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
   const { push } = useToast();
+  const searchParams = useSearchParams();
+
+  // Handle credits success
+  useEffect(() => {
+    if (searchParams.get('credits_success') === 'true') {
+      push('Credits succesvol toegevoegd! Je saldo is bijgewerkt.');
+      // Trigger profile refresh
+      window.dispatchEvent(new CustomEvent('ocaso:profile-updated', { detail: { refetch: true } }));
+      // Clean URL
+      const url = new URL(window.location.href);
+      url.searchParams.delete('credits_success');
+      url.searchParams.delete('session_id');
+      window.history.replaceState({}, '', url.toString());
+    }
+  }, [searchParams, push]);
 
   useEffect(() => {
     (async () => {
@@ -85,7 +101,11 @@ export default function InfoPage() {
           .from('profiles')
           .select(`
             id, email, full_name, phone, avatar_url, bio,
-            address, bank, preferences, notifications
+            address, bank, preferences, notifications,
+            is_business, company_name, vat, registration_nr, website, invoice_email,
+            shop_name, shop_slug, business_logo_url, business_banner_url,
+            business_bio, social_instagram, social_facebook, social_tiktok,
+            public_show_email, public_show_phone, categories, business_plan
           `)
           .eq('id', user.id)
           .maybeSingle();
@@ -118,6 +138,37 @@ export default function InfoPage() {
               bids: r.notifications?.bids ?? true,
               priceDrops: r.notifications?.priceDrops ?? true,
               tips: r.notifications?.tips ?? true,
+            },
+            business: {
+              isBusiness: r.is_business ?? false,
+              companyName: r.company_name ?? '',
+              vatNumber: r.vat ?? '',
+              registrationNr: r.registration_nr ?? '',
+              website: r.website ?? '',
+              invoiceEmail: r.invoice_email ?? '',
+              bank: { iban: '', bic: '' }, // Business bank - TODO: implement proper storage
+              invoiceAddress: {
+                street: '',
+                city: '',
+                zip: '',
+                country: 'België',
+              },
+              plan: r.business_plan ?? 'basic',
+              shopName: r.shop_name ?? '',
+              shopSlug: r.shop_slug ?? '',
+              logoUrl: r.business_logo_url ?? '',
+              bannerUrl: r.business_banner_url ?? '',
+              description: r.business_bio ?? '',
+              socials: {
+                instagram: r.social_instagram ?? '',
+                facebook: r.social_facebook ?? '',
+                tiktok: r.social_tiktok ?? '',
+              },
+              public: {
+                showEmail: r.public_show_email ?? false,
+                showPhone: r.public_show_phone ?? false,
+              },
+              categories: r.categories ?? [],
             },
           };
         }

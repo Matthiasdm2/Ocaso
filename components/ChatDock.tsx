@@ -614,6 +614,55 @@ export default function ChatDock({
   // Generate EPC QR code - European standard supported by most bank apps
   const generateEpcQr = async () => {
     setEpcError(null);
+
+    // Check credits for sellers without payment terminal
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user && isSeller) {
+      try {
+        // Check if seller has payment terminal (Stripe account)
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('stripe_account_id')
+          .eq('id', user.id)
+          .single();
+
+        const hasPaymentTerminal = profile?.stripe_account_id;
+        const credits = 0; // TODO: implement credits column in DB if needed
+
+        if (!hasPaymentTerminal) {
+          // Seller without payment terminal needs credits
+          if (credits <= 0) {
+            setEpcError('Je hebt niet genoeg Ocaso credits. Koop credits in de header om QR codes te versturen.');
+            return;
+          }
+
+          // Deduct 1 credit
+          // TODO: deduct credits once implemented in DB
+          const creditError = null;
+
+          if (creditError) {
+            setEpcError('Fout bij het aftrekken van credits.');
+            return;
+          }
+
+          // Log transaction
+          await supabase
+            .from('credit_transactions')
+            .insert({
+              user_id: user.id,
+              amount: -1,
+              transaction_type: 'usage',
+              description: 'QR code verzending',
+              reference_id: chatId
+            });
+        }
+      } catch (error) {
+        console.error('Credit check error:', error);
+        setEpcError('Fout bij credit verificatie.');
+        return;
+      }
+    }
+
     const cleanIban = (myIban || '').replace(/\s+/g, '').toUpperCase();
     const sanitize = (v: string, max = 70) =>
       v

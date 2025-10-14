@@ -23,7 +23,7 @@ async function checkAuth() {
 function checkListingData() {
   console.log('2. Checking listing data...');
   // Probeer listing ID te vinden in de URL
-  const urlMatch = window.location.pathname.match(/\/listings\/([^\/]+)/);
+  const urlMatch = window.location.pathname.match(/\/listings\/([^/]+)/);
   const listingId = urlMatch ? urlMatch[1] : null;
   console.log('Listing ID from URL:', listingId);
 
@@ -36,7 +36,7 @@ function checkListingData() {
 }
 
 // 3. Test messages API
-async function testMessagesAPI(userId) {
+async function testMessagesAPI() {
   console.log('3. Testing messages API...');
   try {
     const response = await fetch('/api/messages');
@@ -86,7 +86,7 @@ function checkErrors() {
 async function runDiagnostics() {
   const userId = await checkAuth();
   const listingData = checkListingData();
-  await testMessagesAPI(userId);
+  await testMessagesAPI();
   testContactButton();
   checkErrors();
 

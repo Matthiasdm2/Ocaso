@@ -1,9 +1,10 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import Avatar from "@/components/Avatar";
+import { createClient } from "@/lib/supabaseClient";
 import { useProfile } from "@/lib/useProfile";
 import { useUnreadBids } from "@/lib/useUnreadBids";
 import { useUnreadChats } from "@/lib/useUnreadChats";
@@ -27,40 +28,47 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
   const { total: unreadChatsTotal } = useUnreadChats();
   const { total: unreadReviewsTotal } = useUnreadReviews();
 
-  // Afgeleide, met fallback
-  const initialIsBusiness = useMemo(
-    () => Boolean(profile?.business?.isBusiness ?? false),
-    [profile],
+  const [isBusiness, setIsBusiness] = useState<boolean>(() => 
+    Boolean(profile?.business?.isBusiness ?? false)
   );
-
-  const [isBusiness, setIsBusiness] = useState<boolean>(initialIsBusiness);
   const [saving, setSaving] = useState(false);
 
+  // Keep local toggle in sync with profile once it loads/changes
   useEffect(() => {
-    // Sync wanneer profiel laadt/verandert
-    setIsBusiness(initialIsBusiness);
-  }, [initialIsBusiness]);
+    const serverVal = profile?.business?.isBusiness;
+    if (typeof serverVal === 'boolean' && !saving && serverVal !== isBusiness) {
+      setIsBusiness(serverVal);
+    }
+  }, [profile?.business?.isBusiness, saving, isBusiness]);
 
-  async function persistBusinessFlag() {
-    // TODO: vervang door je echte persist (Supabase / API-route)
-    // Voorbeeld (pas aan naar jouw schema):
-    // const { error } = await supabase.from('profiles').update({ is_business: next }).eq('id', profile.id);
-    // if (error) throw error;
+  async function persistBusinessFlag(newValue: boolean) {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Not authenticated");
 
-    // Dummy wachttijd voor UX-gevoel
-    await new Promise((r) => setTimeout(r, 250));
+    const { error } = await supabase
+      .from('profiles')
+      .update({ is_business: newValue })
+      .eq('id', user.id);
+
+    if (error) throw error;
+
+    // Trigger profile refresh met specifieke update in plaats van refetch
+    window.dispatchEvent(new CustomEvent('ocaso:profile-updated', { 
+      detail: { profile: { is_business: newValue } } 
+    }));
   }
 
   async function onToggleBusiness(e: React.ChangeEvent<HTMLInputElement>) {
     const next = e.target.checked;
+    const previous = isBusiness; // Bewaar oude waarde voor rollback
     setSaving(true);
-    const prev = isBusiness;
     setIsBusiness(next);
     try {
-      await persistBusinessFlag();
+      await persistBusinessFlag(next);
     } catch (err) {
-      // revert bij fout
-      setIsBusiness(prev);
+      // Rollback UI state bij error
+      setIsBusiness(previous);
       console.error(err);
       alert("Opslaan mislukt. Probeer later opnieuw.");
     } finally {

@@ -27,11 +27,11 @@ function supabaseFromBearer(token?: string | null) {
 
 // GET list conversations for current user with last message
 export async function GET(request: Request) {
-  console.log('[MESSAGES API] Starting GET request');
+  console.log("[MESSAGES API] Starting GET request");
   let supabase = supabaseServer();
   let { data: { user } } = await supabase.auth.getUser();
   if (!user) {
-    console.log('[MESSAGES API] No user found, trying bearer token');
+    console.log("[MESSAGES API] No user found, trying bearer token");
     const auth = request.headers.get("authorization");
     const token = auth?.toLowerCase().startsWith("bearer ")
       ? auth.slice(7)
@@ -42,20 +42,20 @@ export async function GET(request: Request) {
       if (got.data.user) {
         user = got.data.user;
         supabase = alt;
-        console.log('[MESSAGES API] User found via bearer token:', user.id);
+        console.log("[MESSAGES API] User found via bearer token:", user.id);
       }
     }
   }
 
   if (!user) {
-    console.log('[MESSAGES API] No authenticated user found');
+    console.log("[MESSAGES API] No authenticated user found");
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  console.log('[MESSAGES API] Processing for user:', user.id);
+  console.log("[MESSAGES API] Processing for user:", user.id);
   // Get conversations with last message and unread count
   // Use a more efficient query with proper filtering
-  console.log('[MESSAGES API] Executing database query for user:', user.id);
+  console.log("[MESSAGES API] Executing database query for user:", user.id);
   const { data: conversationsData, error: convError } = await supabase
     .from("conversations")
     .select(`
@@ -79,7 +79,11 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: convError.message }, { status: 500 });
   }
 
-  console.log('[MESSAGES API] Found', conversationsData?.length || 0, 'conversations');
+  console.log(
+    "[MESSAGES API] Found",
+    conversationsData?.length || 0,
+    "conversations",
+  );
 
   interface ConversationOverviewRow {
     id: string;
@@ -106,29 +110,30 @@ export async function GET(request: Request) {
     }>;
   }
 
-    // Process conversations to get last message and unread count
-  const processedConversations: ConversationOverviewRow[] = (conversationsData as RawConversation[] || []).map((conv) => {
-    const messages = conv.messages || [];
-    const sortedMessages = messages.sort((a, b) =>
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    );
-    const lastMessage = sortedMessages[0];
+  // Process conversations to get last message and unread count
+  const processedConversations: ConversationOverviewRow[] =
+    (conversationsData as RawConversation[] || []).map((conv) => {
+      const messages = conv.messages || [];
+      const sortedMessages = messages.sort((a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+      const lastMessage = sortedMessages[0];
 
-    // For now, set unread_count to 0 - we can implement this later if needed
-    const unread_count = 0;
+      // For now, set unread_count to 0 - we can implement this later if needed
+      const unread_count = 0;
 
-    return {
-      id: conv.id,
-      participants: conv.participants,
-      updated_at: conv.updated_at,
-      last_message_id: lastMessage?.id || null,
-      last_message_body: lastMessage?.body || null,
-      last_message_created_at: lastMessage?.created_at || null,
-      last_message_sender: lastMessage?.sender_id || null,
-      unread_count,
-      listing_id: conv.listing_id,
-    };
-  });
+      return {
+        id: conv.id,
+        participants: conv.participants,
+        updated_at: conv.updated_at,
+        last_message_id: lastMessage?.id || null,
+        last_message_body: lastMessage?.body || null,
+        last_message_created_at: lastMessage?.created_at || null,
+        last_message_sender: lastMessage?.sender_id || null,
+        unread_count,
+        listing_id: conv.listing_id,
+      };
+    });
 
   const rows: ConversationOverviewRow[] = processedConversations;
   // Fetch listing snippets for all listing-linked conversations to enrich UI (single roundtrip)

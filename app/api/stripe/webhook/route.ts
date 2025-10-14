@@ -45,16 +45,42 @@ export async function POST(req: Request) {
         const piId = typeof session.payment_intent === "string"
           ? session.payment_intent
           : session.payment_intent?.id ?? null;
-        // Set requires_capture state when authorized
-        const { error } = await supabase
-          .from("orders")
-          .update({
-            stripe_payment_intent_id: piId,
-            state: "requires_capture",
-          })
-          .eq("stripe_checkout_session_id", sessionId);
-        if (error) {
-          console.error("orders update (checkout.session.completed)", error);
+
+        // Check if this is a subscription checkout (has metadata)
+        if (session.metadata?.plan && session.metadata?.userId) {
+          // Handle subscription activation
+          const { plan, billing, userId } = session.metadata;
+          const { error } = await supabase
+            .from("profiles")
+            .update({
+              business: {
+                plan: plan,
+                billing_cycle: billing,
+                subscription_active: true,
+                subscription_updated_at: new Date().toISOString(),
+              },
+            })
+            .eq("id", userId);
+
+          if (error) {
+            console.error("subscription update error:", error);
+          } else {
+            console.log(
+              `Subscription activated: ${plan} (${billing}) for user ${userId}`,
+            );
+          }
+        } else {
+          // Handle marketplace order
+          const { error } = await supabase
+            .from("orders")
+            .update({
+              stripe_payment_intent_id: piId,
+              state: "requires_capture",
+            })
+            .eq("stripe_checkout_session_id", sessionId);
+          if (error) {
+            console.error("orders update (checkout.session.completed)", error);
+          }
         }
         break;
       }
@@ -79,37 +105,80 @@ export async function POST(req: Request) {
         break;
       }
       case "payment_intent.succeeded": {
-        // succeeded means captured (for manual capture flows)
+        // Either a subscription (embedded Elements) or a marketplace capture
         const pi = event.data.object as Stripe.PaymentIntent;
-        const { error } = await supabase
-          .from("orders")
-          .update({ state: "captured", released_at: new Date().toISOString() })
-          .eq("stripe_payment_intent_id", pi.id);
-        if (error) console.error("orders update (succeeded)", error);
+        const meta = (pi.metadata || {}) as Record<string, string | undefined>;
 
-        // Verminder voorraad van de listing met 1
-        const { data: order } = await supabase
-          .from("orders")
-          .select("listing_id, quantity")
-          .eq("stripe_payment_intent_id", pi.id)
-          .single();
+        if (meta.type === "credits" && meta.userId && meta.credits) {
+          // Credits top-up: increment user's credits
+          const userId = String(meta.userId);
+          const inc = parseInt(String(meta.credits), 10) || 0;
+          if (inc > 0) {
+            // Fetch current credits
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("ocaso_credits")
+              .eq("id", userId)
+              .single();
+            const current = (profile?.ocaso_credits as number | null) ?? 0;
+            const { error: upErr } = await supabase
+              .from("profiles")
+              .update({ ocaso_credits: current + inc })
+              .eq("id", userId);
+            if (upErr) console.error("credits top-up failed", upErr);
+          }
+        } else if (meta.plan && meta.userId) {
+          // Embedded subscription checkout: activate on profile
+          const plan = String(meta.plan);
+          const billing = String(meta.billing || "monthly");
+          const userId = String(meta.userId);
+          const { error: subErr } = await supabase
+            .from("profiles")
+            .update({
+              business: {
+                plan,
+                billing_cycle: billing,
+                subscription_active: true,
+                subscription_updated_at: new Date().toISOString(),
+              },
+            })
+            .eq("id", userId);
+          if (subErr) {
+            console.error("subscription update (pi.succeeded)", subErr);
+          }
+        } else {
+          // Marketplace order: succeeded means captured (for manual capture flows)
+          const { error } = await supabase
+            .from("orders")
+            .update({
+              state: "captured",
+              released_at: new Date().toISOString(),
+            })
+            .eq("stripe_payment_intent_id", pi.id);
+          if (error) console.error("orders update (succeeded)", error);
 
-        if (order?.listing_id) {
-          // Haal huidige voorraad en order quantity op
-          const { data: listing } = await supabase
-            .from("listings")
-            .select("stock")
-            .eq("id", order.listing_id)
+          // Verminder voorraad met order.quantity
+          const { data: order } = await supabase
+            .from("orders")
+            .select("listing_id, quantity")
+            .eq("stripe_payment_intent_id", pi.id)
             .single();
 
-          const quantity = order.quantity ?? 1;
-
-          if (listing && (listing.stock ?? 1) >= quantity) {
-            const { error: stockError } = await supabase
+          if (order?.listing_id) {
+            const { data: listing } = await supabase
               .from("listings")
-              .update({ stock: (listing.stock ?? 1) - quantity })
-              .eq("id", order.listing_id);
-            if (stockError) console.error("stock update error", stockError);
+              .select("stock")
+              .eq("id", order.listing_id)
+              .single();
+
+            const quantity = order.quantity ?? 1;
+            if (listing && (listing.stock ?? 1) >= quantity) {
+              const { error: stockError } = await supabase
+                .from("listings")
+                .update({ stock: (listing.stock ?? 1) - quantity })
+                .eq("id", order.listing_id);
+              if (stockError) console.error("stock update error", stockError);
+            }
           }
         }
         break;

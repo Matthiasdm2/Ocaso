@@ -2,7 +2,6 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { createClient } from "../lib/supabaseClient";
-
 import LoginPrompt from "./LoginPrompt";
 import RatingStars from "./RatingStars";
 import ReviewModal from "./ReviewModal";

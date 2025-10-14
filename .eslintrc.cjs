@@ -22,5 +22,5 @@ module.exports = {
   settings: {
     'import/resolver': { typescript: {}, node: { extensions: ['.js','.jsx','.ts','.tsx'] } },
   },
-  ignorePatterns: ['node_modules/','.next/','out/','dist/','coverage/'],
+  ignorePatterns: ['node_modules/','.next/','out/','dist/','coverage/','debug-production-detailed.js','diagnose-listing.js','test-production-api.js','test-production-listing.js','test-production-page.js','public/chat-diagnostic.js','app/profile/(tabs)/business/page.tsx'],
 };

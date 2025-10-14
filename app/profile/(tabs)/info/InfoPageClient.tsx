@@ -95,7 +95,7 @@ export default function InfoPageClient() {
         const { data: r } = await supabase
           .from('profiles')
           .select(`
-            id, email, full_name, phone, avatar_url, bio,
+            id, email, full_name, first_name, last_name, phone, avatar_url, bio,
             address, bank, preferences, notifications,
             is_business, company_name, vat, registration_nr, website, invoice_email,
             shop_name, shop_slug, business_logo_url, business_banner_url,
@@ -106,7 +106,12 @@ export default function InfoPageClient() {
           .maybeSingle();
 
         if (r) {
-          const name = splitName(r.full_name);
+          const rec = r as Record<string, unknown>;
+          const rf = rec['first_name'];
+          const rl = rec['last_name'];
+          const fn = typeof rf === 'string' ? rf : null;
+          const ln = typeof rl === 'string' ? rl : null;
+          const name = fn || ln ? { firstName: fn || '', lastName: ln || '' } : splitName(r.full_name);
           ui = {
             ...ui,
             firstName: name.firstName,
@@ -209,6 +214,8 @@ export default function InfoPageClient() {
           cookieConsent: cookiePrefs ? { ...cookiePrefs } : profile.preferences.cookieConsent,
         },
         notifications: { ...(profile.notifications || { newMessages: true, bids: true, priceDrops: true, tips: true }) },
+        first_name: (profile.firstName || '').trim() || null,
+        last_name: (profile.lastName || '').trim() || null,
         full_name: [profile.firstName?.trim(), profile.lastName?.trim()].filter(Boolean).join(' '),
       } as const;
 
@@ -232,11 +239,16 @@ export default function InfoPageClient() {
           if (upErr) throw upErr;
           const { data: fresh } = await _supabase
             .from('profiles')
-            .select('id, full_name, email, phone, avatar_url, bio, address, bank, preferences, notifications')
+            .select('id, full_name, first_name, last_name, email, phone, avatar_url, bio, address, bank, preferences, notifications')
             .eq('id', dbPayload.id)
             .maybeSingle();
           if (fresh) {
-            const nm = splitName(fresh.full_name || '');
+            const frec = fresh as Record<string, unknown>;
+            const ff = frec['first_name'];
+            const fl = frec['last_name'];
+            const nm = (typeof ff === 'string' || typeof fl === 'string')
+              ? { firstName: (typeof ff === 'string' ? ff : '') || '', lastName: (typeof fl === 'string' ? fl : '') || '' }
+              : splitName(fresh.full_name || '');
             setProfile((p) => ({
               ...p,
               firstName: nm.firstName,
@@ -275,8 +287,10 @@ export default function InfoPageClient() {
           throw new Error(`${msg} — fallback mislukte: ${m}`);
         }
       }
-      const resp = await r.json().catch(() => ({} as { profile?: {
+  const resp = await r.json().catch(() => ({} as { profile?: {
         full_name?: string | null;
+        first_name?: string | null;
+        last_name?: string | null;
         phone?: string | null;
         avatar_url?: string | null;
         bio?: string | null;
@@ -292,7 +306,12 @@ export default function InfoPageClient() {
       try {
         const row = resp?.profile;
         if (row && typeof row === 'object') {
-          const nm = splitName(row.full_name || '');
+          const rrec = row as Record<string, unknown>;
+          const rf = rrec['first_name'];
+          const rl = rrec['last_name'];
+          const nm = (typeof rf === 'string' || typeof rl === 'string')
+            ? { firstName: (typeof rf === 'string' ? rf : '') || '', lastName: (typeof rl === 'string' ? rl : '') || '' }
+            : splitName(row.full_name || '');
           setProfile((p) => ({
             ...p,
             firstName: nm.firstName,

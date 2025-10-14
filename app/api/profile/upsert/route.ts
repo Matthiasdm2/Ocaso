@@ -17,6 +17,8 @@ type UpsertPayload = Partial<{
   preferences: Record<string, unknown> | null;
   notifications: Record<string, unknown> | null;
   full_name: string | null;
+  first_name: string | null;
+  last_name: string | null;
 }>;
 
 export async function PUT(req: Request) {
@@ -66,6 +68,8 @@ export async function PUT(req: Request) {
     "preferences",
     "notifications",
     "full_name",
+  "first_name",
+  "last_name",
   ] as const satisfies Readonly<Array<keyof UpsertPayload>>;
   function assign<K extends keyof UpsertPayload>(key: K) {
     const v = body[key];
@@ -87,7 +91,7 @@ export async function PUT(req: Request) {
       .from("profiles")
       .upsert(allowed)
       .select(
-        "id, full_name, email, phone, avatar_url, bio, address, bank, preferences, notifications",
+        "id, full_name, first_name, last_name, email, phone, avatar_url, bio, address, bank, preferences, notifications",
       )
       .single();
     if (error) {
@@ -104,7 +108,7 @@ export async function PUT(req: Request) {
       .update(allowed)
       .eq("id", user.id)
       .select(
-        "id, full_name, email, phone, avatar_url, bio, address, bank, preferences, notifications",
+        "id, full_name, first_name, last_name, email, phone, avatar_url, bio, address, bank, preferences, notifications",
       )
       .single();
     if (updErr) {

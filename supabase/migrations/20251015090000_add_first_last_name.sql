@@ -22,7 +22,7 @@ update public.profiles p
 set first_name = coalesce(first_name, split_part(coalesce(full_name, ''), ' ', 1)),
     last_name  = coalesce(
       last_name,
-      nullif(regexp_replace(coalesce(full_name, ''), '^\s*([^ ]+)\s*', ''), '')
+      nullif(regexp_replace(coalesce(full_name, ''), '^[[:space:]]*([^[:space:]]+)[[:space:]]*', ''), '')
     );
 
 -- 3) Update handle_new_user to also populate first/last name if provided
@@ -32,11 +32,11 @@ as $$
 declare
   fn text := coalesce(new.raw_user_meta_data->>'first_name', '');
   ln text := coalesce(new.raw_user_meta_data->>'last_name', '');
-  full text := coalesce(new.raw_user_meta_data->>'full_name',
+  full_name_val text := coalesce(new.raw_user_meta_data->>'full_name',
                         nullif(trim(fn || ' ' || ln), ''), '');
 begin
   insert into public.profiles (id, email, full_name, first_name, last_name)
-  values (new.id, new.email, full, nullif(fn,''), nullif(ln,''))
+  values (new.id, new.email, full_name_val, nullif(fn,''), nullif(ln,''))
   on conflict (id) do nothing;
 
   if exists (

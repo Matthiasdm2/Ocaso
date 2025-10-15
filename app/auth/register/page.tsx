@@ -20,16 +20,34 @@ export default function RegisterPage() {
     e.preventDefault();
     setErr(null);
     setMessage(null);
-  const { error } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-    data: { first_name: firstName, last_name: lastName, full_name: [firstName, lastName].filter(Boolean).join(" ") },
-    emailRedirectTo: `${siteUrl}/auth/callback`,
+        data: {
+          first_name: firstName,
+          last_name: lastName,
+          full_name: [firstName, lastName].filter(Boolean).join(" "),
+        },
+        emailRedirectTo: `${siteUrl}/auth/callback`,
       },
     });
-    if (error) setErr(error.message);
-    else {
+    if (error) {
+      const msg = (error.message || '').toLowerCase();
+      if (error.status === 429 || msg.includes('rate') || msg.includes('too many')) {
+        setErr('Te veel verzoeken. Wacht 60 seconden en probeer opnieuw.');
+        return;
+      }
+      if (error.status === 504 || msg.includes('timeout') || msg.includes('context deadline')) {
+        setErr('Tijdelijke storing bij e-mailverzending. Probeer het zo meteen opnieuw.');
+        return;
+      }
+      if (msg.includes('smtp') || msg.includes('mailer') || msg.includes('invalid login')) {
+        setErr('E-mailserver is tijdelijk onbereikbaar. Probeer later opnieuw.');
+        return;
+      }
+      setErr(error.message || 'Registratie mislukt.');
+    } else {
       router.push("/login");
       return;
     }

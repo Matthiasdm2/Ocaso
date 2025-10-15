@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { Autocomplete } from "@/components/Autocomplete";
 import { getBaseUrl } from "@/lib/getBaseUrl";
@@ -103,6 +103,22 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
+  const [resendCooldown, setResendCooldown] = useState<number>(0);
+  const cooldownRef = useRef<number | null>(null);
+
+  function startResendCooldown(seconds: number) {
+  if (cooldownRef.current) window.clearInterval(cooldownRef.current);
+    setResendCooldown(seconds);
+    cooldownRef.current = window.setInterval(() => {
+      setResendCooldown((s) => {
+        if (s <= 1) {
+      if (cooldownRef.current) window.clearInterval(cooldownRef.current);
+          return 0;
+        }
+        return s - 1;
+      });
+    }, 1000);
+  }
 
   function saveDraftProfile() {
     const draft = {
@@ -148,12 +164,22 @@ export default function RegisterPage() {
       if (!required(companyName)) return setErr("Vul je bedrijfsnaam in.");
     }
 
+    // Throttle: voorkom herhaaldelijke signups binnen 60s (rate limit)
+    try {
+      const last = typeof window !== 'undefined' ? Number(localStorage.getItem('ocaso:lastSignUpAt') || '0') : 0;
+      if (last && Date.now() - last < 60000) {
+        const left = Math.ceil((60000 - (Date.now() - last)) / 1000);
+        setErr(`Even wachten… probeer opnieuw over ${left}s.`);
+        return;
+      }
+    } catch { /* ignore */ }
+
     setLoading(true);
     try {
       // (optioneel) lokaal concept bewaren
       saveDraftProfile();
 
-      const { error } = await supabase.auth.signUp({
+  const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -174,7 +200,21 @@ export default function RegisterPage() {
         },
       });
 
-  if (error) throw error;
+  if (error) {
+    const msg = (error.message || '').toLowerCase();
+    if (error.status === 429 || msg.includes('rate') || msg.includes('too many')) {
+      startResendCooldown(60);
+      throw new Error('Te veel e-mails in korte tijd. Wacht 60 seconden en probeer opnieuw.');
+    }
+    if (error.status === 504 || msg.includes('timeout') || msg.includes('context deadline')) {
+      throw new Error('Tijdelijke storing bij e-mailverzending. Probeer het zo meteen opnieuw.');
+    }
+    if (msg.includes('smtp') || msg.includes('mailer') || msg.includes('invalid login')) {
+      throw new Error('E-mailserver is tijdelijk onbereikbaar. Probeer later opnieuw.');
+    }
+    throw error;
+  }
+  try { localStorage.setItem('ocaso:lastSignUpAt', String(Date.now())); } catch { /* ignore */ }
   // Redirect naar login na registreren
   router.push("/login");
   return;
@@ -559,7 +599,9 @@ export default function RegisterPage() {
         {validateEmail(email) && (
           <button
             type="button"
+            disabled={resendCooldown > 0}
             onClick={async () => {
+              if (resendCooldown > 0) return;
               const { error } = await supabase.auth.resend({
                 type: "signup",
                 email,
@@ -568,14 +610,21 @@ export default function RegisterPage() {
                 },
               });
               if (error) {
-                alert(`Kon mail niet opnieuw sturen: ${error.message}`);
+                const lower = (error.message || '').toLowerCase();
+                if (error.status === 429 || lower.includes('rate') || lower.includes('too many')) {
+                  startResendCooldown(60);
+                  alert('Te veel e-mails in korte tijd. Wacht 60 seconden en probeer opnieuw.');
+                } else {
+                  alert(`Kon mail niet opnieuw sturen: ${error.message}`);
+                }
               } else {
                 alert("Verificatiemail opnieuw verstuurd ✅");
+                startResendCooldown(30);
               }
             }}
             className="text-sm underline mt-1 self-start"
           >
-            Geen mail ontvangen? Verstuur opnieuw
+            {resendCooldown > 0 ? `Wacht ${resendCooldown}s…` : 'Geen mail ontvangen? Verstuur opnieuw'}
           </button>
         )}
 

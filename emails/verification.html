@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="nl" xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta http-equiv="x-ua-compatible" content="ie=edge" />
+    <title>Bevestig je e-mailadres</title>
+    <meta name="color-scheme" content="light dark" />
+    <meta name="supported-color-schemes" content="light dark" />
+    <style>
+      /* Prefer inline styles for best client support; a few resets here */
+      html, body { margin:0; padding:0; height:100%; background:#0b1020; }
+      @media (prefers-color-scheme: light) {
+        body { background:#f6f8fb; }
+      }
+      a { color:#2563eb; text-decoration:none; }
+    </style>
+  </head>
+  <body style="margin:0; padding:0;">
+    <!-- Preheader (hidden) -->
+    <div style="display:none; overflow:hidden; line-height:1px; opacity:0; max-height:0; max-width:0;">
+      Rond je registratie af door je e-mailadres te bevestigen.
+    </div>
+
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#0b1020;">
+      <tr>
+        <td align="center" style="padding:24px;">
+          <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:640px; background:#0f172a; border-radius:16px; overflow:hidden;">
+            <!-- Header -->
+            <tr>
+              <td style="padding:28px 28px 0 28px; text-align:left;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color:#e5e7eb; font-size:14px;">
+                      <img src="{{ .SiteURL }}/favicon.svg" width="36" height="36" alt="Ocaso" style="vertical-align:middle; display:inline-block;" />
+                      <span style="margin-left:10px; font-weight:600; font-size:16px; vertical-align:middle;">Ocaso</span>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <!-- Body -->
+            <tr>
+              <td style="padding:24px 28px 8px 28px;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#111827; border-radius:12px;">
+                  <tr>
+                    <td style="padding:28px; text-align:left;">
+                      <h1 style="margin:0 0 12px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color:#f9fafb; font-size:22px;">Bevestig je e-mailadres</h1>
+                      <p style="margin:0 0 20px 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color:#cbd5e1; font-size:15px; line-height:1.55;">
+                        Bedankt voor je registratie bij Ocaso. Klik op de knop hieronder om je e-mailadres te bevestigen en je account te activeren.
+                      </p>
+                      <!-- Button -->
+                      <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0;">
+                        <tr>
+                          <td style="border-radius:10px; background:#22c55e;">
+                            <a href="{{ .ConfirmationURL }}" style="display:inline-block; padding:12px 18px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color:#0b1220; font-weight:700; font-size:14px;">E-mailadres bevestigen</a>
+                          </td>
+                        </tr>
+                      </table>
+                      <p style="margin:16px 0 0 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color:#94a3b8; font-size:12px;">De link verloopt na korte tijd. Werkt de knop niet? Gebruik dan deze link:</p>
+                      <p style="margin:6px 0 0 0; word-break:break-all; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size:12px; color:#cbd5e1;">
+                        <a href="{{ .ConfirmationURL }}" style="color:#60a5fa;">{{ .ConfirmationURL }}</a>
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <!-- Footer -->
+            <tr>
+              <td style="padding:8px 28px 28px 28px; text-align:left;">
+                <p style="margin:0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color:#9ca3af; font-size:12px; line-height:1.6;">
+                  Als je dit verzoek niet hebt aangevraagd, kun je deze e-mail veilig negeren.
+                </p>
+                <p style="margin:10px 0 0 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color:#6b7280; font-size:12px;">
+                  &copy; {{year}} Ocaso — <a href="{{ .SiteURL }}" style="color:#9ca3af;">www.ocaso.be</a>
+                </p>
+              </td>
+            </tr>
+          </table>
+          <div style="height:24px; line-height:24px;">&nbsp;</div>
+        </td>
+      </tr>
+    </table>
+  </body>
+  <!--
+   Variables provided by Supabase Auth templates include:
+   - {{ .ConfirmationURL }}: the verification URL
+   - {{ .SiteURL }}: your configured Site URL
+   - {{ .Email }}: recipient email
+   Adjust copy/styling as needed.
+  -->
+</html>

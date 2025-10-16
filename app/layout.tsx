@@ -15,10 +15,18 @@ import MobileFooter from "@/components/MobileFooter";
 import { ToastProvider } from "@/components/Toast";
 const ChatDockManager = dynamic(() => import('@/components/ChatDockManager'), { ssr: false });
 
-const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.ocaso.be").replace(/\/$/, "");
+// Normalize site URL: accept values without protocol (e.g. 'www.ocaso.be') and fall back safely
+const rawSite = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.ocaso.be").replace(/\/$/, "");
+const normalizedSite = /^https?:\/\//i.test(rawSite) ? rawSite : `https://${rawSite}`;
+let metadataBase: URL | undefined;
+try {
+  metadataBase = new URL(normalizedSite);
+} catch {
+  metadataBase = undefined;
+}
 
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
+  metadataBase,
   title: {
     default: "OCASO — Slim tweedehands kopen en verkopen",
     template: "%s | OCASO",
@@ -29,7 +37,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: "website",
-    url: siteUrl,
+    url: normalizedSite,
     siteName: "OCASO",
     title: "OCASO — Slim tweedehands kopen en verkopen",
     description: "Marktplaats met AI-zoek en prijscontrole",

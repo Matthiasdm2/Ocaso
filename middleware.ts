@@ -9,15 +9,27 @@ export async function middleware(req: NextRequest) {
     try {
       const canonicalRaw = siteUrl.startsWith("http") ? siteUrl : `https://${siteUrl}`;
       const canonical = new URL(canonicalRaw);
-      const targetHostname = canonical.hostname; // ignore port
-      const targetProtocol = canonical.protocol || "https:";
+      const targetHostname = canonical.hostname.toLowerCase(); // ignore port
+      const targetProtocol = (canonical.protocol || "https:").toLowerCase();
 
-      const currentHostname = req.nextUrl.hostname;
-      const currentProtocol = req.nextUrl.protocol;
+      // Respect reverse proxy headers for accurate scheme/host
+      const fwdHost = (req.headers.get("x-forwarded-host") || req.headers.get("host") || req.nextUrl.host || "").toLowerCase();
+      const fwdProto = (req.headers.get("x-forwarded-proto") || req.nextUrl.protocol.replace(":", "") || "https").toLowerCase();
+      const currentHostname = fwdHost.split(":")[0];
+      const currentProtocol = `${fwdProto}:`;
 
-      // Redirect only when hostname differs or protocol mismatch
-      if (currentHostname !== targetHostname || currentProtocol !== targetProtocol) {
+      // Skip redirect for localhost or preview domains
+      const isLocal = currentHostname === "localhost";
+      const isPreview = /\.(vercel\.app|amplifyapp\.com)$/i.test(currentHostname);
+
+      // Redirect only when hostname differs or protocol mismatch, and not in local/preview
+      if (!isLocal && !isPreview && (currentHostname !== targetHostname || currentProtocol !== targetProtocol)) {
         const redirectUrl = new URL(req.nextUrl.toString());
+        // Guard: if already at target (avoid loops)
+        if (redirectUrl.hostname.toLowerCase() === targetHostname && redirectUrl.protocol.toLowerCase() === targetProtocol) {
+          // Already canonical
+          return NextResponse.next();
+        }
         redirectUrl.hostname = targetHostname;
         redirectUrl.protocol = targetProtocol;
         redirectUrl.port = ""; // never force a port in prod canonical

@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
 import { Autocomplete } from "@/components/Autocomplete";
@@ -71,7 +70,7 @@ function IconApple(props: React.SVGProps<SVGSVGElement>) {
 
 export default function RegisterPage() {
   const supabase = createClient();
-  const router = useRouter();
+  // no router redirect; we show inline success notice after sign-up
   const siteUrl = getBaseUrl();
 
   // Basis
@@ -215,8 +214,10 @@ export default function RegisterPage() {
     throw error;
   }
   try { localStorage.setItem('ocaso:lastSignUpAt', String(Date.now())); } catch { /* ignore */ }
-  // Redirect naar login na registreren
-  router.push("/login");
+  // Toon melding i.p.v. directe redirect
+  setOk("Verificatiemail verstuurd! Check je mailbox om je account te bevestigen.");
+  // Optioneel: scroll naar boven voor zichtbaarheid
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch { /* noop */ }
   return;
     } catch (e: unknown) {
       console.error("signup error", e);
@@ -227,6 +228,24 @@ export default function RegisterPage() {
       }
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function resendVerification() {
+    setErr(null);
+    if (resendCooldown > 0) return;
+    try {
+      startResendCooldown(60);
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email,
+        options: { emailRedirectTo: `${siteUrl}/auth/callback` },
+      });
+      if (error) throw error;
+      setOk('Nieuwe verificatiemail verstuurd.');
+    } catch (e: unknown) {
+      if (e instanceof Error) setErr(e.message);
+      else setErr('Kon geen nieuwe verificatiemail sturen.');
     }
   }
 
@@ -340,6 +359,19 @@ export default function RegisterPage() {
       )}
 
       <form onSubmit={registerEmailPassword} className="grid gap-6">
+        {ok && (
+          <div className="rounded-xl border border-green-300 bg-green-50 text-green-700 p-3 text-sm">
+            {ok} &nbsp;
+            <button
+              type="button"
+              onClick={resendVerification}
+              disabled={resendCooldown > 0 || !validateEmail(email)}
+              className="underline font-medium disabled:opacity-60"
+            >
+              {resendCooldown > 0 ? `Opnieuw verzenden (${resendCooldown}s)` : 'Opnieuw verzenden'}
+            </button>
+          </div>
+        )}
         {/* Account basis */}
         <section className="grid gap-3 rounded-2xl border border-gray-200 p-4">
           <h2 className="font-medium">Accountgegevens</h2>

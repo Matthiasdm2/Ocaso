@@ -9,8 +9,7 @@ export async function middleware(req: NextRequest) {
     try {
       const canonicalRaw = siteUrl.startsWith("http") ? siteUrl : `https://${siteUrl}`;
       const canonical = new URL(canonicalRaw);
-      const targetHostname = canonical.hostname.toLowerCase(); // ignore port
-      const targetProtocol = (canonical.protocol || "https:").toLowerCase();
+  const targetProtocol = (canonical.protocol || "https:").toLowerCase();
 
       // Respect reverse proxy headers for accurate scheme/host
       const fwdHost = (req.headers.get("x-forwarded-host") || req.headers.get("host") || req.nextUrl.host || "").toLowerCase();
@@ -22,18 +21,18 @@ export async function middleware(req: NextRequest) {
       const isLocal = currentHostname === "localhost";
       const isPreview = /\.(vercel\.app|amplifyapp\.com)$/i.test(currentHostname);
 
-      // Redirect only when hostname differs or protocol mismatch, and not in local/preview
-      if (!isLocal && !isPreview && (currentHostname !== targetHostname || currentProtocol !== targetProtocol)) {
-        const redirectUrl = new URL(req.nextUrl.toString());
-        // Guard: if already at target (avoid loops)
-        if (redirectUrl.hostname.toLowerCase() === targetHostname && redirectUrl.protocol.toLowerCase() === targetProtocol) {
-          // Already canonical
-          return NextResponse.next();
+  // Enforce HTTPS only; do not change hostname to avoid loops with external redirects
+
+      // Only enforce HTTPS; do not change hostname to avoid loops with external redirects
+      if (!isLocal && !isPreview) {
+        const needsHttps = currentProtocol !== targetProtocol;
+        if (needsHttps) {
+          const redirectUrl = new URL(req.nextUrl.toString());
+          redirectUrl.protocol = targetProtocol; // force https
+          redirectUrl.port = ""; // drop any explicit port
+          return NextResponse.redirect(redirectUrl, { status: 308 });
         }
-        redirectUrl.hostname = targetHostname;
-        redirectUrl.protocol = targetProtocol;
-        redirectUrl.port = ""; // never force a port in prod canonical
-        return NextResponse.redirect(redirectUrl, { status: 308 });
+        // If host is unexpected AND protocol is fine, do nothing to avoid loops
       }
     } catch {
       // ignore invalid siteUrl

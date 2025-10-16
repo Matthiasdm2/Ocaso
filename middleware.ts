@@ -7,12 +7,20 @@ export async function middleware(req: NextRequest) {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
   if (process.env.NODE_ENV === "production" && siteUrl) {
     try {
-      const canonical = new URL(siteUrl);
-      const currentHost = req.headers.get("host") || req.nextUrl.host;
-      if (currentHost && currentHost !== canonical.host) {
+      const canonicalRaw = siteUrl.startsWith("http") ? siteUrl : `https://${siteUrl}`;
+      const canonical = new URL(canonicalRaw);
+      const targetHostname = canonical.hostname; // ignore port
+      const targetProtocol = canonical.protocol || "https:";
+
+      const currentHostname = req.nextUrl.hostname;
+      const currentProtocol = req.nextUrl.protocol;
+
+      // Redirect only when hostname differs or protocol mismatch
+      if (currentHostname !== targetHostname || currentProtocol !== targetProtocol) {
         const redirectUrl = new URL(req.nextUrl.toString());
-        redirectUrl.host = canonical.host;
-        redirectUrl.protocol = canonical.protocol;
+        redirectUrl.hostname = targetHostname;
+        redirectUrl.protocol = targetProtocol;
+        redirectUrl.port = ""; // never force a port in prod canonical
         return NextResponse.redirect(redirectUrl, { status: 308 });
       }
     } catch {

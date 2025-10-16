@@ -8,7 +8,8 @@ import {
   Home,
   Package,
   Shield,
-  Users} from "lucide-react";
+  Users
+} from "lucide-react";
 import { useState } from "react";
 
 import CategoryManagement from "./CategoryManagement";

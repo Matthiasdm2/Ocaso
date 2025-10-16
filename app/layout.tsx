@@ -5,6 +5,8 @@ import "@/lib/ensureAbsoluteApiFetch";
 import type { Metadata, Viewport } from "next";
 import dynamic from 'next/dynamic';
 import Script from 'next/script';
+// Ensure Node.js runtime for this subtree (avoids Edge warnings for certain server libs)
+export const runtime = 'nodejs';
 
 import AuthSessionSync from "@/components/AuthSessionSync";
 import Footer from "@/components/Footer";
@@ -13,9 +15,52 @@ import MobileFooter from "@/components/MobileFooter";
 import { ToastProvider } from "@/components/Toast";
 const ChatDockManager = dynamic(() => import('@/components/ChatDockManager'), { ssr: false });
 
+const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.ocaso.be").replace(/\/$/, "");
+
 export const metadata: Metadata = {
-  title: "OCASO — Slim tweedehands kopen en verkopen",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "OCASO — Slim tweedehands kopen en verkopen",
+    template: "%s | OCASO",
+  },
   description: "Marktplaats met AI-zoek en prijscontrole",
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    url: siteUrl,
+    siteName: "OCASO",
+    title: "OCASO — Slim tweedehands kopen en verkopen",
+    description: "Marktplaats met AI-zoek en prijscontrole",
+    images: [
+      {
+        url: "/placeholder.png",
+        width: 1200,
+        height: 630,
+        alt: "OCASO",
+      },
+    ],
+    locale: "nl_BE",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "OCASO — Slim tweedehands kopen en verkopen",
+    description: "Marktplaats met AI-zoek en prijscontrole",
+    images: ["/placeholder.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  manifest: "/site.webmanifest",
+  icons: {
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/placeholder.png", sizes: "512x512" },
+    ],
+    apple: [{ url: "/placeholder.png" }],
+  },
 };
 
 export const viewport: Viewport = {

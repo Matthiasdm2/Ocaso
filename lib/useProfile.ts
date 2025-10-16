@@ -24,7 +24,10 @@ export function useProfile() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
           // Don't redirect to login if we're already on auth pages
-          if (typeof window !== "undefined" && !window.location.pathname.match(/^\/(?:login|register|reset|auth)/)) {
+          if (
+            typeof window !== "undefined" &&
+            !window.location.pathname.match(/^\/(?:login|register|reset|auth)/)
+          ) {
             window.location.href = "/login";
           }
           return;

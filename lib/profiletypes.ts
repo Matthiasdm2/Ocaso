@@ -22,7 +22,16 @@ export type Profile = {
   address: { street: string; city: string; zip: string; country: string };
   // Bankgegevens voor particuliere verkopers (voor QR-betalingen)
   bank?: { iban: string; bic: string };
-  preferences: { language: string; newsletter: boolean; cookieConsent?: { functional: boolean; analytics: boolean; marketing: boolean; updatedAt?: string } };
+  preferences: {
+    language: string;
+    newsletter: boolean;
+    cookieConsent?: {
+      functional: boolean;
+      analytics: boolean;
+      marketing: boolean;
+      updatedAt?: string;
+    };
+  };
   notifications: {
     newMessages: boolean;
     bids: boolean;
@@ -60,9 +69,9 @@ export type Profile = {
     description?: string;
     socials: { instagram?: string; facebook?: string; tiktok?: string };
     public: { showEmail: boolean; showPhone: boolean };
-  // Verkoper verificatie status (true nadat Stripe onboarding succesvol afgerond)
-  verified?: boolean;
-  categories?: string[]; // max 8, optioneel
+    // Verkoper verificatie status (true nadat Stripe onboarding succesvol afgerond)
+    verified?: boolean;
+    categories?: string[]; // max 8, optioneel
   };
 };
 

@@ -68,8 +68,8 @@ export async function PUT(req: Request) {
     "preferences",
     "notifications",
     "full_name",
-  "first_name",
-  "last_name",
+    "first_name",
+    "last_name",
   ] as const satisfies Readonly<Array<keyof UpsertPayload>>;
   function assign<K extends keyof UpsertPayload>(key: K) {
     const v = body[key];

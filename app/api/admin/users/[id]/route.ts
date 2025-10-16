@@ -90,23 +90,31 @@ export async function DELETE(
     let authUserDeleted = false;
     try {
         const service = supabaseServiceRole();
-        console.log('Service role client created, key available:', !!process.env.SUPABASE_SERVICE_ROLE_KEY);
-        
+        console.log(
+            "Service role client created, key available:",
+            !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+        );
+
         // Test if service role works by trying to get user info
-        const { data: userInfo, error: getError } = await service.auth.admin.getUserById(params.id);
-        console.log('Get user test:', { userExists: !!userInfo?.user, error: getError });
-        
+        const { data: userInfo, error: getError } = await service.auth.admin
+            .getUserById(params.id);
+        console.log("Get user test:", {
+            userExists: !!userInfo?.user,
+            error: getError,
+        });
+
         if (!getError && userInfo?.user) {
-            const { data, error: authError } = await service.auth.admin.deleteUser(params.id);
-            console.log('deleteUser result:', { data, error: authError });
+            const { data, error: authError } = await service.auth.admin
+                .deleteUser(params.id);
+            console.log("deleteUser result:", { data, error: authError });
             if (!authError) {
                 authUserDeleted = true;
-                console.log('Auth user deleted successfully');
+                console.log("Auth user deleted successfully");
             } else {
                 console.error("Error deleting auth user:", authError);
             }
         } else {
-            console.log('Auth user not found or cannot access admin API');
+            console.log("Auth user not found or cannot access admin API");
         }
     } catch (error) {
         console.error("Exception deleting auth user:", error);
@@ -114,7 +122,9 @@ export async function DELETE(
     }
 
     if (!authUserDeleted) {
-        console.log('Warning: Auth user was not deleted, but continuing with profile deletion');
+        console.log(
+            "Warning: Auth user was not deleted, but continuing with profile deletion",
+        );
     }
 
     // Delete profile

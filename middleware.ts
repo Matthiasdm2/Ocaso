@@ -3,6 +3,23 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 export async function middleware(req: NextRequest) {
+  // Canonical host redirect in production
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  if (process.env.NODE_ENV === "production" && siteUrl) {
+    try {
+      const canonical = new URL(siteUrl);
+      const currentHost = req.headers.get("host") || req.nextUrl.host;
+      if (currentHost && currentHost !== canonical.host) {
+        const redirectUrl = new URL(req.nextUrl.toString());
+        redirectUrl.host = canonical.host;
+        redirectUrl.protocol = canonical.protocol;
+        return NextResponse.redirect(redirectUrl, { status: 308 });
+      }
+    } catch {
+      // ignore invalid siteUrl
+    }
+  }
+
   const res = NextResponse.next();
   try {
     const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;

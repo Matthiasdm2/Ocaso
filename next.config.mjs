@@ -12,14 +12,15 @@ const nextConfig = {
     /**
      * Security headers applied to all routes. CSP is now enforced.
      */
-    const SUPABASE = 'dmnowaqinfkhovhyztan.supabase.co';
+  const SUPABASE = 'dmnowaqinfkhovhyztan.supabase.co';
+  const GOOGLE_AVATAR = 'lh3.googleusercontent.com';
     const csp = [
       "default-src 'self'",
       // Allow Next inline bootstraps and Stripe SDK; consider replacing 'unsafe-inline' with nonces later
       "script-src 'self' 'unsafe-inline' 'unsafe-eval' https: js.stripe.com",
       "style-src 'self' 'unsafe-inline' https:",
-      // Images from app, Supabase storage/CDN, OpenStreetMap tiles, and general https
-      `img-src 'self' data: blob: https: *.tile.openstreetmap.org ${SUPABASE}`,
+  // Images from app, Supabase storage/CDN, OpenStreetMap tiles, Google avatars, and general https
+  `img-src 'self' data: blob: https: *.tile.openstreetmap.org ${SUPABASE} ${GOOGLE_AVATAR}`,
       "font-src 'self' data: https:",
       // API/fetch and websockets to our origins, Supabase, Stripe, and general https/wss
       `connect-src 'self' https: wss: ${SUPABASE} wss://${SUPABASE} api.stripe.com m.stripe.com`,

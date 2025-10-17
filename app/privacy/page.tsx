@@ -38,6 +38,7 @@ export default function PrivacyPage() {
           <QuickLink href="#use" icon={CheckCircle2} title="Gebruik van gegevens" desc="Transacties, support, veiligheid" />
           <QuickLink href="#share" icon={Shield} title="Delen met derden" desc="Betaal- & logistieke partners" />
           <QuickLink href="#retention" icon={Clock} title="Bewaartermijnen" desc="Wettelijke & operationele termijnen" />
+          <QuickLink href="#data-deletion" icon={FileText} title="Gegevens verwijderen" desc="Uitleg & stappen voor verwijdering" />
           <QuickLink href="#rights" icon={FileText} title="Jouw rechten (GDPR)" desc="Inzage, wissen, bezwaar, dataportabiliteit" />
           <QuickLink href="#security" icon={Lock} title="Beveiliging" desc="Encryptie, toegangscontrole, audits" />
         </div>
@@ -92,7 +93,26 @@ export default function PrivacyPage() {
             <p className="mt-3 text-sm text-neutral-700">Dien je verzoek in via <a href="mailto:privacy@ocaso.app" className="text-emerald-700 hover:underline">privacy@ocaso.app</a>. We reageren binnen de wettelijke termijnen.</p>
           </Card>
 
-          <Card id="security" title="6) Beveiliging" icon={Lock}>
+          <Card id="data-deletion" title="6) Gegevens verwijderen (Data Deletion)" icon={FileText}>
+            <p className="text-sm text-neutral-700">
+              Je kunt je account en persoonsgegevens verwijderen op de volgende manieren:
+            </p>
+            <ul className="mt-2 list-disc space-y-2 pl-6 text-sm text-neutral-700">
+              <li>
+                Via je account: ga naar <span className="font-medium">Profiel → Instellingen → Account</span> en kies <span className="font-medium">Account verwijderen</span>.
+              </li>
+              <li>
+                Of per e‑mail: stuur je verzoek vanaf je geregistreerde e‑mail naar
+                {" "}
+                <a href="mailto:privacy@ocaso.app" className="text-emerald-700 hover:underline">privacy@ocaso.app</a> met onderwerp “Verwijder mijn account”.
+              </li>
+            </ul>
+            <p className="mt-3 text-sm text-neutral-700">
+              We bevestigen de verwijdering en ronden dit doorgaans binnen 30 dagen af, behoudens wettelijke bewaartermijnen (bijv. facturatie‑ en transactiedata).
+            </p>
+          </Card>
+
+          <Card id="security" title="7) Beveiliging" icon={Lock}>
             <ul className="list-disc space-y-2 pl-6 text-sm text-neutral-700">
               <li>Versleutelde verbindingen (SSL/TLS).</li>
               <li>Escrow‑betalingen en toegangsbeheer.</li>
@@ -101,11 +121,11 @@ export default function PrivacyPage() {
             </ul>
           </Card>
 
-          <Card id="intl" title="7) Internationale verwerking" icon={Globe2}>
+          <Card id="intl" title="8) Internationale verwerking" icon={Globe2}>
             <p className="text-sm text-neutral-700">Als gegevens buiten de EU worden verwerkt, doen we dat conform <span className="font-medium">GDPR/AVG</span> en met passende waarborgen (bijv. EU‑U.S. Data Privacy Framework of standaardcontractbepalingen).</p>
           </Card>
 
-          <Card id="disclaimer" title="8) Disclaimer" icon={AlertCircle}>
+          <Card id="disclaimer" title="9) Disclaimer" icon={AlertCircle}>
             <ul className="list-disc space-y-2 pl-6 text-sm text-neutral-700">
               <li>We streven naar maximale zorg en beveiliging, maar zijn niet aansprakelijk voor misbruik van accounts door derden.</li>
               <li>We zijn niet verantwoordelijk voor storingen bij externe partners of voor handelingen die gebruikers buiten Ocaso om uitvoeren (bijv. directe betalingen).</li>

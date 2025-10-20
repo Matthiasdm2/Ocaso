@@ -23,12 +23,20 @@ export async function GET() {
   // Test if service role client can be initialized
   let serviceRoleOk = false;
   let serviceRoleError = null;
+  let queryTest = null;
   try {
-    supabaseServiceRole();
+    const client = supabaseServiceRole();
     serviceRoleOk = true;
+    // Test a simple query
+    const { count, error } = await client.from("profiles").select("*", { count: "exact", head: true });
+    if (error) {
+      queryTest = { success: false, error: error.message };
+    } else {
+      queryTest = { success: true, count };
+    }
   } catch (e) {
     serviceRoleError = e instanceof Error ? e.message : "Unknown error";
   }
 
-  return NextResponse.json({ present, serviceRole: { ok: serviceRoleOk, error: serviceRoleError } });
+  return NextResponse.json({ present, serviceRole: { ok: serviceRoleOk, error: serviceRoleError, queryTest } });
 }

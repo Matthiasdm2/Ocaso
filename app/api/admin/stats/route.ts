@@ -1,5 +1,5 @@
-import { createClient } from "@supabase/supabase-js";
 import { type NextRequest, NextResponse } from "next/server";
+import { supabaseServiceRole } from "@/lib/supabaseServiceRole";
 
 import { toURL } from "@/lib/url";
 
@@ -7,14 +7,13 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (!supabaseUrl || !supabaseServiceKey) {
-        throw new Error("Missing Supabase environment variables");
+    let supabase;
+    try {
+        supabase = supabaseServiceRole();
+    } catch (e) {
+        const msg = e instanceof Error ? e.message : "Failed to init service role";
+        return NextResponse.json({ error: msg }, { status: 500 });
     }
-
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const { searchParams } = toURL(request.url);
     const period = searchParams.get("period") || "31d";
 

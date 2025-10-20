@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-import { supabaseAdmin } from "@/lib/supabaseServer";
+import { supabaseServer } from "@/lib/supabaseServer";
 
 import AdminPanel from "./AdminPanel";
 
@@ -10,7 +10,8 @@ export const metadata = {
 };
 
 export default async function AdminPage() {
-  const supabase = supabaseAdmin();
+  // Use cookie-bound anon client to read the current user session safely
+  const supabase = supabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {

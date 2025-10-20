@@ -1,19 +1,21 @@
 import { NextResponse } from "next/server";
 
-import { supabaseAdmin } from "@/lib/supabaseServer";
+import { supabaseServer } from "@/lib/supabaseServer";
+import { supabaseServiceRole } from "@/lib/supabaseServiceRole";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
-    const supabase = supabaseAdmin();
-    const { data: { user } } = await supabase.auth.getUser();
+    // Use cookie-bound anon client to authenticate requester
+    const authClient = supabaseServer();
+    const { data: { user } } = await authClient.auth.getUser();
 
     if (!user) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { data: profile } = await supabase
+    const { data: profile } = await authClient
         .from("profiles")
         .select("is_admin")
         .eq("id", user.id)
@@ -31,7 +33,16 @@ export async function GET(req: Request) {
         ? "id, full_name, email, business_plan, subscription_active"
         : "id, full_name, email, account_type, is_admin, phone, bio, address, bank, preferences, notifications, avatar_url";
 
-    let query = supabase
+    // Use service role client for unrestricted admin query (bypasses RLS)
+    let adminClient;
+    try {
+        adminClient = supabaseServiceRole();
+    } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : "Service role client init failed";
+        return NextResponse.json({ error: message }, { status: 500 });
+    }
+
+    let query = adminClient
         .from("profiles")
         .select(selectFields);
 

@@ -7,14 +7,14 @@ export async function PUT(
     req: Request,
     { params }: { params: { id: string } },
 ) {
-    const supabase = supabaseServer();
-    const { data: { user } } = await supabase.auth.getUser();
+    const auth = supabaseServer();
+    const { data: { user } } = await auth.auth.getUser();
 
     if (!user) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { data: profile } = await supabase
+    const { data: profile } = await auth
         .from("profiles")
         .select("is_admin")
         .eq("id", user.id)
@@ -31,8 +31,16 @@ export async function PUT(
     const profileUpdate: Record<string, unknown> = { ...profileUpdates };
     if (is_admin !== undefined) profileUpdate.is_admin = is_admin;
 
+    let admin;
+    try {
+        admin = supabaseServiceRole();
+    } catch (e) {
+        const msg = e instanceof Error ? e.message : "Service role init failed";
+        return NextResponse.json({ error: msg }, { status: 500 });
+    }
+
     if (Object.keys(profileUpdate).length > 0) {
-        const { error: profileError } = await supabase
+        const { error: profileError } = await admin
             .from("profiles")
             .update(profileUpdate)
             .eq("id", params.id);
@@ -46,8 +54,7 @@ export async function PUT(
 
     // Update password if provided
     if (password) {
-        const service = supabaseServiceRole();
-        const { error: authError } = await service.auth.admin.updateUserById(
+    const { error: authError } = await admin.auth.admin.updateUserById(
             params.id,
             {
                 password,
@@ -67,14 +74,14 @@ export async function DELETE(
     _req: Request,
     { params }: { params: { id: string } },
 ) {
-    const supabase = supabaseServer();
-    const { data: { user } } = await supabase.auth.getUser();
+    const auth = supabaseServer();
+    const { data: { user } } = await auth.auth.getUser();
 
     if (!user) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { data: profile } = await supabase
+    const { data: profile } = await auth
         .from("profiles")
         .select("is_admin")
         .eq("id", user.id)
@@ -128,7 +135,8 @@ export async function DELETE(
     }
 
     // Delete profile
-    const { error: profileError } = await supabase
+    const service = supabaseServiceRole();
+    const { error: profileError } = await service
         .from("profiles")
         .delete()
         .eq("id", params.id);
@@ -140,7 +148,7 @@ export async function DELETE(
     }
 
     // Delete all listings associated with this user
-    const { error: listingsError } = await supabase
+    const { error: listingsError } = await service
         .from("listings")
         .delete()
         .eq("seller_id", params.id);
@@ -150,7 +158,7 @@ export async function DELETE(
     }
 
     // Delete all bids placed by this user
-    const { error: bidsError } = await supabase
+    const { error: bidsError } = await service
         .from("bids")
         .delete()
         .eq("bidder_id", params.id);
@@ -160,7 +168,7 @@ export async function DELETE(
     }
 
     // Delete all orders where this user is buyer or seller
-    const { error: ordersError } = await supabase
+    const { error: ordersError } = await service
         .from("orders")
         .delete()
         .or(`buyer_id.eq.${params.id},seller_id.eq.${params.id}`);
@@ -170,7 +178,7 @@ export async function DELETE(
     }
 
     // Delete all messages sent by this user
-    const { error: messagesError } = await supabase
+    const { error: messagesError } = await service
         .from("messages")
         .delete()
         .eq("sender_id", params.id);
@@ -181,7 +189,7 @@ export async function DELETE(
 
     // Delete conversations where this user is the only participant
     // (conversations with multiple participants should be handled differently)
-    const { error: conversationsError } = await supabase
+    const { error: conversationsError } = await service
         .from("conversations")
         .delete()
         .contains("participants", [params.id]);

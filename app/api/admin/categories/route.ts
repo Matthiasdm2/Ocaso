@@ -1,19 +1,21 @@
 import { NextResponse } from "next/server";
 
-import { supabaseAdmin } from "@/lib/supabaseServer";
+import { supabaseServer } from "@/lib/supabaseServer";
+import { supabaseServiceRole } from "@/lib/supabaseServiceRole";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-    const supabase = supabaseAdmin();
-    const { data: { user } } = await supabase.auth.getUser();
+    // Authenticate requester using cookie-bound anon client
+    const auth = supabaseServer();
+    const { data: { user } } = await auth.auth.getUser();
 
     if (!user) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { data: profile } = await supabase
+    const { data: profile } = await auth
         .from("profiles")
         .select("is_admin")
         .eq("id", user.id)
@@ -23,7 +25,16 @@ export async function GET() {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { data, error } = await supabase
+    // Use service role for unrestricted admin data access
+    let admin;
+    try {
+        admin = supabaseServiceRole();
+    } catch (e) {
+        const msg = e instanceof Error ? e.message : "Service role init failed";
+        return NextResponse.json({ error: msg }, { status: 500 });
+    }
+
+    const { data, error } = await admin
         .from("categories")
         .select(`
       id, name, slug, sort_order, is_active,
@@ -39,14 +50,14 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-    const supabase = supabaseAdmin();
-    const { data: { user } } = await supabase.auth.getUser();
+    const auth = supabaseServer();
+    const { data: { user } } = await auth.auth.getUser();
 
     if (!user) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { data: profile } = await supabase
+    const { data: profile } = await auth
         .from("profiles")
         .select("is_admin")
         .eq("id", user.id)
@@ -59,7 +70,15 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { name, slug, sort_order, is_active } = body;
 
-    const { data, error } = await supabase
+    let admin;
+    try {
+        admin = supabaseServiceRole();
+    } catch (e) {
+        const msg = e instanceof Error ? e.message : "Service role init failed";
+        return NextResponse.json({ error: msg }, { status: 500 });
+    }
+
+    const { data, error } = await admin
         .from("categories")
         .insert({ name, slug, sort_order, is_active })
         .select()

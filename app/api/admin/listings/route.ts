@@ -1,19 +1,20 @@
 import { NextResponse } from "next/server";
 
-import { supabaseAdmin } from "@/lib/supabaseServer";
+import { supabaseServer } from "@/lib/supabaseServer";
+import { supabaseServiceRole } from "@/lib/supabaseServiceRole";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-    const supabase = supabaseAdmin();
-    const { data: { user } } = await supabase.auth.getUser();
+    const auth = supabaseServer();
+    const { data: { user } } = await auth.auth.getUser();
 
     if (!user) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { data: profile } = await supabase
+    const { data: profile } = await auth
         .from("profiles")
         .select("is_admin")
         .eq("id", user.id)
@@ -23,7 +24,15 @@ export async function GET() {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { data, error } = await supabase
+    let admin;
+    try {
+        admin = supabaseServiceRole();
+    } catch (e) {
+        const msg = e instanceof Error ? e.message : "Service role init failed";
+        return NextResponse.json({ error: msg }, { status: 500 });
+    }
+
+    const { data, error } = await admin
         .from("listings")
         .select(`
       id, 
@@ -47,14 +56,14 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-    const supabase = supabaseAdmin();
-    const { data: { user } } = await supabase.auth.getUser();
+    const auth = supabaseServer();
+    const { data: { user } } = await auth.auth.getUser();
 
     if (!user) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { data: profile } = await supabase
+    const { data: profile } = await auth
         .from("profiles")
         .select("is_admin")
         .eq("id", user.id)
@@ -84,7 +93,15 @@ export async function POST(req: Request) {
         }
 
         // Voeg listing toe
-        const { data: listing, error: listingError } = await supabase
+        let admin;
+        try {
+            admin = supabaseServiceRole();
+        } catch (e) {
+            const msg = e instanceof Error ? e.message : "Service role init failed";
+            return NextResponse.json({ error: msg }, { status: 500 });
+        }
+
+        const { data: listing, error: listingError } = await admin
             .from("listings")
             .insert({
                 title,
@@ -119,17 +136,17 @@ export async function POST(req: Request) {
                 const fileName = `${listing.id}/${Date.now()}.${fileExt}`;
 
                 // Upload naar Supabase Storage
-                const { error: uploadError } = await supabase.storage
+                const { error: uploadError } = await admin.storage
                     .from("listing-images")
                     .upload(fileName, image);
 
                 if (!uploadError) {
                     // Voeg image URL toe aan listing_images tabel
-                    const { data: publicUrl } = supabase.storage
+                    const { data: publicUrl } = admin.storage
                         .from("listing-images")
                         .getPublicUrl(fileName);
 
-                    await supabase
+                    await admin
                         .from("listing_images")
                         .insert({
                             listing_id: listing.id,
@@ -140,7 +157,7 @@ export async function POST(req: Request) {
             }
 
             // Maak eerste image primary
-            const { data: firstImage } = await supabase
+            const { data: firstImage } = await admin
                 .from("listing_images")
                 .select("id")
                 .eq("listing_id", listing.id)
@@ -148,7 +165,7 @@ export async function POST(req: Request) {
                 .single();
 
             if (firstImage) {
-                await supabase
+                await admin
                     .from("listing_images")
                     .update({ is_primary: true })
                     .eq("id", firstImage.id);

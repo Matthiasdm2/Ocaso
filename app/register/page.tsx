@@ -57,16 +57,6 @@ function IconFacebook(props: React.SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
-function IconApple(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" width="18" height="18" {...props} aria-hidden>
-      <path
-        fill="currentColor"
-        d="M16.36 1.64a4.36 4.36 0 01-1.04 3.21 3.9 3.9 0 01-3 .1 4.36 4.36 0 011.04-3.21A3.9 3.9 0 0116.36 1.64zM19.9 17.26a9.45 9.45 0 01-1.93 3.17c-.98 1.13-2.08 2.4-3.6 2.4s-1.88-.77-3.61-.77-2.21.75-3.62.78-2.6-1.25-3.58-2.38A10.98 10.98 0 012.8 12.9c0-2.86 1.86-4.37 3.58-4.37 1.5 0 2.43.79 3.66.79 1.2 0 1.94-.8 3.66-.8 1.18 0 2.44.62 3.3 1.68a4.9 4.9 0 00-2.33 4.15 4.94 4.94 0 002.57 4.92z"
-      />
-    </svg>
-  );
-}
 
 export default function RegisterPage() {
   const supabase = createClient();
@@ -249,7 +239,7 @@ export default function RegisterPage() {
     }
   }
 
-  async function signInOAuth(provider: "google" | "facebook" | "apple") {
+  async function signInOAuth(provider: "google" | "facebook") {
     setErr(null);
     setOk(null);
     const { error } = await supabase.auth.signInWithOAuth({
@@ -348,10 +338,7 @@ export default function RegisterPage() {
             <IconFacebook />
             <span>Registreren met Facebook</span>
           </OAuthBtn>
-          <OAuthBtn onClick={() => signInOAuth("apple")}>
-            <IconApple />
-            <span>Registreren met Apple</span>
-          </OAuthBtn>
+          {/* Apple registration removed */}
           <div className="text-center text-sm text-gray-500">
             of met e-mail & wachtwoord
           </div>

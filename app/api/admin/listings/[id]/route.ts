@@ -1,19 +1,20 @@
 import { NextResponse } from "next/server";
 
-import { supabaseAdmin } from "@/lib/supabaseServer";
+import { supabaseServer } from "@/lib/supabaseServer";
+import { supabaseServiceRole } from "@/lib/supabaseServiceRole";
 
 export async function PUT(
     req: Request,
     { params }: { params: { id: string } },
 ) {
-    const supabase = supabaseAdmin();
-    const { data: { user } } = await supabase.auth.getUser();
+    const auth = supabaseServer();
+    const { data: { user } } = await auth.auth.getUser();
 
     if (!user) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { data: profile } = await supabase
+    const { data: profile } = await auth
         .from("profiles")
         .select("is_admin")
         .eq("id", user.id)
@@ -44,7 +45,9 @@ export async function PUT(
         }
 
         // Update listing
-        const { data: listing, error: listingError } = await supabase
+    let admin;
+    try { admin = supabaseServiceRole(); } catch (e) { const msg = e instanceof Error ? e.message : "Service role init failed"; return NextResponse.json({ error: msg }, { status: 500 }); }
+    const { data: listing, error: listingError } = await admin
             .from("listings")
             .update({
                 title,
@@ -79,17 +82,17 @@ export async function PUT(
                 const fileName = `${params.id}/${Date.now()}.${fileExt}`;
 
                 // Upload naar Supabase Storage
-                const { error: uploadError } = await supabase.storage
+                const { error: uploadError } = await admin.storage
                     .from("listing-images")
                     .upload(fileName, image);
 
                 if (!uploadError) {
                     // Voeg image URL toe aan listing_images tabel
-                    const { data: publicUrl } = supabase.storage
+                    const { data: publicUrl } = admin.storage
                         .from("listing-images")
                         .getPublicUrl(fileName);
 
-                    await supabase
+                    await admin
                         .from("listing_images")
                         .insert({
                             listing_id: params.id,
@@ -116,14 +119,14 @@ export async function DELETE(
     _req: Request,
     { params }: { params: { id: string } },
 ) {
-    const supabase = supabaseAdmin();
-    const { data: { user } } = await supabase.auth.getUser();
+    const auth = supabaseServer();
+    const { data: { user } } = await auth.auth.getUser();
 
     if (!user) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { data: profile } = await supabase
+    const { data: profile } = await auth
         .from("profiles")
         .select("is_admin")
         .eq("id", user.id)
@@ -133,7 +136,9 @@ export async function DELETE(
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { error } = await supabase
+    let admin;
+    try { admin = supabaseServiceRole(); } catch (e) { const msg = e instanceof Error ? e.message : "Service role init failed"; return NextResponse.json({ error: msg }, { status: 500 }); }
+    const { error } = await admin
         .from("listings")
         .delete()
         .eq("id", params.id);

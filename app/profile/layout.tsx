@@ -12,7 +12,7 @@ import { useUnreadReviews } from "@/lib/useUnreadReviews";
 
 const TABS = [
   { href: "/profile/info", label: "Mijn gegevens" },
-  { href: "/profile/business", label: "Gegevens shop" }, // altijd zichtbaar
+  { href: "/profile/business", label: "Ocaso Shop" }, // altijd zichtbaar
   { href: "/profile/chats", label: "Chats" },
   // Notificaties tab verwijderd — instellingen nu onder 'Mijn gegevens'
   { href: "/profile/listings", label: "Mijn zoekertjes" },
@@ -133,9 +133,9 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
           <div className="mb-4 rounded-2xl border border-neutral-200 bg-white p-4">
             <div className="flex items-center justify-between">
               <div>
-                <div className="font-medium">Zakelijk account</div>
+                <div className="font-medium">Ocaso Shop activeren</div>
                 <div className="text-sm text-neutral-600">
-                  Schakel in als u als zakelijke gebruiker wilt verkopen en toegang wilt tot “Zakelijke gegevens”.
+                  Activeer je Ocaso Shop om te verkopen met shop‑profiel, badges en extra functies.
                 </div>
               </div>
               <label className="inline-flex cursor-pointer items-center gap-3">
@@ -171,13 +171,12 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
         <div className="rounded-2xl border border-neutral-200 bg-white p-6">
           {isBusinessRoute && !isBusiness ? (
             <div className="text-sm text-neutral-700">
-              <div className="mb-2 font-medium">Gegevens shop</div>
+              <div className="mb-2 font-medium">Ocaso Shop</div>
               <p>
-                U bent geen zakelijke gebruiker, gelieve in uw profiel aan te geven dat u een zakelijke gebruiker bent.
+                Je shop is nog niet geactiveerd. Activeer eerst je <span className="font-medium">Ocaso Shop</span> in <span className="font-medium">Mijn gegevens</span>.
               </p>
               <p className="mt-2 text-neutral-600">
-                Tip: Ga naar <span className="font-medium">Mijn gegevens</span> en zet{" "}
-                <span className="font-medium">Zakelijk account</span> op <span className="font-medium">Aan</span>.
+                Tip: Ga naar <span className="font-medium">Mijn gegevens</span> en zet <span className="font-medium">Ocaso Shop activeren</span> op <span className="font-medium">Aan</span>.
               </p>
             </div>
           ) : (

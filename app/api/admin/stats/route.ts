@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { supabaseServiceRole } from "@/lib/supabaseServiceRole";
 
+import { supabaseServiceRole } from "@/lib/supabaseServiceRole";
 import { toURL } from "@/lib/url";
 
 export const runtime = "nodejs";

@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
+
 import { supabaseServiceRole } from "@/lib/supabaseServiceRole";
 
 export const runtime = "nodejs";

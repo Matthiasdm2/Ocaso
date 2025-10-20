@@ -1,5 +1,7 @@
-import { supabaseServer } from "@/lib/supabaseServer";
 import { NextResponse } from "next/server";
+
+import { supabaseServer } from "@/lib/supabaseServer";
+import { supabaseServiceRole } from "@/lib/supabaseServiceRole";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,5 +19,16 @@ export async function GET() {
     NEXT_PUBLIC_SUPABASE_ANON_KEY: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     SUPABASE_SERVICE_ROLE_KEY: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
   };
-  return NextResponse.json({ present });
+
+  // Test if service role client can be initialized
+  let serviceRoleOk = false;
+  let serviceRoleError = null;
+  try {
+    supabaseServiceRole();
+    serviceRoleOk = true;
+  } catch (e) {
+    serviceRoleError = e instanceof Error ? e.message : "Unknown error";
+  }
+
+  return NextResponse.json({ present, serviceRole: { ok: serviceRoleOk, error: serviceRoleError } });
 }

@@ -22,7 +22,7 @@ export default function SafetyPage() {
             </div>
             <h1 className="mt-3 text-4xl font-semibold tracking-tight md:text-5xl">Samen zorgen we voor vertrouwen</h1>
             <p className="mt-3 max-w-3xl text-lg text-neutral-700 md:text-xl">
-              Ocaso is gebouwd op veiligheid en transparantie. We beschermen kopers en verkopers met duidelijke regels, escrow‑betalingen en slimme verificatie.
+              Ocaso is gebouwd op veiligheid en transparantie. We beschermen kopers en verkopers met escrow‑betalingen, geverifieerde profielen, reviews en ingebouwde chat.
             </p>
           </motion.div>
         </div>
@@ -32,9 +32,9 @@ export default function SafetyPage() {
       <section className="px-6 py-10 md:py-16">
         <div className="mx-auto grid max-w-6xl gap-6 md:grid-cols-3">
           {[
-            { icon: CreditCard, title: "Escrow‑betalingen", desc: "Geld wordt pas vrijgegeven na bevestigde levering. Zo zijn zowel koper als verkoper beschermd." },
-            { icon: PackageCheck, title: "Verzekerde verzending", desc: "Via onze logistieke partners verzend je veilig met tracking en ondersteuning bij verlies of schade." },
-            { icon: BadgeCheck, title: "Verificatie", desc: "Zakelijke verkopers worden gecontroleerd. Particuliere verkopers bouwen reputatie op via reviews." },
+            { icon: CreditCard, title: "Escrow‑betalingen", desc: "Geld staat in veilige bewaring tot de levering is bevestigd. Geen vooruitbetaling buiten het platform." },
+            { icon: PackageCheck, title: "Verzending met tracking", desc: "Verzend via Ocaso‑labels met tracking. Ondersteuning bij vertraging, verlies of schade." },
+            { icon: BadgeCheck, title: "Geverifieerde profielen", desc: "Zakelijke verkopers doorlopen extra checks (KYC). Iedereen bouwt reputatie op via reviews." },
           ].map((p, i) => (
             <div key={i} className="rounded-2xl border border-neutral-200 bg-white p-6">
               <p.icon className="h-6 w-6 text-emerald-600" />
@@ -53,17 +53,18 @@ export default function SafetyPage() {
             <div className="rounded-2xl border border-neutral-200 bg-white p-6">
               <div className="flex items-center gap-2 text-emerald-700"><Users2 className="h-5 w-5" /> Voor kopers</div>
               <ul className="mt-3 list-disc space-y-2 pl-6 text-sm text-neutral-700">
-                <li>Betaal altijd via Ocaso — nooit buiten het platform.</li>
-                <li>Controleer reviews en verificatie van verkopers.</li>
-                <li>Bevestig de levering pas als je product ontvangen en in orde is.</li>
+                <li>Betaal altijd via Ocaso (escrow) — nooit buiten het platform.</li>
+                <li>Controleer reviews, badges en eventuele bedrijfsverificatie.</li>
+                <li>Houd alle communicatie binnen de Ocaso‑chat.</li>
+                <li>Bevestig levering pas als je item ontvangen en in orde is.</li>
               </ul>
             </div>
             <div className="rounded-2xl border border-neutral-200 bg-white p-6">
               <div className="flex items-center gap-2 text-emerald-700"><Users2 className="h-5 w-5" /> Voor verkopers</div>
               <ul className="mt-3 list-disc space-y-2 pl-6 text-sm text-neutral-700">
-                <li>Verzend altijd met een label via Ocaso voor bescherming.</li>
-                <li>Communiceer alleen via ons berichten‑systeem.</li>
-                <li>Accepteer nooit directe betalingen buiten escrow.</li>
+                <li>Gebruik een Ocaso‑verzendlabel voor tracking en bescherming.</li>
+                <li>Reageer via de ingebouwde chat en houd afspraken in de app.</li>
+                <li>Accepteer alleen betalingen via Ocaso (escrow), niet extern.</li>
               </ul>
             </div>
           </div>
@@ -75,7 +76,7 @@ export default function SafetyPage() {
         <div className="mx-auto max-w-5xl rounded-2xl border border-neutral-200 bg-white p-6 md:p-10">
           <div className="flex items-center gap-2 text-emerald-700"><AlertCircle className="h-5 w-5" /> Problemen melden</div>
           <p className="mt-2 text-neutral-700 text-sm md:text-base">
-            Zie je verdacht gedrag of heb je een probleem met een transactie? Meld dit direct via het <Link href="/support/new" className="text-emerald-700 hover:underline">supportformulier</Link>. Ons team onderzoekt je melding en grijpt indien nodig in.
+            Probleem of vermoeden van fraude? Meld dit via het <Link href="/support/new" className="text-emerald-700 hover:underline">supportformulier</Link>. Voeg order‑ID, chat‑screenshots en verzendbewijs toe. Wij bekijken je case en ondernemen actie.
           </p>
         </div>
       </section>

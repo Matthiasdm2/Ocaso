@@ -1,0 +1,2 @@
+-- Placeholder seed; keep empty unless you want sample data.
+-- This prevents supabase db reset from failing when seeding is enabled.

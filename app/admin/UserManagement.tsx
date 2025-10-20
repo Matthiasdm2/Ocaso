@@ -21,6 +21,7 @@ export default function UserManagement() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   // Filter states
   const [filters, setFilters] = useState({
@@ -33,12 +34,29 @@ export default function UserManagement() {
   }, []);
 
   const fetchUsers = async () => {
-    const res = await fetch("/api/admin/users");
-    if (res.ok) {
-      const data = await res.json();
-      setUsers(data);
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/admin/users", { credentials: "same-origin" });
+      if (!res.ok) {
+        if (res.status === 401) {
+          setError("Niet ingelogd. Log in en probeer opnieuw.");
+        } else if (res.status === 403) {
+          setError("Geen admin-rechten voor deze actie.");
+        } else {
+          const body = await res.json().catch(() => ({}));
+          setError(body?.error || `Fout ${res.status}`);
+        }
+        setUsers([]);
+      } else {
+        const data = await res.json();
+        setUsers(data);
+      }
+    } catch (e) {
+      setError("Kon gebruikers niet laden. Controleer verbinding.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const deleteUser = async (id: string) => {
@@ -149,6 +167,12 @@ export default function UserManagement() {
         </div>
       </div>
 
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 text-red-700 border border-red-200 rounded">
+          {error}
+        </div>
+      )}
+
       <table className="w-full border">
         <thead>
           <tr>
@@ -169,7 +193,7 @@ export default function UserManagement() {
               </td>
             </tr>
           )}
-          {filteredUsers.length === 0 && users.length === 0 && !loading && (
+          {filteredUsers.length === 0 && users.length === 0 && !loading && !error && (
             <tr>
               <td colSpan={7} className="border p-4 text-center text-gray-500">
                 Geen gebruikers gevonden.

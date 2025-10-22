@@ -79,24 +79,26 @@ export function supabaseServer() {
       },
       set(name: string, value: string, options: CookieOptions) {
         // Belangrijk: gedeeld cookie-domein en secure in prod
+        const isProduction = process.env.NODE_ENV === 'production';
         cookies().set({
           name,
           value,
           ...options,
-          domain: '.ocaso.be',
-          secure: true,
-          sameSite: 'lax',
+          domain: isProduction ? '.ocaso.be' : undefined,
+          secure: isProduction,
+          sameSite: isProduction ? 'lax' : 'lax',
           httpOnly: true,
         });
       },
       remove(name: string, options: CookieOptions) {
+        const isProduction = process.env.NODE_ENV === 'production';
         cookies().set({
           name,
           value: '',
           ...options,
-          domain: '.ocaso.be',
-          secure: true,
-          sameSite: 'lax',
+          domain: isProduction ? '.ocaso.be' : undefined,
+          secure: isProduction,
+          sameSite: isProduction ? 'lax' : 'lax',
           httpOnly: true,
           maxAge: 0,
         });

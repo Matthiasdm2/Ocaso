@@ -2,13 +2,8 @@
 import { NextResponse } from "next/server";
 
 import { supabaseServer } from "@/lib/supabaseServer";
-import { withCORS } from "@/lib/cors";
 
 export const dynamic = "force-dynamic";
-
-export async function OPTIONS(req: Request) {
-  return new NextResponse(null, { status: 204, headers: withCORS(req) });
-}
 
 export async function GET(request: Request) {
   const supabase = supabaseServer();
@@ -99,6 +94,6 @@ export async function GET(request: Request) {
   }));
 
   return NextResponse.json({ sponsored, recommended }, {
-    headers: withCORS(request, new Headers({ "Cache-Control": "no-store" })),
+    headers: { "Cache-Control": "no-store" },
   });
 }

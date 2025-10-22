@@ -1,7 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 
 import { supabaseServiceRole } from "@/lib/supabaseServiceRole";
-import { withCORS } from "@/lib/cors";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -9,10 +8,6 @@ export const dynamic = "force-dynamic";
 interface ListingView {
     user_id: string | null;
     session_id: string | null;
-}
-
-export async function OPTIONS(req: Request) {
-  return new NextResponse(null, { status: 204, headers: withCORS(req) });
 }
 
 export async function GET(request: NextRequest) {
@@ -63,23 +58,22 @@ export async function GET(request: NextRequest) {
                 .gte("created_at", `${dateStr}T00:00:00.000Z`)
                 .lt("created_at", `${dateStr}T23:59:59.999Z`);
 
-            let visitorCount = 0;
             if (error) {
-                // listing_views table might not exist, fallback to 0
-                console.warn("listing_views table not available for", dateStr, error.message);
-                visitorCount = 0;
-            } else if (viewsData) {
-                // Tel unieke bezoekers (user_id of session_id)
-                const uniqueVisitors = new Set();
-                (viewsData as ListingView[])?.forEach((view) => {
-                    if (view.user_id) {
-                        uniqueVisitors.add(`user_${view.user_id}`);
-                    } else if (view.session_id) {
-                        uniqueVisitors.add(`session_${view.session_id}`);
-                    }
-                });
-                visitorCount = uniqueVisitors.size;
+                console.error("Error fetching views for date", dateStr, error);
+                continue;
             }
+
+            // Tel unieke bezoekers (user_id of session_id)
+            const uniqueVisitors = new Set();
+            (viewsData as ListingView[])?.forEach((view) => {
+                if (view.user_id) {
+                    uniqueVisitors.add(`user_${view.user_id}`);
+                } else if (view.session_id) {
+                    uniqueVisitors.add(`session_${view.session_id}`);
+                }
+            });
+
+            const visitorCount = uniqueVisitors.size;
 
             dailyVisitors.push({
                 date: dateStr,
@@ -92,12 +86,11 @@ export async function GET(request: NextRequest) {
             });
         }
 
-        return NextResponse.json(dailyVisitors, { headers: withCORS(request) });
+        return NextResponse.json(dailyVisitors);
     } catch (error) {
         console.error("Error fetching daily visitors:", error);
         return NextResponse.json({ error: "Failed to fetch daily visitors" }, {
             status: 500,
-            headers: withCORS(request),
         });
     }
 }

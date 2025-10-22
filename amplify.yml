@@ -3,10 +3,12 @@ frontend:
   phases:
     preBuild:
       commands:
+        - echo "Using Node $(node -v)"
         - nvm use 20
         - npm ci
     build:
       commands:
+        - echo "Starting Next.js build..."
         - npm run build
   artifacts:
     baseDirectory: .next
@@ -17,10 +19,10 @@ frontend:
       - node_modules/**/*
       - .next/cache/**/*
 
-# Environment variables worden geconfigureerd in Amplify Console
-# NEXT_PUBLIC_SUPABASE_URL
-# NEXT_PUBLIC_SUPABASE_ANON_KEY
-# SUPABASE_SERVICE_ROLE_KEY
-# STRIPE_SECRET_KEY
-# STRIPE_PUBLISHABLE_KEY
-# STRIPE_WEBHOOK_SECRET
+  environment:
+    NEXT_PUBLIC_SUPABASE_URL: $NEXT_PUBLIC_SUPABASE_URL
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: $NEXT_PUBLIC_SUPABASE_ANON_KEY
+    SUPABASE_SERVICE_ROLE_KEY: $SUPABASE_SERVICE_ROLE_KEY
+    STRIPE_SECRET_KEY: $STRIPE_SECRET_KEY
+    STRIPE_PUBLISHABLE_KEY: $STRIPE_PUBLISHABLE_KEY
+    STRIPE_WEBHOOK_SECRET: $STRIPE_WEBHOOK_SECRET

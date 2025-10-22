@@ -2,14 +2,9 @@ import { type NextRequest, NextResponse } from "next/server";
 
 import { supabaseServiceRole } from "@/lib/supabaseServiceRole";
 import { toURL } from "@/lib/url";
-import { withCORS } from "@/lib/cors";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-export async function OPTIONS(req: Request) {
-  return new NextResponse(null, { status: 204, headers: withCORS(req) });
-}
 
 export async function GET(request: NextRequest) {
     let supabase;
@@ -56,11 +51,7 @@ export async function GET(request: NextRequest) {
             .gte("created_at", startDate.toISOString());
 
         let visitorsCount = 0;
-        if (viewsError) {
-            // listing_views table might not exist, fallback to 0
-            console.warn("listing_views table not available:", viewsError.message);
-            visitorsCount = 0;
-        } else if (viewsData) {
+        if (!viewsError && viewsData) {
             const uniqueVisitors = new Set();
             viewsData.forEach((view) => {
                 if (view.user_id) {
@@ -93,12 +84,11 @@ export async function GET(request: NextRequest) {
             listings: listingsCount || 0,
             sales: salesCount || 0,
             shipments: shipmentsCount || 0,
-        }, { headers: withCORS(request) });
+        });
     } catch (error) {
         console.error("Error fetching stats:", error);
         return NextResponse.json({ error: "Failed to fetch stats" }, {
             status: 500,
-            headers: withCORS(request),
         });
     }
 }

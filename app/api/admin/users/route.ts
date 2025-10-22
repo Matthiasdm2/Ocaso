@@ -2,14 +2,9 @@ import { NextResponse } from "next/server";
 
 import { supabaseServer } from "@/lib/supabaseServer";
 import { supabaseServiceRole } from "@/lib/supabaseServiceRole";
-import { withCORS } from "@/lib/cors";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-export async function OPTIONS(req: Request) {
-  return new NextResponse(null, { status: 204, headers: withCORS(req) });
-}
 
 export async function GET(req: Request) {
     // Use cookie-bound anon client to authenticate requester
@@ -17,7 +12,7 @@ export async function GET(req: Request) {
     const { data: { user } } = await authClient.auth.getUser();
 
     if (!user) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: withCORS(req) });
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { data: profile } = await authClient
@@ -27,7 +22,7 @@ export async function GET(req: Request) {
         .single();
 
     if (!profile?.is_admin) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403, headers: withCORS(req) });
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const url = new URL(req.url);
@@ -58,8 +53,8 @@ export async function GET(req: Request) {
     const { data, error } = await query;
 
     if (error) {
-        return NextResponse.json({ error: error.message }, { status: 400, headers: withCORS(req) });
+        return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    return NextResponse.json(data, { headers: withCORS(req) });
+    return NextResponse.json(data);
 }

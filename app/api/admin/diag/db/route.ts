@@ -2,16 +2,11 @@ import { NextResponse } from "next/server";
 
 import { supabaseServer } from "@/lib/supabaseServer";
 import { supabaseServiceRole } from "@/lib/supabaseServiceRole";
-import { withCORS } from "@/lib/cors";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function OPTIONS(req: Request) {
-  return new NextResponse(null, { status: 204, headers: withCORS(req) });
-}
-
-export async function GET(_req: Request) {
+export async function GET() {
   // Authenticate requester
   const auth = supabaseServer();
   const { data: { user } } = await auth.auth.getUser();
@@ -90,5 +85,5 @@ export async function GET(_req: Request) {
       user_subscriptions,
       listing_views,
     },
-  }, { headers: withCORS(_req) });
+  });
 }

@@ -1,14 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server";
 
 import { supabaseServiceRole } from "@/lib/supabaseServiceRole";
-import { withCORS } from "@/lib/cors";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-export async function OPTIONS(req: Request) {
-  return new NextResponse(null, { status: 204, headers: withCORS(req) });
-}
 
 export async function GET(request: NextRequest) {
     let supabase;
@@ -124,12 +119,11 @@ export async function GET(request: NextRequest) {
             `Category stats check: Sum of categories = ${totalFromCategories}, Actual total = ${actualTotal}`,
         );
 
-        return NextResponse.json(filteredCategoryStats, { headers: withCORS(request) });
+        return NextResponse.json(filteredCategoryStats);
     } catch (error) {
         console.error("Error fetching category stats:", error);
         return NextResponse.json({ error: "Failed to fetch category stats" }, {
             status: 500,
-            headers: withCORS(request),
         });
     }
 }

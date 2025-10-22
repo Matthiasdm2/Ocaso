@@ -11,69 +11,31 @@ export async function OPTIONS(req: Request) {
 }
 
 export async function GET(request: NextRequest) {
-    let supabase;
+    // TEMP DEBUG: Test basic database connection
     try {
-        supabase = supabaseServiceRole();
-    } catch (e) {
-        const msg = e instanceof Error
-            ? e.message
-            : "Failed to init service role";
-        return NextResponse.json({ error: msg }, { status: 500 });
-    }
-    const { searchParams } = new URL(request.url);
-    const period = searchParams.get("period") || "31d";
+        const supabase = supabaseServiceRole();
+        const { count, error } = await supabase
+            .from("profiles")
+            .select("*", { count: "exact", head: true })
+            .limit(1);
 
-    // Bereken het aantal dagen gebaseerd op periode
-    const now = new Date();
-    let days: number;
-
-    switch (period) {
-        case "7d":
-            days = 7;
-            break;
-        case "31d":
-            days = 31;
-            break;
-        case "1y":
-            days = 365;
-            break;
-        case "all":
-        default:
-            days = 365; // Voor "all" tonen we laatste jaar
-            break;
-    }
-
-    try {
-        const dailyUsers = [];
-
-        for (let i = days - 1; i >= 0; i--) {
-            const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
-            const dateStr = date.toISOString().split("T")[0]; // YYYY-MM-DD format
-
-            // Tel nieuwe gebruikers voor deze dag
-            const { count: userCount } = await supabase
-                .from("profiles")
-                .select("*", { count: "exact", head: true })
-                .gte("created_at", `${dateStr}T00:00:00.000Z`)
-                .lt("created_at", `${dateStr}T23:59:59.999Z`);
-
-            dailyUsers.push({
-                date: dateStr,
-                users: userCount || 0,
-                day: date.toLocaleDateString("nl-NL", {
-                    weekday: "short",
-                    day: "numeric",
-                    month: "short",
-                }),
-            });
+        if (error) {
+            return NextResponse.json({ 
+                error: "Database query failed", 
+                details: error.message,
+                code: error.code 
+            }, { status: 500, headers: withCORS(request) });
         }
 
-        return NextResponse.json(dailyUsers, { headers: withCORS(request) });
-    } catch (error) {
-        console.error("Error fetching daily users:", error);
-        return NextResponse.json({ error: "Failed to fetch daily users" }, {
-            status: 500,
-            headers: withCORS(request),
-        });
+        return NextResponse.json({ 
+            success: true, 
+            totalProfiles: count,
+            message: "Database connection works"
+        }, { headers: withCORS(request) });
+    } catch (e) {
+        return NextResponse.json({ 
+            error: "Service role init failed", 
+            details: e instanceof Error ? e.message : String(e)
+        }, { status: 500, headers: withCORS(request) });
     }
 }

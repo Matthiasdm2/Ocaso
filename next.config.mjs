@@ -8,6 +8,16 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  async redirects() {
+    return [
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: 'ocaso.be' }],
+        destination: 'https://www.ocaso.be/:path*',
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     /**
      * Security headers applied to all routes. CSP is now enforced.

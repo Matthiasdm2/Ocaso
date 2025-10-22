@@ -80,5 +80,6 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  // Bescherm *pagina's*, maar niet /api
+  matcher: ['/((?!api/|_next/|static/|favicon.ico).*)'],
 };

@@ -2,18 +2,18 @@
 
 import { motion } from "framer-motion";
 import {
-  AlertCircle,
-  AlertTriangle,
-  ArrowRight,
-  BadgeCheck,
-  CreditCard,
-  HelpCircle,
-  Lock,
-  MessageSquare,
-  PackageCheck,
-  Shield,
-  ShieldCheck,
-  Users2,
+    AlertCircle,
+    AlertTriangle,
+    ArrowRight,
+    BadgeCheck,
+    CreditCard,
+    HelpCircle,
+    Lock,
+    MessageSquare,
+    PackageCheck,
+    Shield,
+    ShieldCheck,
+    Users2,
 } from "lucide-react";
 import Link from "next/link";
 

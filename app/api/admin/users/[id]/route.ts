@@ -54,7 +54,7 @@ export async function PUT(
 
     // Update password if provided
     if (password) {
-    const { error: authError } = await admin.auth.admin.updateUserById(
+        const { error: authError } = await admin.auth.admin.updateUserById(
             params.id,
             {
                 password,

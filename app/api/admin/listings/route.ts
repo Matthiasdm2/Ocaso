@@ -97,7 +97,9 @@ export async function POST(req: Request) {
         try {
             admin = supabaseServiceRole();
         } catch (e) {
-            const msg = e instanceof Error ? e.message : "Service role init failed";
+            const msg = e instanceof Error
+                ? e.message
+                : "Service role init failed";
             return NextResponse.json({ error: msg }, { status: 500 });
         }
 

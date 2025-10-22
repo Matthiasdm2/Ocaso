@@ -94,6 +94,9 @@ export async function GET(request: Request) {
   }));
 
   return NextResponse.json({ sponsored, recommended }, {
-    headers: { "Cache-Control": "no-store" },
+    headers: {
+      "Cache-Control": "no-store",
+      "Access-Control-Allow-Origin": "*", // Zet hier eventueel specifiek domein
+    },
   });
 }

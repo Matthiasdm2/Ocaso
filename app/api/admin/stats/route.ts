@@ -11,7 +11,9 @@ export async function GET(request: NextRequest) {
     try {
         supabase = supabaseServiceRole();
     } catch (e) {
-        const msg = e instanceof Error ? e.message : "Failed to init service role";
+        const msg = e instanceof Error
+            ? e.message
+            : "Failed to init service role";
         return NextResponse.json({ error: msg }, { status: 500 });
     }
     const { searchParams } = toURL(request.url);

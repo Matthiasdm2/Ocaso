@@ -11,9 +11,16 @@ export const dynamic = "force-dynamic";
 export async function POST() {
   const auth = supabaseServer();
   const { data: { user } } = await auth.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const { data: profile } = await auth.from("profiles").select("is_admin").eq("id", user.id).single();
-  if (!profile?.is_admin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const { data: profile } = await auth.from("profiles").select("is_admin").eq(
+    "id",
+    user.id,
+  ).single();
+  if (!profile?.is_admin) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   let admin;
   try {
@@ -24,7 +31,11 @@ export async function POST() {
   }
 
   // Pick a few categories/subcategories if available, otherwise leave nulls
-  type Cat = { id: number; name: string; subcategories: { id: number; name: string }[] };
+  type Cat = {
+    id: number;
+    name: string;
+    subcategories: { id: number; name: string }[];
+  };
   const { data: cats, error: catErr } = await admin
     .from("categories")
     .select("id,name, subcategories(id,name)")
@@ -35,21 +46,36 @@ export async function POST() {
     console.warn("[seed] Failed to load categories:", catErr.message);
   }
 
-  const choose = <T,>(arr: T[] | null | undefined, i: number): T | undefined => (arr && arr.length ? arr[i % arr.length] : undefined);
+  const choose = <T>(
+    arr: T[] | null | undefined,
+    i: number,
+  ): T | undefined => (arr && arr.length ? arr[i % arr.length] : undefined);
 
   // Build simple demo listings
   const samples = [
     {
-      title: "Demo fiets", description: "Degelijke stadsfiets in goede staat.", price: 120.0,
-      state: "good", location: "Antwerpen", images: ["https://picsum.photos/seed/ocaso-bike/640/480"],
+      title: "Demo fiets",
+      description: "Degelijke stadsfiets in goede staat.",
+      price: 120.0,
+      state: "good",
+      location: "Antwerpen",
+      images: ["https://picsum.photos/seed/ocaso-bike/640/480"],
     },
     {
-      title: "iPhone 12 128GB", description: "Zo goed als nieuw, altijd met hoesje gebruikt.", price: 380.0,
-      state: "like_new", location: "Gent", images: ["https://picsum.photos/seed/ocaso-phone/640/480"],
+      title: "iPhone 12 128GB",
+      description: "Zo goed als nieuw, altijd met hoesje gebruikt.",
+      price: 380.0,
+      state: "like_new",
+      location: "Gent",
+      images: ["https://picsum.photos/seed/ocaso-phone/640/480"],
     },
     {
-      title: "Boekenpakket romans", description: "Pakket van 10 recente romans.", price: 25.0,
-      state: "fair", location: "Leuven", images: ["https://picsum.photos/seed/ocaso-books/640/480"],
+      title: "Boekenpakket romans",
+      description: "Pakket van 10 recente romans.",
+      price: 25.0,
+      state: "fair",
+      location: "Leuven",
+      images: ["https://picsum.photos/seed/ocaso-books/640/480"],
     },
   ].map((s, idx) => {
     const cat = choose<Cat>(cats ?? undefined, idx);
@@ -84,5 +110,9 @@ export async function POST() {
     return NextResponse.json({ error: insErr.message }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true, insertedCount: inserted?.length ?? 0, ids: inserted?.map(r => r.id) ?? [] });
+  return NextResponse.json({
+    ok: true,
+    insertedCount: inserted?.length ?? 0,
+    ids: inserted?.map((r) => r.id) ?? [],
+  });
 }

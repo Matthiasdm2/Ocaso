@@ -7,21 +7,29 @@ export async function middleware(req: NextRequest) {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
   if (process.env.NODE_ENV === "production" && siteUrl) {
     try {
-      const canonicalRaw = siteUrl.startsWith("http") ? siteUrl : `https://${siteUrl}`;
+      const canonicalRaw = siteUrl.startsWith("http")
+        ? siteUrl
+        : `https://${siteUrl}`;
       const canonical = new URL(canonicalRaw);
-  const targetProtocol = (canonical.protocol || "https:").toLowerCase();
+      const targetProtocol = (canonical.protocol || "https:").toLowerCase();
 
       // Respect reverse proxy headers for accurate scheme/host
-      const fwdHost = (req.headers.get("x-forwarded-host") || req.headers.get("host") || req.nextUrl.host || "").toLowerCase();
-      const fwdProto = (req.headers.get("x-forwarded-proto") || req.nextUrl.protocol.replace(":", "") || "https").toLowerCase();
+      const fwdHost =
+        (req.headers.get("x-forwarded-host") || req.headers.get("host") ||
+          req.nextUrl.host || "").toLowerCase();
+      const fwdProto =
+        (req.headers.get("x-forwarded-proto") ||
+          req.nextUrl.protocol.replace(":", "") || "https").toLowerCase();
       const currentHostname = fwdHost.split(":")[0];
       const currentProtocol = `${fwdProto}:`;
 
       // Skip redirect for localhost or preview domains
       const isLocal = currentHostname === "localhost";
-      const isPreview = /\.(vercel\.app|amplifyapp\.com)$/i.test(currentHostname);
+      const isPreview = /\.(vercel\.app|amplifyapp\.com)$/i.test(
+        currentHostname,
+      );
 
-  // Enforce HTTPS only; do not change hostname to avoid loops with external redirects
+      // Enforce HTTPS only; do not change hostname to avoid loops with external redirects
 
       // Only enforce HTTPS; do not change hostname to avoid loops with external redirects
       if (!isLocal && !isPreview) {

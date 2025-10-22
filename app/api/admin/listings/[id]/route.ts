@@ -45,9 +45,16 @@ export async function PUT(
         }
 
         // Update listing
-    let admin;
-    try { admin = supabaseServiceRole(); } catch (e) { const msg = e instanceof Error ? e.message : "Service role init failed"; return NextResponse.json({ error: msg }, { status: 500 }); }
-    const { data: listing, error: listingError } = await admin
+        let admin;
+        try {
+            admin = supabaseServiceRole();
+        } catch (e) {
+            const msg = e instanceof Error
+                ? e.message
+                : "Service role init failed";
+            return NextResponse.json({ error: msg }, { status: 500 });
+        }
+        const { data: listing, error: listingError } = await admin
             .from("listings")
             .update({
                 title,
@@ -137,7 +144,12 @@ export async function DELETE(
     }
 
     let admin;
-    try { admin = supabaseServiceRole(); } catch (e) { const msg = e instanceof Error ? e.message : "Service role init failed"; return NextResponse.json({ error: msg }, { status: 500 }); }
+    try {
+        admin = supabaseServiceRole();
+    } catch (e) {
+        const msg = e instanceof Error ? e.message : "Service role init failed";
+        return NextResponse.json({ error: msg }, { status: 500 });
+    }
     const { error } = await admin
         .from("listings")
         .delete()

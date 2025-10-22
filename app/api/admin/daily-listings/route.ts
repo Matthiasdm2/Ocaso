@@ -2,9 +2,14 @@ import { type NextRequest, NextResponse } from "next/server";
 
 import { supabaseServer } from "@/lib/supabaseServer";
 import { supabaseServiceRole } from "@/lib/supabaseServiceRole";
+import { withCORS } from "@/lib/cors";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+export async function OPTIONS(req: Request) {
+  return new NextResponse(null, { status: 204, headers: withCORS(req) });
+}
 
 export async function GET(request: NextRequest) {
     // Admin guard via cookie-bound client
@@ -89,11 +94,12 @@ export async function GET(request: NextRequest) {
             });
         }
 
-        return NextResponse.json(dailyListings);
+        return NextResponse.json(dailyListings, { headers: withCORS(request) });
     } catch (error) {
         console.error("Error fetching daily listings:", error);
         return NextResponse.json({ error: "Failed to fetch daily listings" }, {
             status: 500,
+            headers: withCORS(request),
         });
     }
 }

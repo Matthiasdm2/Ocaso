@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 
 import { supabaseServiceRole } from "@/lib/supabaseServiceRole";
+import { withCORS } from "@/lib/cors";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -8,6 +9,10 @@ export const dynamic = "force-dynamic";
 interface ListingView {
     user_id: string | null;
     session_id: string | null;
+}
+
+export async function OPTIONS(req: Request) {
+  return new NextResponse(null, { status: 204, headers: withCORS(req) });
 }
 
 export async function GET(request: NextRequest) {
@@ -86,11 +91,12 @@ export async function GET(request: NextRequest) {
             });
         }
 
-        return NextResponse.json(dailyVisitors);
+        return NextResponse.json(dailyVisitors, { headers: withCORS(request) });
     } catch (error) {
         console.error("Error fetching daily visitors:", error);
         return NextResponse.json({ error: "Failed to fetch daily visitors" }, {
             status: 500,
+            headers: withCORS(request),
         });
     }
 }

@@ -1,9 +1,14 @@
 import { type NextRequest, NextResponse } from "next/server";
 
 import { supabaseServiceRole } from "@/lib/supabaseServiceRole";
+import { withCORS } from "@/lib/cors";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+export async function OPTIONS(req: Request) {
+  return new NextResponse(null, { status: 204, headers: withCORS(req) });
+}
 
 export async function GET(request: NextRequest) {
     let supabase;
@@ -63,11 +68,12 @@ export async function GET(request: NextRequest) {
             });
         }
 
-        return NextResponse.json(dailyUsers);
+        return NextResponse.json(dailyUsers, { headers: withCORS(request) });
     } catch (error) {
         console.error("Error fetching daily users:", error);
         return NextResponse.json({ error: "Failed to fetch daily users" }, {
             status: 500,
+            headers: withCORS(request),
         });
     }
 }

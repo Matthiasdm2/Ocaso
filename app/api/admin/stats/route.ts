@@ -56,7 +56,11 @@ export async function GET(request: NextRequest) {
             .gte("created_at", startDate.toISOString());
 
         let visitorsCount = 0;
-        if (!viewsError && viewsData) {
+        if (viewsError) {
+            // listing_views table might not exist, fallback to 0
+            console.warn("listing_views table not available:", viewsError.message);
+            visitorsCount = 0;
+        } else if (viewsData) {
             const uniqueVisitors = new Set();
             viewsData.forEach((view) => {
                 if (view.user_id) {

@@ -63,22 +63,23 @@ export async function GET(request: NextRequest) {
                 .gte("created_at", `${dateStr}T00:00:00.000Z`)
                 .lt("created_at", `${dateStr}T23:59:59.999Z`);
 
+            let visitorCount = 0;
             if (error) {
-                console.error("Error fetching views for date", dateStr, error);
-                continue;
+                // listing_views table might not exist, fallback to 0
+                console.warn("listing_views table not available for", dateStr, error.message);
+                visitorCount = 0;
+            } else if (viewsData) {
+                // Tel unieke bezoekers (user_id of session_id)
+                const uniqueVisitors = new Set();
+                (viewsData as ListingView[])?.forEach((view) => {
+                    if (view.user_id) {
+                        uniqueVisitors.add(`user_${view.user_id}`);
+                    } else if (view.session_id) {
+                        uniqueVisitors.add(`session_${view.session_id}`);
+                    }
+                });
+                visitorCount = uniqueVisitors.size;
             }
-
-            // Tel unieke bezoekers (user_id of session_id)
-            const uniqueVisitors = new Set();
-            (viewsData as ListingView[])?.forEach((view) => {
-                if (view.user_id) {
-                    uniqueVisitors.add(`user_${view.user_id}`);
-                } else if (view.session_id) {
-                    uniqueVisitors.add(`session_${view.session_id}`);
-                }
-            });
-
-            const visitorCount = uniqueVisitors.size;
 
             dailyVisitors.push({
                 date: dateStr,

@@ -59,11 +59,11 @@ jobs:
 
     - name: Check for secrets in code
       run: |
-        if grep -r "sk_live_" . --exclude-dir=node_modules --exclude-dir=.git; then
+        if grep -r "sk_live_" . --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=.github; then
           echo "❌ Found potential live Stripe keys in code!"
           exit 1
         fi
-        if grep -r "sb_secret_" . --exclude-dir=node_modules --exclude-dir=.git --exclude=.env*; then
+        if grep -r "sb_secret_" . --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=.github --exclude=.env*; then
           echo "❌ Found Supabase secrets in code!"
           exit 1
         fi

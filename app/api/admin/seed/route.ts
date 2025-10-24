@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { supabaseServer } from "@/lib/supabaseServer";
-import { supabaseServiceRole } from "@/lib/supabaseServiceRole";
+import { supabaseAdmin } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -9,26 +8,7 @@ export const dynamic = "force-dynamic";
 // POST /api/admin/seed
 // Admin-only. Seeds a handful of listings so the admin portal shows live data.
 export async function POST() {
-  const auth = supabaseServer();
-  const { data: { user } } = await auth.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-  const { data: profile } = await auth.from("profiles").select("is_admin").eq(
-    "id",
-    user.id,
-  ).single();
-  if (!profile?.is_admin) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-
-  let admin;
-  try {
-    admin = supabaseServiceRole();
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : "Service role init failed";
-    return NextResponse.json({ error: msg }, { status: 500 });
-  }
+  const admin = supabaseAdmin();
 
   // Pick a few categories/subcategories if available, otherwise leave nulls
   type Cat = {

@@ -1,28 +1,13 @@
 import { NextResponse } from "next/server";
 
-import { supabaseServer } from "@/lib/supabaseServer";
-import { supabaseServiceRole } from "@/lib/supabaseServiceRole";
+import { supabaseAdmin } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  // Authenticate requester
-  const auth = supabaseServer();
-  const { data: { user } } = await auth.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-  const { data: profile } = await auth.from("profiles").select("is_admin").eq(
-    "id",
-    user.id,
-  ).single();
-  if (!profile?.is_admin) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-
   // Init service role client
-  const admin = supabaseServiceRole();
+  const admin = supabaseAdmin();
 
   async function count(table: string) {
     const { count, error } = await admin.from(table).select("*", {

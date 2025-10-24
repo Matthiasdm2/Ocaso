@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 
-import { supabaseServiceRole } from "@/lib/supabaseServiceRole";
+import { supabaseAdmin } from "@/lib/supabase/server";
+
+export const runtime = "nodejs";
 
 export async function POST() {
   try {
     // Fix inconsistent status values: change 'active' to 'actief'
-    const { error } = await supabaseServiceRole()
+    const { error } = await supabaseAdmin()
       .from("listings")
       .update({ status: "actief" })
       .eq("status", "active");

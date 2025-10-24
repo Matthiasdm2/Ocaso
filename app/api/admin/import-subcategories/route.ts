@@ -3,7 +3,9 @@ import path from "node:path";
 
 import { NextResponse } from "next/server";
 
-import { supabaseServiceRole } from "@/lib/supabaseServiceRole";
+import { supabaseAdmin } from "@/lib/supabase/server";
+
+export const runtime = "nodejs";
 
 interface CategoryRow {
   id: number;
@@ -16,7 +18,7 @@ export async function POST() {
     const categoriesPath = path.join(process.cwd(), "data", "categories.json");
     const categoriesData = JSON.parse(fs.readFileSync(categoriesPath, "utf-8"));
 
-    const sb = supabaseServiceRole();
+    const sb = supabaseAdmin();
 
     // First, get existing categories
     const { data: existingCats, error: catError } = await sb

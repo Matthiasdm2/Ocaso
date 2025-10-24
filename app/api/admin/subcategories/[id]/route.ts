@@ -1,32 +1,17 @@
 import { NextResponse } from "next/server";
 
-import { supabaseServer } from "@/lib/supabaseServer";
+import { supabaseAdmin } from "@/lib/supabase/server";
+
+export const runtime = "nodejs";
 
 export async function PUT(
     req: Request,
     { params }: { params: { id: string } },
 ) {
-    const supabase = supabaseServer();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const { data: profile } = await supabase
-        .from("profiles")
-        .select("is_admin")
-        .eq("id", user.id)
-        .single();
-
-    if (!profile?.is_admin) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
     const body = await req.json();
     const { name, slug, sort_order, is_active } = body;
 
-    const { error } = await supabase
+    const { error } = await supabaseAdmin()
         .from("subcategories")
         .update({ name, slug, sort_order, is_active })
         .eq("id", params.id);
@@ -42,24 +27,7 @@ export async function DELETE(
     _req: Request,
     { params }: { params: { id: string } },
 ) {
-    const supabase = supabaseServer();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const { data: profile } = await supabase
-        .from("profiles")
-        .select("is_admin")
-        .eq("id", user.id)
-        .single();
-
-    if (!profile?.is_admin) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
-    const { error } = await supabase
+    const { error } = await supabaseAdmin()
         .from("subcategories")
         .delete()
         .eq("id", params.id);

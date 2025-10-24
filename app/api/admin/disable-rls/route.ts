@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 
-import { supabaseServiceRole } from "@/lib/supabaseServiceRole";
+import { supabaseAdmin } from "@/lib/supabase/server";
+
+export const runtime = "nodejs";
 
 export async function POST() {
   try {
     // Try to disable RLS using raw SQL
-    const { error } = await supabaseServiceRole()
+    const { error } = await supabaseAdmin()
       .rpc("exec_sql", {
         sql: "ALTER TABLE subcategories DISABLE ROW LEVEL SECURITY;",
       });

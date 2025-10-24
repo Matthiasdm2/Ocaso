@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 
-import { supabaseServiceRole } from "@/lib/supabaseServiceRole";
+import { supabaseAdmin } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,15 +11,7 @@ interface ListingView {
 }
 
 export async function GET(request: NextRequest) {
-    let supabase;
-    try {
-        supabase = supabaseServiceRole();
-    } catch (e) {
-        const msg = e instanceof Error
-            ? e.message
-            : "Failed to init service role";
-        return NextResponse.json({ error: msg }, { status: 500 });
-    }
+    const supabase = supabaseAdmin();
     const { searchParams } = new URL(request.url);
     const period = searchParams.get("period") || "31d";
 

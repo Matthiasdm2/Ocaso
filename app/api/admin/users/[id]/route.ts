@@ -1,29 +1,13 @@
 import { NextResponse } from "next/server";
 
-import { supabaseServer } from "@/lib/supabaseServer";
-import { supabaseServiceRole } from "@/lib/supabaseServiceRole";
+import { supabaseAdmin } from "@/lib/supabase/server";
+
+export const runtime = "nodejs";
 
 export async function PUT(
     req: Request,
     { params }: { params: { id: string } },
 ) {
-    const auth = supabaseServer();
-    const { data: { user } } = await auth.auth.getUser();
-
-    if (!user) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const { data: profile } = await auth
-        .from("profiles")
-        .select("is_admin")
-        .eq("id", user.id)
-        .single();
-
-    if (!profile?.is_admin) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
     const body = await req.json();
     const { is_admin, password, ...profileUpdates } = body;
 
@@ -31,13 +15,7 @@ export async function PUT(
     const profileUpdate: Record<string, unknown> = { ...profileUpdates };
     if (is_admin !== undefined) profileUpdate.is_admin = is_admin;
 
-    let admin;
-    try {
-        admin = supabaseServiceRole();
-    } catch (e) {
-        const msg = e instanceof Error ? e.message : "Service role init failed";
-        return NextResponse.json({ error: msg }, { status: 500 });
-    }
+    const admin = supabaseAdmin();
 
     if (Object.keys(profileUpdate).length > 0) {
         const { error: profileError } = await admin
@@ -74,36 +52,20 @@ export async function DELETE(
     _req: Request,
     { params }: { params: { id: string } },
 ) {
-    const auth = supabaseServer();
-    const { data: { user } } = await auth.auth.getUser();
-
-    if (!user) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const { data: profile } = await auth
-        .from("profiles")
-        .select("is_admin")
-        .eq("id", user.id)
-        .single();
-
-    if (!profile?.is_admin) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
+    const admin = supabaseAdmin();
 
     // Try to delete the Supabase Auth user first (requires service role)
     // This must be done before deleting the profile due to foreign key constraints
     console.log(`Attempting to delete auth user: ${params.id}`);
     let authUserDeleted = false;
     try {
-        const service = supabaseServiceRole();
         console.log(
             "Service role client created, key available:",
             !!process.env.SUPABASE_SERVICE_ROLE_KEY,
         );
 
         // Test if service role works by trying to get user info
-        const { data: userInfo, error: getError } = await service.auth.admin
+        const { data: userInfo, error: getError } = await admin.auth.admin
             .getUserById(params.id);
         console.log("Get user test:", {
             userExists: !!userInfo?.user,
@@ -111,7 +73,7 @@ export async function DELETE(
         });
 
         if (!getError && userInfo?.user) {
-            const { data, error: authError } = await service.auth.admin
+            const { data, error: authError } = await admin.auth.admin
                 .deleteUser(params.id);
             console.log("deleteUser result:", { data, error: authError });
             if (!authError) {
@@ -135,8 +97,7 @@ export async function DELETE(
     }
 
     // Delete profile
-    const service = supabaseServiceRole();
-    const { error: profileError } = await service
+    const { error: profileError } = await admin
         .from("profiles")
         .delete()
         .eq("id", params.id);
@@ -148,7 +109,7 @@ export async function DELETE(
     }
 
     // Delete all listings associated with this user
-    const { error: listingsError } = await service
+    const { error: listingsError } = await admin
         .from("listings")
         .delete()
         .eq("seller_id", params.id);
@@ -158,7 +119,7 @@ export async function DELETE(
     }
 
     // Delete all bids placed by this user
-    const { error: bidsError } = await service
+    const { error: bidsError } = await admin
         .from("bids")
         .delete()
         .eq("bidder_id", params.id);
@@ -168,7 +129,7 @@ export async function DELETE(
     }
 
     // Delete all orders where this user is buyer or seller
-    const { error: ordersError } = await service
+    const { error: ordersError } = await admin
         .from("orders")
         .delete()
         .or(`buyer_id.eq.${params.id},seller_id.eq.${params.id}`);
@@ -178,7 +139,7 @@ export async function DELETE(
     }
 
     // Delete all messages sent by this user
-    const { error: messagesError } = await service
+    const { error: messagesError } = await admin
         .from("messages")
         .delete()
         .eq("sender_id", params.id);
@@ -189,7 +150,7 @@ export async function DELETE(
 
     // Delete conversations where this user is the only participant
     // (conversations with multiple participants should be handled differently)
-    const { error: conversationsError } = await service
+    const { error: conversationsError } = await admin
         .from("conversations")
         .delete()
         .contains("participants", [params.id]);

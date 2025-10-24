@@ -14,8 +14,8 @@ export async function PUT(
         const title = formData.get("title") as string;
         const description = formData.get("description") as string;
         const price = parseFloat(formData.get("price") as string);
-        const category_id = formData.get("category_id") as string;
-        const subcategory_id = formData.get("subcategory_id") as string || null;
+        const category_id = parseInt(formData.get("category_id") as string);
+        const subcategory_id = formData.get("subcategory_id") ? parseInt(formData.get("subcategory_id") as string) : null;
         const state = formData.get("state") as string;
         const location = formData.get("location") as string || null;
         const status = formData.get("status") as string;

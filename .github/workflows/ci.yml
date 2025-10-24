@@ -76,6 +76,13 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Debug secrets availability
+      run: |
+        echo "Checking if secrets are available..."
+        echo "NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:+SET}"
+        echo "NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY:+SET}"
+        echo "SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:+SET}"
+
     - name: Check environment variables
       run: |
         if [ -z "$NEXT_PUBLIC_SUPABASE_URL" ]; then

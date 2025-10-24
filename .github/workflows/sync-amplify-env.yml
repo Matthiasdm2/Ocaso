@@ -1,0 +1,29 @@
+name: Sync Amplify Env Vars
+
+on:
+  workflow_dispatch:
+
+jobs:
+  update-amplify-env:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up AWS CLI
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-central-1
+
+      - name: Read amplify.env and update Amplify app
+        run: |
+          set -a
+          source amplify.env
+          set +a
+          aws amplify update-app \
+            --app-id d1yqxvaeuc4uuj \
+            --environment-variables \
+              SUPABASE_URL=$SUPABASE_URL,SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY,INDEXER_SECRET=$INDEXER_SECRET,IMAGE_SEARCH_OCR_ENABLED=$IMAGE_SEARCH_OCR_ENABLED,IMAGE_SEARCH_OCR_TIMEOUT_MS=$IMAGE_SEARCH_OCR_TIMEOUT_MS,IMAGE_SEARCH_EMBEDDINGS_ENABLED=$IMAGE_SEARCH_EMBEDDINGS_ENABLED,IMAGE_SEARCH_URL=$IMAGE_SEARCH_URL,IMAGE_SEARCH_TEXT_URL=$IMAGE_SEARCH_TEXT_URL,IMAGE_SEARCH_EMBEDDING_MAX_DIST=$IMAGE_SEARCH_EMBEDDING_MAX_DIST,NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL,NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY,SUPABASE_SERVICE_ROLE_KEY=$SUPABASE_SERVICE_ROLE_KEY
+        shell: bash

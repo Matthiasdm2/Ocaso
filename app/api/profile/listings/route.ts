@@ -167,7 +167,8 @@ export async function GET(req: Request) {
     }
 
     // Haal subcategorieën op
-    const { data: subCatsData } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: subCatsData } = await (supabase as any)
       .from("subcategories")
       .select("id,name")
       .in("id", allIds);

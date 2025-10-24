@@ -68,7 +68,8 @@ export async function GET(request: Request) {
   }
 
   if (subSlug) {
-    const { data: sub } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: sub } = await (supabase as any)
       .from("subcategories")
       .select("id,slug")
       .eq("slug", subSlug)

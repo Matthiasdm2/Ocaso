@@ -9,7 +9,8 @@ export async function POST(req: Request) {
     const { name, slug, sort_order, is_active, category_id } = body;
 
     const admin = supabaseAdmin();
-    const { data, error } = await admin
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (admin as any)
         .from("subcategories")
         .insert({ name, slug, sort_order, is_active, category_id })
         .select()

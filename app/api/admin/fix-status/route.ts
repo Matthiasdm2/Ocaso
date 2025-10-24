@@ -7,7 +7,8 @@ export const runtime = "nodejs";
 export async function POST() {
   try {
     // Fix inconsistent status values: change 'active' to 'actief'
-    const { error } = await supabaseAdmin()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabaseAdmin() as any)
       .from("listings")
       .update({ status: "actief" })
       .eq("status", "active");

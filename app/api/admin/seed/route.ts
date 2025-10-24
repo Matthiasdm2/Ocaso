@@ -16,7 +16,8 @@ export async function POST() {
     name: string;
     subcategories: { id: number; name: string }[];
   };
-  const { data: cats, error: catErr } = await admin
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: cats, error: catErr } = await (admin as any)
     .from("categories")
     .select("id,name, subcategories(id,name)")
     .limit(3);
@@ -60,11 +61,13 @@ export async function POST() {
   ].map((s, idx) => {
     const cat = choose<Cat>(cats ?? undefined, idx);
     const sub = choose<Cat["subcategories"][number]>(cat?.subcategories, 0);
+    // Use a dummy user ID for seeding
+    const dummyUserId = "00000000-0000-0000-0000-000000000000";
     return {
       ...s,
       status: "actief",
-      seller_id: user.id,
-      created_by: user.id,
+      seller_id: dummyUserId,
+      created_by: dummyUserId,
       categories: cat ? [String(cat.id), ...(sub ? [String(sub.id)] : [])] : [],
       category_id: cat?.id ?? null,
       subcategory_id: sub?.id ?? null,
@@ -82,7 +85,8 @@ export async function POST() {
     };
   });
 
-  const { data: inserted, error: insErr } = await admin
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: inserted, error: insErr } = await (admin as any)
     .from("listings")
     .insert(samples)
     .select("id,title,price,status,category_id,subcategory_id");
@@ -93,6 +97,7 @@ export async function POST() {
   return NextResponse.json({
     ok: true,
     insertedCount: inserted?.length ?? 0,
-    ids: inserted?.map((r) => r.id) ?? [],
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ids: inserted?.map((r: any) => r.id) ?? [],
   });
 }

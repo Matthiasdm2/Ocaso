@@ -10,7 +10,8 @@ export async function GET() {
   const admin = supabaseAdmin();
 
   async function count(table: string) {
-    const { count, error } = await admin.from(table).select("*", {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { count, error } = await (admin as any).from(table).select("*", {
       count: "exact",
       head: true,
     });

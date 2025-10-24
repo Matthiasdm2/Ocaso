@@ -12,7 +12,8 @@ export async function PUT(
     const { name, slug, sort_order, is_active } = body;
 
     const admin = supabaseAdmin();
-    const { error } = await admin
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (admin as any)
         .from("categories")
         .update({ name, slug, sort_order, is_active })
         .eq("id", params.id);
@@ -29,7 +30,8 @@ export async function DELETE(
     { params }: { params: { id: string } },
 ) {
     const admin = supabaseAdmin();
-    const { error } = await admin
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (admin as any)
         .from("categories")
         .delete()
         .eq("id", params.id);

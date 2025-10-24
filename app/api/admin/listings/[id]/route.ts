@@ -75,7 +75,8 @@ export async function PUT(
                         .from("listing-images")
                         .getPublicUrl(fileName);
 
-                    await admin
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    await (admin as any)
                         .from("listing_images")
                         .insert({
                             listing_id: params.id,

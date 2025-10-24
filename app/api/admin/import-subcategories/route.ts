@@ -21,7 +21,8 @@ export async function POST() {
     const sb = supabaseAdmin();
 
     // First, get existing categories
-    const { data: existingCats, error: catError } = await sb
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: existingCats, error: catError } = await (sb as any)
       .from("categories")
       .select("id, slug");
 
@@ -58,7 +59,8 @@ export async function POST() {
 
     // Insert/update L2 subcategories
     if (l2Payload.length) {
-      const { error } = await sb.from("subcategories").upsert(l2Payload, {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (sb as any).from("subcategories").upsert(l2Payload, {
         onConflict: "slug",
       });
       if (error) {

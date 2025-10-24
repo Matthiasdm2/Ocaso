@@ -2,6 +2,15 @@ import { type NextRequest, NextResponse } from "next/server";
 
 import { supabaseAdmin } from "@/lib/supabase/server";
 
+type CategoryWithSubs = {
+  id: number;
+  name: string;
+  subcategories: {
+    id: number;
+    name: string;
+  }[];
+};
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -52,7 +61,7 @@ export async function GET(request: NextRequest) {
 
         // Voor elke categorie, tel het aantal listings in de periode
         const categoryStats = await Promise.all(
-            categories.map(async (category) => {
+            categories.map(async (category: CategoryWithSubs) => {
                 // Tel listings voor deze hoofdcategorie (alle listings met deze category_id)
                 const { count: mainCount } = await supabase
                     .from("listings")

@@ -129,7 +129,8 @@ export async function DELETE(
     }
 
     // Delete all orders where this user is buyer or seller
-    const { error: ordersError } = await admin
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: ordersError } = await (admin as any)
         .from("orders")
         .delete()
         .or(`buyer_id.eq.${params.id},seller_id.eq.${params.id}`);
@@ -150,7 +151,8 @@ export async function DELETE(
 
     // Delete conversations where this user is the only participant
     // (conversations with multiple participants should be handled differently)
-    const { error: conversationsError } = await admin
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: conversationsError } = await (admin as any)
         .from("conversations")
         .delete()
         .contains("participants", [params.id]);

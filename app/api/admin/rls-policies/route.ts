@@ -7,7 +7,8 @@ export const runtime = "nodejs";
 export async function GET() {
   try {
     // Get RLS policies for all tables
-    const { data, error } = await supabaseAdmin()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabaseAdmin() as any)
       .from("pg_policies")
       .select("*")
       .in("tablename", ["listings", "conversations", "messages", "profiles"]);

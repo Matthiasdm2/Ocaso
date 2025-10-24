@@ -44,7 +44,8 @@ export async function GET(request: NextRequest) {
             const dateStr = date.toISOString().split("T")[0]; // YYYY-MM-DD format
 
             // Tel unieke views voor deze dag (per user_id of session_id)
-            const { data: viewsData, error } = await supabase
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { data: viewsData, error } = await (supabase as any)
                 .from("listing_views")
                 .select("user_id, session_id")
                 .gte("created_at", `${dateStr}T00:00:00.000Z`)

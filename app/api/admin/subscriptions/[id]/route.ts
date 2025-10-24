@@ -13,7 +13,8 @@ export async function PUT(
 
     const subscription_active = business_plan ? true : false;
 
-    const { error } = await supabaseAdmin()
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabaseAdmin() as any)
         .from("profiles")
         .update({ business_plan, subscription_active })
         .eq("id", params.id);

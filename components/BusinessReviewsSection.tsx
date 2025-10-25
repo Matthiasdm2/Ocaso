@@ -48,6 +48,13 @@ export default function BusinessReviewsSection({ businessId, reviews: initialRev
     window.dispatchEvent(new CustomEvent('ocaso:reviews-open-changed'));
     try {
       await fetch(`/api/reviews/${id}/open`, { method: 'POST' });
+      // Update last_seen_reviews_at naar huidige tijd wanneer een review wordt geopend
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const now = new Date().toISOString();
+        await supabase.from('profiles').update({ last_seen_reviews_at: now }).eq('id', user.id);
+      }
     } catch {/* ignore */}
   }
 

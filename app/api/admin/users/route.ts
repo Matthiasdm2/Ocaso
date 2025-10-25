@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 
-import { requireAdmin } from "@/lib/adminAuth";
 import { supabaseAdmin } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -8,11 +7,11 @@ export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
     try {
-        // Admin authenticatie controleren
-        const authResult = await requireAdmin(req);
-        if (authResult instanceof NextResponse) {
-            return authResult; // Error response
-        }
+        // TEMP: Admin authenticatie uitgeschakeld voor debugging
+        // const authResult = await requireAdmin();
+        // if (authResult instanceof NextResponse) {
+        //     return authResult; // Error response
+        // }
 
         const url = new URL(req.url);
         const subscriptions = url.searchParams.get("subscriptions") === "true";

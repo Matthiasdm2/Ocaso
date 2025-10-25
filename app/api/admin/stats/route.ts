@@ -1,12 +1,19 @@
 import { NextResponse } from "next/server";
 
+import { requireAdmin } from "@/lib/adminAuth";
 import { supabaseAdmin } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: Request) {
     try {
+        // Admin authenticatie controleren
+        const authResult = await requireAdmin(request);
+        if (authResult instanceof NextResponse) {
+            return authResult; // Error response
+        }
+
         const supabase = supabaseAdmin();
         // Tel alle listings
         const { count: listingsCount } = await supabase

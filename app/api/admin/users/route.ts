@@ -1,20 +1,28 @@
 import { NextResponse } from "next/server";
 
+import { requireAdmin } from "@/lib/adminAuth";
 import { supabaseAdmin } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
-    const url = new URL(req.url);
-    const subscriptions = url.searchParams.get("subscriptions") === "true";
-    const email = url.searchParams.get("email");
+    try {
+        // Admin authenticatie controleren
+        const authResult = await requireAdmin(req);
+        if (authResult instanceof NextResponse) {
+            return authResult; // Error response
+        }
 
-    const selectFields = subscriptions
-        ? "id, full_name, email, business_plan, subscription_active"
-        : "id, full_name, email, account_type, is_admin, phone, bio, address, bank, preferences, notifications, avatar_url";
+        const url = new URL(req.url);
+        const subscriptions = url.searchParams.get("subscriptions") === "true";
+        const email = url.searchParams.get("email");
 
-    const adminClient = supabaseAdmin();
+        const selectFields = subscriptions
+            ? "id, full_name, email, business_plan, subscription_active"
+            : "id, full_name, email, account_type, is_admin, phone, bio, address, bank, preferences, notifications, avatar_url";
+
+        const adminClient = supabaseAdmin();
 
     let query = adminClient
         .from("profiles")
@@ -31,4 +39,8 @@ export async function GET(req: Request) {
     }
 
     return NextResponse.json(data);
+    } catch (error) {
+        console.error("Admin users error:", error);
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    }
 }

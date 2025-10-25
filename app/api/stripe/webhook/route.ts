@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
-import { env } from "@/lib/env";
+import { getStripeSecretKey, getStripeWebhookSecret, getSupabaseServiceRoleKey } from "@/lib/env";
 import { supabaseServiceRole } from "@/lib/supabaseServiceRole";
 
 export const runtime = "nodejs"; // ensure Node runtime for raw body
 
 export async function POST(req: Request) {
-  const secret = env.STRIPE_WEBHOOK_SECRET;
-  const stripeSecret = env.STRIPE_SECRET_KEY;
+  const secret = getStripeWebhookSecret();
+  const stripeSecret = getStripeSecretKey();
   if (!secret || !stripeSecret) {
     return NextResponse.json({ error: "Missing Stripe secrets" }, {
       status: 500,
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
-  if (!env.SUPABASE_SERVICE_ROLE_KEY) {
+  if (!getSupabaseServiceRoleKey()) {
     return NextResponse.json({ error: "service_role_missing" }, {
       status: 503,
     });

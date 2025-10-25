@@ -3,11 +3,11 @@
 import { type CookieOptions, createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
-import { env } from "@/lib/env";
+import { env, getSupabaseServiceRoleKeyOptional } from "@/lib/env";
 
 export function supabaseServiceRole() {
   const url = env.SUPABASE_URL;
-  const serviceRole = env.SUPABASE_SERVICE_ROLE_KEY;
+  const serviceRole = getSupabaseServiceRoleKeyOptional();
   const anon = env.SUPABASE_ANON_KEY;
   if (!url) throw new Error("supabaseServiceRole: missing NEXT_PUBLIC_SUPABASE_URL");
   // In development, allow falling back to anon to avoid hard crashes while wiring features.

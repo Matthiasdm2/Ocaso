@@ -3,6 +3,7 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
+import { getStripeSecretKey } from "@/lib/env";
 import { supabaseServer } from "@/lib/supabaseServer";
 import { supabaseServiceRole } from "@/lib/supabaseServiceRole";
 
@@ -114,7 +115,7 @@ export async function POST(req: Request) {
       }, { status: 409 });
     }
 
-    const stripeSecret = process.env.STRIPE_SECRET_KEY;
+    const stripeSecret = getStripeSecretKey();
     if (!stripeSecret) {
       return NextResponse.json({ error: "Missing STRIPE_SECRET_KEY" }, {
         status: 500,

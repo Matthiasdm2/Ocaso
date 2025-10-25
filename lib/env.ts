@@ -28,17 +28,41 @@ export const env = {
   NODE_ENV: getEnvVar('NODE_ENV', 'development'),
   SUPABASE_URL: getEnvVar('NEXT_PUBLIC_SUPABASE_URL'),
   SUPABASE_ANON_KEY: getEnvVar('NEXT_PUBLIC_SUPABASE_ANON_KEY'),
-  // Lazy getters for optional environment variables to prevent build-time evaluation
-  get SUPABASE_SERVICE_ROLE_KEY() {
-    return process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-  },
-  get STRIPE_SECRET_KEY() {
-    return process.env.STRIPE_SECRET_KEY || '';
-  },
-  get STRIPE_PUBLISHABLE_KEY() {
-    return process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '';
-  },
-  get STRIPE_WEBHOOK_SECRET() {
-    return process.env.STRIPE_WEBHOOK_SECRET || '';
-  }
 };
+
+// Functions for runtime-only environment variables to avoid build-time evaluation
+export function getSupabaseServiceRoleKey(): string {
+  const value = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!value) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY is required but not set');
+  }
+  return value;
+}
+
+export function getSupabaseServiceRoleKeyOptional(): string | null {
+  return process.env.SUPABASE_SERVICE_ROLE_KEY || null;
+}
+
+export function getStripeSecretKey(): string {
+  const value = process.env.STRIPE_SECRET_KEY;
+  if (!value) {
+    throw new Error('STRIPE_SECRET_KEY is required but not set');
+  }
+  return value;
+}
+
+export function getStripePublishableKey(): string {
+  const value = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+  if (!value) {
+    throw new Error('NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is required but not set');
+  }
+  return value;
+}
+
+export function getStripeWebhookSecret(): string {
+  const value = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!value) {
+    throw new Error('STRIPE_WEBHOOK_SECRET is required but not set');
+  }
+  return value;
+}

@@ -1,4 +1,5 @@
 export const runtime = "nodejs";
+import { getStripeSecretKey } from "@/lib/env";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
@@ -8,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   try {
-    const stripeSecret = process.env.STRIPE_SECRET_KEY;
+    const stripeSecret = getStripeSecretKey();
     if (!stripeSecret) {
       return NextResponse.json({ error: "Missing STRIPE_SECRET_KEY" }, {
         status: 500,

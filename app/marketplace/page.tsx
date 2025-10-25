@@ -402,7 +402,7 @@ export default async function MarketplacePage({ searchParams }: { searchParams?:
   }));
 
   // Centralize sidebar categories mapping for both desktop and mobile
-  const sidebarCategories = categories.map((cat) => ({
+  const sidebarCategories = (categories || []).map((cat) => ({
     id: cat.id,
     name: cat.name,
     slug: cat.slug,
@@ -452,10 +452,11 @@ export default async function MarketplacePage({ searchParams }: { searchParams?:
   // sellerRatings is hierboven gedefinieerd; geen fallback nodig.
 
   // --- Fallback koppeling category/subcategory via oude 'categories' array ---
-  const parentIds = new Set(categories.map((c) => c.id));
-  const subIds = new Set(categories.flatMap((c) => c.subs.map((s) => s.id)));
+  const safeCategories = categories || [];
+  const parentIds = new Set(safeCategories.map((c) => c.id));
+  const subIds = new Set(safeCategories.flatMap((c) => c.subs.map((s) => s.id)));
   const subIdToParent = new Map<number, number>();
-  for (const c of categories) for (const s of c.subs) subIdToParent.set(s.id, c.id);
+  for (const c of safeCategories) for (const s of c.subs) subIdToParent.set(s.id, c.id);
 
   const listingsResolved = listings.map((l) => {
     let catId = l.category_id;

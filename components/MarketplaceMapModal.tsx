@@ -28,6 +28,9 @@ export default function MarketplaceMapModal({ listings, centerLat, centerLng, ra
   const openModal = useCallback(() => setOpen(true), []);
   const closeModal = useCallback(() => setOpen(false), []);
 
+  // Protect against null/undefined listings
+  const safeListings = Array.isArray(listings) ? listings : [];
+
   useEffect(() => {
     const handler = () => openModal();
     window.addEventListener("ocaso-open-map", handler);
@@ -54,7 +57,7 @@ export default function MarketplaceMapModal({ listings, centerLat, centerLng, ra
               </div>
             </div>
             <div className="flex-1">
-              <MarketplaceMap listings={listings} centerLat={centerLat} centerLng={centerLng} radiusKm={radiusKm} />
+              <MarketplaceMap listings={safeListings} centerLat={centerLat} centerLng={centerLng} radiusKm={radiusKm} />
             </div>
           </div>
         </div>

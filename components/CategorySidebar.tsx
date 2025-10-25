@@ -14,6 +14,9 @@ export default function CategorySidebar({ categories }: { categories: CategorySi
   const router = useRouter();
   const pathname = usePathname();
 
+  // Protect against null/undefined categories
+  const safeCategories = useMemo(() => Array.isArray(categories) ? categories : [], [categories]);
+
   // Ondersteun ook legacy ?cat= uit oudere links / home
   const activeCategorySlug = params.get("category") || params.get("cat") || undefined;
   const activeSubSlug = params.get("sub") || params.get("subcategory") || undefined; // legacy 'subcategory'
@@ -21,16 +24,16 @@ export default function CategorySidebar({ categories }: { categories: CategorySi
   // Bepaal initieel open category (als een sub actief is, open zijn parent)
   const activeCategoryId = useMemo(() => {
     if (activeCategorySlug) {
-      const c = categories.find(c => c.slug === activeCategorySlug);
+      const c = safeCategories.find(c => c.slug === activeCategorySlug);
       if (c) return c.id;
     }
     if (activeSubSlug) {
-      for (const c of categories) {
+      for (const c of safeCategories) {
         if (c.subcategories.some(s => s.slug === activeSubSlug)) return c.id;
       }
     }
     return null;
-  }, [activeCategorySlug, activeSubSlug, categories]);
+  }, [activeCategorySlug, activeSubSlug, safeCategories]);
 
   const [openId, setOpenId] = useState<number | null>(activeCategoryId);
   const [isPending, startTransition] = useTransition();
@@ -101,10 +104,10 @@ export default function CategorySidebar({ categories }: { categories: CategorySi
     Alle categorieën
   </button>
   <ul className="space-y-1">
-        {categories.length === 0 ? (
+        {safeCategories.length === 0 ? (
           <li className="text-gray-400">Geen categorieën gevonden.</li>
         ) : (
-          categories.map((cat) => (
+          safeCategories.map((cat) => (
             <li key={cat.id}>
               <button
                 className={`w-full text-left px-3 py-2 rounded-lg transition cursor-pointer text-sm flex items-center truncate ${

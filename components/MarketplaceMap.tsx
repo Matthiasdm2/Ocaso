@@ -58,6 +58,9 @@ export default function MarketplaceMap({ listings, centerLat, centerLng, radiusK
   const [drawEnabled, setDrawEnabled] = useState(false);
   const [pluginReady, setPluginReady] = useState(false);
   const mapRef = useRef<LeafletMap | null>(null);
+
+  // Protect against null/undefined listings
+  const safeListings = useMemo(() => Array.isArray(listings) ? listings : [], [listings]);
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
@@ -78,20 +81,20 @@ export default function MarketplaceMap({ listings, centerLat, centerLng, radiusK
   const center: [number, number] | undefined = useMemo(() => {
     if (typeof centerLat === 'number' && typeof centerLng === 'number') return [centerLat, centerLng];
     // fallback: average of listing coords
-    const coords = listings.filter(l => typeof l.latitude === 'number' && typeof l.longitude === 'number');
+    const coords = safeListings.filter(l => typeof l.latitude === 'number' && typeof l.longitude === 'number');
     if (coords.length) {
       const avgLat = coords.reduce((s,l)=>s+(l.latitude as number),0)/coords.length;
       const avgLng = coords.reduce((s,l)=>s+(l.longitude as number),0)/coords.length;
       return [avgLat, avgLng];
     }
     return undefined;
-  }, [centerLat, centerLng, listings]);
+  }, [centerLat, centerLng, safeListings]);
 
   const bounds = L.latLngBounds([]);
-  listings.forEach(l => {
+  safeListings.forEach(l => {
     if (typeof l.latitude === 'number' && typeof l.longitude === 'number') bounds.extend([l.latitude, l.longitude]);
   });
-  if (bounds.isValid() && listings.length > 0) {
+  if (bounds.isValid() && safeListings.length > 0) {
     // expand small bounds
   if (bounds.getNorthEast().equals(bounds.getSouthWest())) {
       const pad = 0.02;
@@ -202,7 +205,7 @@ export default function MarketplaceMap({ listings, centerLat, centerLng, radiusK
             pathOptions={{ color: '#2563eb', fillColor: '#3b82f6', fillOpacity: 0.08 }}
           />
         )}
-        {listings.filter(l => typeof l.latitude === 'number' && typeof l.longitude === 'number').map(l => (
+        {safeListings.filter(l => typeof l.latitude === 'number' && typeof l.longitude === 'number').map(l => (
           <LeafletMarker key={l.id} position={[l.latitude as number, l.longitude as number]} icon={simpleDivIcon('#dc2626')}>
             <LeafletPopup>
               <div className="space-y-1 text-sm">

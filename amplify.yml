@@ -3,13 +3,16 @@ frontend:
   phases:
     preBuild:
       commands:
-        - echo "Using Node $(node -v)"
+        - echo "Node version: $(node -v)"
+        - echo "NPM version: $(npm -v)"
         - nvm use 20
-        - npm ci
+        - npm ci --prefer-offline --no-audit
+        - echo "Dependencies installed"
     build:
       commands:
         - echo "Starting Next.js build..."
         - npm run build
+        - echo "Build completed successfully"
   artifacts:
     baseDirectory: .next
     files:
@@ -18,11 +21,13 @@ frontend:
     paths:
       - node_modules/**/*
       - .next/cache/**/*
+      - .next/static/**/*
 
   environment:
+    NODE_ENV: production
     NEXT_PUBLIC_SUPABASE_URL: $NEXT_PUBLIC_SUPABASE_URL
     NEXT_PUBLIC_SUPABASE_ANON_KEY: $NEXT_PUBLIC_SUPABASE_ANON_KEY
     SUPABASE_SERVICE_ROLE_KEY: $SUPABASE_SERVICE_ROLE_KEY
     STRIPE_SECRET_KEY: $STRIPE_SECRET_KEY
-    STRIPE_PUBLISHABLE_KEY: $STRIPE_PUBLISHABLE_KEY
+    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: $NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
     STRIPE_WEBHOOK_SECRET: $STRIPE_WEBHOOK_SECRET

@@ -183,3 +183,4 @@ Voor vragen of ondersteuning, neem contact op via [GitHub Issues](https://github
 # Test commit for CI/CD workflow
 # CI/CD test - Sat Oct 25 00:54:11 CEST 2025
 # Build trigger
+# Force rebuild

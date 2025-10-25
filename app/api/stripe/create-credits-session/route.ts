@@ -37,7 +37,7 @@ export async function POST(req: Request) {
 
         const { credits, buyerType } = await req.json();
         const creditQty = Number(credits);
-        if (!creditQty || ![4, 25].includes(creditQty)) {
+        if (!creditQty || ![10, 25].includes(creditQty)) {
             return NextResponse.json({ error: "Invalid credits package" }, {
                 status: 400,
             });
@@ -45,7 +45,7 @@ export async function POST(req: Request) {
 
         // Server-side pricing map (in cents) to avoid client tampering
         const pricing: Record<number, number> = {
-            4: 100, // €1.00
+            10: 100, // €1.00
             25: 500, // €5.00
         };
         const amount = pricing[creditQty];

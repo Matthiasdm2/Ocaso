@@ -344,18 +344,19 @@ export default function Header() {
               
               <div className="grid gap-4">
                 {/* Small Package */}
+                                {/* Small Package */}
                 <div className="border-2 border-gray-200 rounded-xl p-3 hover:border-gray-300 transition-all duration-200 hover:shadow-md">
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <div className="font-bold text-2xl">4</div>
+                        <div className="font-bold text-2xl">10</div>
                         <div className="text-gray-600">Credits</div>
                       </div>
                       <div className="text-3xl font-bold text-primary">€1,00</div>
-                      <div className="text-sm text-gray-500">€0,25 per credit</div>
+                      <div className="text-sm text-gray-500">€0,10 per credit</div>
                     </div>
                     <button 
-                      onClick={() => buyCredits(4)}
+                      onClick={() => buyCredits(10)}
                       className="bg-gray-100 text-gray-800 px-6 py-3 rounded-lg font-semibold hover:bg-gray-200 transition-colors border border-gray-300"
                     >
                       koop nu

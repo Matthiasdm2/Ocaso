@@ -1,3 +1,4 @@
+
 import { type CookieOptions, createServerClient } from "@supabase/ssr";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
@@ -48,9 +49,22 @@ export async function middleware(req: NextRequest) {
   }
 
   const res = NextResponse.next();
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !anon) {
+    console.error('[middleware] Supabase env vars missing', {
+      hasUrl: !!url,
+      hasKey: !!anon,
+    });
+    // Voor admin routes: redirect naar login
+    if (req.nextUrl.pathname.startsWith('/admin')) {
+      const loginUrl = new URL('/login', req.url);
+      return NextResponse.redirect(loginUrl);
+    }
+    // Voor andere routes: 503
+    return new NextResponse('Service unavailable', { status: 503 });
+  }
   try {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
     const supabase = createServerClient(url, anon, {
       cookies: {
         get(name: string) {

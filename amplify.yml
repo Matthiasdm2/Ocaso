@@ -3,16 +3,16 @@ frontend:
   phases:
     preBuild:
       commands:
-        - echo "Node version: $(node -v)"
-        - echo "NPM version: $(npm -v)"
+        - 'echo "Node version: $(node -v)"'
+        - 'echo "NPM version: $(npm -v)"'
         - nvm use 20
         - npm ci --prefer-offline --no-audit
-        - echo "Dependencies installed"
+        - 'echo "Dependencies installed"'
     build:
       commands:
-        - echo "Starting Next.js build..."
+        - 'echo "Starting Next.js build..."'
         - npm run build
-        - echo "Build completed successfully"
+        - 'echo "Build completed successfully"'
   artifacts:
     baseDirectory: .next
     files:

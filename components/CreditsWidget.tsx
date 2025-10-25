@@ -15,34 +15,8 @@ export default function CreditsWidget() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Create Stripe checkout session
-      const response = await fetch('/api/stripe/create-credits-session', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-        },
-        body: JSON.stringify({
-          credits: amount,
-          buyerType: 'consumer', // or determine based on user type
-        }),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        alert(`Fout bij het starten van betaling: ${error.error}`);
-        setModalOpen(false);
-        return;
-      }
-
-      const { url } = await response.json();
-      if (url) {
-        // Redirect to Stripe checkout
-        window.location.href = url;
-      } else {
-        alert('Kon checkout URL niet verkrijgen.');
-        setModalOpen(false);
-      }
+      // Redirect to embedded checkout page with credits parameter
+      window.location.href = `/checkout/embedded?mode=credits&credits=${amount}`;
     } catch (error) {
       console.error('Error buying credits:', error);
       alert('Fout bij het kopen van credits.');

@@ -58,26 +58,37 @@ export default function Dashboard() {
     if (statsRes.ok) {
       const data = await statsRes.json();
       setStats(data);
+    } else {
+      // Reset to default values on error
+      setStats({ visitors: 0, listings: 0, sales: 0, shipments: 0 });
     }
 
     if (categoryRes.ok) {
       const data = await categoryRes.json();
       setCategoryStats(data);
+    } else {
+      setCategoryStats([]);
     }
 
     if (visitorsRes.ok) {
       const data = await visitorsRes.json();
       setDailyVisitors(data);
+    } else {
+      setDailyVisitors([]);
     }
 
     if (listingsRes.ok) {
       const data = await listingsRes.json();
       setDailyListings(data);
+    } else {
+      setDailyListings([]);
     }
 
     if (usersRes.ok) {
       const data = await usersRes.json();
       setDailyUsers(data);
+    } else {
+      setDailyUsers([]);
     }
 
     setLoading(false);

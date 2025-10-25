@@ -161,6 +161,7 @@ export default function ChatDock({
   // Normalize incoming attachments to always have a usable public URL
   const normalizeAttachments = useCallback((atts: unknown): NormalizedAttachment[] => {
     if (!Array.isArray(atts)) return [];
+    if (!Array.isArray(atts)) return [];
     const toPublicUrl = (sp?: string | null): string | undefined => {
       if (!sp) return undefined;
       try {

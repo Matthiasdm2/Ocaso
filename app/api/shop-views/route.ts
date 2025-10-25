@@ -1,3 +1,4 @@
+export const runtime = "nodejs";
 // app/api/shop-views/route.ts
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";

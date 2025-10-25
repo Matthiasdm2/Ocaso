@@ -1,3 +1,4 @@
+export const runtime = "nodejs";
 /* eslint-disable simple-import-sort/imports */
 import { supabaseServer } from "@/lib/supabaseServer";
 import { NextResponse } from "next/server";

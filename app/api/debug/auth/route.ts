@@ -1,3 +1,4 @@
+export const runtime = "nodejs";
 /* eslint-disable simple-import-sort/imports */
 import { getServerUser } from "@/lib/getServerUser";
 import { NextResponse } from "next/server";

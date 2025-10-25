@@ -1,3 +1,4 @@
+export const runtime = "nodejs";
 // Placeholder onboarding route for Stripe Connect onboarding link.
 // TODO: replace with real Stripe integration using STRIPE_SECRET_KEY and server-side logic.
 

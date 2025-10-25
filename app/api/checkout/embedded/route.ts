@@ -1,3 +1,4 @@
+export const runtime = "nodejs";
 // Minimal placeholder endpoint to satisfy Next.js module requirements.
 // This route is not used by the app; kept to avoid accidental 404s if requested.
 

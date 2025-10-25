@@ -1,3 +1,4 @@
+export const runtime = "nodejs";
 // app/api/revalidate-category/route.ts
 import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";

@@ -10,7 +10,15 @@ frontend:
         - 'echo "Dependencies installed"'
     build:
       commands:
-        - 'echo "Starting Next.js build..."'
+        - 'echo "Setting environment variables..."'
+        - export NODE_ENV=production
+        - export NEXT_PUBLIC_SUPABASE_URL=https://dmnowaqinfkhovhyztan.supabase.co
+        - export NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_6EUcWrLAZQ-abTkRXy7LLg_CofHMZ26
+        - export SUPABASE_SERVICE_ROLE_KEY=sb_secret_qcAd1n4QrsYnOOVJcBlAnA_6mVGa0fM
+        - export STRIPE_SECRET_KEY=sk_test_51S9WEa1zucWY3IcBtFlZKGj2vJ2efKP0mMBOpZCayafhP8GJPFXYh1UShX7GQF0CvhrOEqrWrfEhsi2ShCVXWQqu006MDAV5kA
+        - export NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_51S9WEa1zucWY3IcBtFlZKGj2vJ2efKP0mMBOpZCayafhP8GJPFXYh1UShX7GQF0CvhrOEqrWrfEhsi2ShCVXWQqu006MDAV5kA
+        - export STRIPE_WEBHOOK_SECRET=whsec_550e1dcc6f49127e8bb2facaeb36affe9fe0fe1a9df029b368cbc9308ac150af
+        - 'echo "Environment variables set"'
         - npm run build
         - 'echo "Build completed successfully"'
   artifacts:

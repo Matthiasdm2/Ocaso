@@ -29,6 +29,8 @@ function toPrice(n: number) {
 
 
 export default function ClientListingsGrid({ initial }: { initial: Listing[] }) {
+  // Protect against null/undefined initial data
+  const safeInitial = useMemo(() => Array.isArray(initial) ? initial : [], [initial]);
   // Dynamisch laden van categorieën en subcategorieën uit Supabase
   type Subcategory = {
     id: number;
@@ -149,7 +151,7 @@ export default function ClientListingsGrid({ initial }: { initial: Listing[] }) 
 
 
   const filtered = useMemo(() => {
-    let arr = [...initial];
+    let arr = [...safeInitial];
     if (query.trim()) arr = arr.filter(l => l.title.toLowerCase().includes(query.toLowerCase()));
     if (mainCat) arr = arr.filter(l => l.category === mainCat);
     if (subCat) arr = arr.filter(l => l.subcategory === subCat);
@@ -164,7 +166,7 @@ export default function ClientListingsGrid({ initial }: { initial: Listing[] }) 
       default: arr.sort((a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime());
     }
     return arr;
-  }, [initial, query, mainCat, subCat, cat, minPrice, maxPrice, sort, inStock]);
+  }, [safeInitial, query, mainCat, subCat, cat, minPrice, maxPrice, sort, inStock]);
 
   return (
     <div className="space-y-3">

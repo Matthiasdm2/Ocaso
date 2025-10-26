@@ -23,23 +23,25 @@ export async function GET(req: Request) {
 
         const adminClient = supabaseAdmin();
 
-    let query = adminClient
-        .from("profiles")
-        .select(selectFields);
+        let query = adminClient
+            .from("profiles")
+            .select(selectFields);
 
-    if (email) {
-        query = query.eq("email", email);
-    }
+        if (email) {
+            query = query.eq("email", email);
+        }
 
-    const { data, error } = await query;
+        const { data, error } = await query;
 
-    if (error) {
-        return NextResponse.json({ error: error.message }, { status: 400 });
-    }
+        if (error) {
+            return NextResponse.json({ error: error.message }, { status: 400 });
+        }
 
-    return NextResponse.json(data);
+        return NextResponse.json(data);
     } catch (error) {
         console.error("Admin users error:", error);
-        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+        return NextResponse.json({ error: "Internal server error" }, {
+            status: 500,
+        });
     }
 }

@@ -4,15 +4,15 @@ import { NextResponse } from "next/server";
 import { env } from "@/lib/env";
 
 export interface AdminAuthResult {
-  user: {
-    id: string;
-    email?: string;
-  };
-  profile: {
-    is_admin: boolean;
-    full_name?: string;
-    email?: string;
-  };
+    user: {
+        id: string;
+        email?: string;
+    };
+    profile: {
+        is_admin: boolean;
+        full_name?: string;
+        email?: string;
+    };
 }
 
 /**
@@ -20,16 +20,20 @@ export interface AdminAuthResult {
  * Gebruikt voor het beveiligen van admin API routes
  */
 export async function requireAdmin(): Promise<AdminAuthResult | NextResponse> {
-  try {
-    // Voor nu: sta alles toe (tijdelijk voor debugging)
-    // TODO: Implementeer proper admin authenticatie
-    return {
-      user: { id: "temp-user", email: "temp@example.com" },
-      profile: { is_admin: true, full_name: "Temp Admin", email: "temp@example.com" }
-    };
+    try {
+        // Voor nu: sta alles toe (tijdelijk voor debugging)
+        // TODO: Implementeer proper admin authenticatie
+        return {
+            user: { id: "temp-user", email: "temp@example.com" },
+            profile: {
+                is_admin: true,
+                full_name: "Temp Admin",
+                email: "temp@example.com",
+            },
+        };
 
-    // Echte implementatie (uitgecommentarieerd vanwege timeout problemen):
-    /*
+        // Echte implementatie (uitgecommentarieerd vanwege timeout problemen):
+        /*
     // Supabase client maken
     const cookieHeader = request.headers.get('cookie') || '';
 
@@ -77,38 +81,42 @@ export async function requireAdmin(): Promise<AdminAuthResult | NextResponse> {
 
     return { user: session.user, profile };
     */
-  } catch (error) {
-    console.error("Admin auth error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
-  }
+    } catch (error) {
+        console.error("Admin auth error:", error);
+        return NextResponse.json({ error: "Internal server error" }, {
+            status: 500,
+        });
+    }
 }
 
 /**
  * Controleert admin status zonder NextRequest (voor andere use cases)
  */
 export async function checkAdminStatus(userId: string): Promise<boolean> {
-  try {
-    const supabase = createServerClient(
-      env.SUPABASE_URL,
-      env.SUPABASE_ANON_KEY,
-      {
-        cookies: {
-          get() { return undefined; },
-          set() {},
-          remove() {},
-        },
-      }
-    );
+    try {
+        const supabase = createServerClient(
+            env.SUPABASE_URL,
+            env.SUPABASE_ANON_KEY,
+            {
+                cookies: {
+                    get() {
+                        return undefined;
+                    },
+                    set() {},
+                    remove() {},
+                },
+            },
+        );
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("is_admin")
-      .eq("id", userId)
-      .single();
+        const { data: profile } = await supabase
+            .from("profiles")
+            .select("is_admin")
+            .eq("id", userId)
+            .single();
 
-    return !!profile?.is_admin;
-  } catch (error) {
-    console.error("Check admin status error:", error);
-    return false;
-  }
+        return !!profile?.is_admin;
+    } catch (error) {
+        console.error("Check admin status error:", error);
+        return false;
+    }
 }

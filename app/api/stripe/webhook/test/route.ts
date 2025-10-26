@@ -10,13 +10,13 @@ export async function GET() {
       environment: process.env.NODE_ENV || "unknown",
       hasStripeSecret: !!process.env.STRIPE_SECRET_KEY,
       hasWebhookSecret: !!process.env.STRIPE_WEBHOOK_SECRET,
-      hasSupabaseKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY
+      hasSupabaseKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
     });
   } catch (error) {
-    return NextResponse.json({ 
-      status: "error", 
+    return NextResponse.json({
+      status: "error",
       message: "Test failed",
-      error: error instanceof Error ? error.message : "Unknown error"
+      error: error instanceof Error ? error.message : "Unknown error",
     }, { status: 500 });
   }
 }

@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
-import { getStripeSecretKey, getStripeWebhookSecret, getSupabaseServiceRoleKey } from "@/lib/env";
+import {
+  getStripeSecretKey,
+  getStripeWebhookSecret,
+  getSupabaseServiceRoleKey,
+} from "@/lib/env";
 import { supabaseServiceRole } from "@/lib/supabaseServiceRole";
 
 export const runtime = "nodejs"; // ensure Node runtime for raw body
@@ -31,7 +35,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
-  console.log(`[stripe/webhook] Received event: ${event.type}`, { id: event.id });
+  console.log(`[stripe/webhook] Received event: ${event.type}`, {
+    id: event.id,
+  });
 
   if (!getSupabaseServiceRoleKey()) {
     return NextResponse.json({ error: "service_role_missing" }, {
@@ -147,7 +153,9 @@ export async function POST(req: Request) {
               if (txErr) {
                 console.error("credit transaction logging failed", txErr);
               }
-              console.log(`Credits topped up: +${inc} for user ${userId} (new balance: ${newCredits})`);
+              console.log(
+                `Credits topped up: +${inc} for user ${userId} (new balance: ${newCredits})`,
+              );
 
               // Dispatch global event to refresh profile in all components
               // Note: This is a server-side event, clients need to poll or use real-time subscriptions

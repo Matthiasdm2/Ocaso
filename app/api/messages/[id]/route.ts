@@ -54,13 +54,30 @@ export async function GET(
   const before = url.searchParams.get("before");
   const debug = url.searchParams.has("debug");
 
+  if (debug) {
+    console.log(`[messages/:id DEBUG] request url=${request.url}`);
+    console.log(`[messages/:id DEBUG] auth header present=${request.headers.get("authorization") ? 'yes' : 'no'}`);
+    console.log(`[messages/:id DEBUG] user id resolved=${user?.id ?? 'null'}`);
+  }
+
   // Verify access by selecting conversation first (will RLS filter)
-  const { data: conv } = await supabase
+  console.log(
+    `[messages/:id] Checking conversation access for ${params.id}, user: ${user?.id}`,
+  );
+  const { data: conv, error: convError } = await supabase
     .from("conversations")
     .select("id, participants, listing_id")
     .eq("id", params.id)
     .maybeSingle();
+  console.log(`[messages/:id] Conversation query result:`, {
+    conv: !!conv,
+    error: convError,
+    participants: conv?.participants,
+  });
   if (!conv) {
+    console.log(
+      `[messages/:id] Access denied or conversation not found for ${params.id}`,
+    );
     if (process.env.NODE_ENV !== "production") {
       console.debug(
         "[messages/:id GET] conversation not found or no access",

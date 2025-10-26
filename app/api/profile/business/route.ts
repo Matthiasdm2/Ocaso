@@ -38,7 +38,14 @@ export async function GET() {
     website: data.website || "",
     invoiceEmail: data.invoice_email || "",
     invoiceAddress: data.invoice_address ||
-      { firstName: "", lastName: "", street: "", city: "", zip: "", country: "België" },
+      {
+        firstName: "",
+        lastName: "",
+        street: "",
+        city: "",
+        zip: "",
+        country: "België",
+      },
     shopName: data.shop_name || "",
     shopSlug: data.shop_slug || "",
     logoUrl: data.business_logo_url || "",

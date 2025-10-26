@@ -19,7 +19,9 @@ export async function GET() {
         return NextResponse.json(data);
     } catch (error) {
         console.error("Error in GET /api/admin/categories:", error);
-        return NextResponse.json({ error: "Interne server fout" }, { status: 500 });
+        return NextResponse.json({ error: "Interne server fout" }, {
+            status: 500,
+        });
     }
 }
 
@@ -39,6 +41,8 @@ export async function POST(req: Request) {
         return NextResponse.json(data);
     } catch (error) {
         console.error("Error in POST /api/admin/categories:", error);
-        return NextResponse.json({ error: "Interne server fout" }, { status: 500 });
+        return NextResponse.json({ error: "Interne server fout" }, {
+            status: 500,
+        });
     }
 }

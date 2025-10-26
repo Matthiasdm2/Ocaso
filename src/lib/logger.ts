@@ -1,8 +1,10 @@
 // eslint-disable-next-line import/no-named-as-default
-import pino from 'pino';
+import pino from "pino";
 
 export const logger = pino({
-  level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
-  transport: process.env.NODE_ENV === 'production' ? undefined : { target: 'pino-pretty' },
-  base: { app: 'ocaso' }
+  level: process.env.NODE_ENV === "production" ? "info" : "debug",
+  transport: process.env.NODE_ENV === "production"
+    ? undefined
+    : { target: "pino-pretty" },
+  base: { app: "ocaso" },
 });

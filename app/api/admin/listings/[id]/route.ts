@@ -15,7 +15,9 @@ export async function PUT(
         const description = formData.get("description") as string;
         const price = parseFloat(formData.get("price") as string);
         const category_id = parseInt(formData.get("category_id") as string);
-        const subcategory_id = formData.get("subcategory_id") ? parseInt(formData.get("subcategory_id") as string) : null;
+        const subcategory_id = formData.get("subcategory_id")
+            ? parseInt(formData.get("subcategory_id") as string)
+            : null;
         const state = formData.get("state") as string;
         const location = formData.get("location") as string || null;
         const status = formData.get("status") as string;
@@ -117,6 +119,8 @@ export async function DELETE(
         return NextResponse.json({ success: true });
     } catch (error) {
         console.error("Error in DELETE /api/admin/listings/[id]:", error);
-        return NextResponse.json({ error: "Interne server fout" }, { status: 500 });
+        return NextResponse.json({ error: "Interne server fout" }, {
+            status: 500,
+        });
     }
 }

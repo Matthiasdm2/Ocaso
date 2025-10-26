@@ -10,7 +10,8 @@ export async function GET() {
     env: {
       NODE_ENV: env.NODE_ENV,
       has_SUPABASE_SERVICE_ROLE_KEY: !!getSupabaseServiceRoleKeyOptional(),
-      SUPABASE_SERVICE_ROLE_KEY_preview: getSupabaseServiceRoleKeyOptional()?.substring(0, 10) + '...',
-    }
+      SUPABASE_SERVICE_ROLE_KEY_preview:
+        getSupabaseServiceRoleKeyOptional()?.substring(0, 10) + "...",
+    },
   });
 }

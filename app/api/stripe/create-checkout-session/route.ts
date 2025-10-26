@@ -41,26 +41,29 @@ export async function POST(req: Request) {
         let customerEmail: string | undefined = user.email || undefined;
         let customerName: string | undefined;
         let customerAddress: Stripe.AddressParam | undefined;
-        
+
         try {
             const { data: profile } = await supabase
                 .from("profiles")
                 .select("full_name, invoice_email, invoice_address")
                 .eq("id", user.id)
                 .single();
-            
+
             if (profile?.invoice_email) customerEmail = profile.invoice_email;
             if (profile?.full_name) customerName = profile.full_name;
-            
+
             // Parse invoice address for Stripe customer
-            if (profile?.invoice_address && typeof profile.invoice_address === 'object') {
+            if (
+                profile?.invoice_address &&
+                typeof profile.invoice_address === "object"
+            ) {
                 const addr = profile.invoice_address as Record<string, string>;
                 if (addr.street || addr.city || addr.zip || addr.country) {
                     customerAddress = {
                         line1: addr.street || undefined,
                         city: addr.city || undefined,
                         postal_code: addr.zip || undefined,
-                        country: addr.country || 'BE', // Default to Belgium
+                        country: addr.country || "BE", // Default to Belgium
                     };
                 }
             }
@@ -76,7 +79,7 @@ export async function POST(req: Request) {
                 email: customerEmail,
                 limit: 1,
             });
-            
+
             if (existingCustomers.data.length > 0) {
                 // Update existing customer
                 await stripe.customers.update(existingCustomers.data[0].id, {
@@ -87,7 +90,14 @@ export async function POST(req: Request) {
                     },
                 });
                 stripeCustomerId = existingCustomers.data[0].id;
-                console.log('Updated existing Stripe customer:', stripeCustomerId, 'with name:', customerName, 'address:', customerAddress);
+                console.log(
+                    "Updated existing Stripe customer:",
+                    stripeCustomerId,
+                    "with name:",
+                    customerName,
+                    "address:",
+                    customerAddress,
+                );
             } else {
                 // Create new customer
                 const newCustomer = await stripe.customers.create({
@@ -99,10 +109,20 @@ export async function POST(req: Request) {
                     },
                 });
                 stripeCustomerId = newCustomer.id;
-                console.log('Created new Stripe customer:', stripeCustomerId, 'with name:', customerName, 'address:', customerAddress);
+                console.log(
+                    "Created new Stripe customer:",
+                    stripeCustomerId,
+                    "with name:",
+                    customerName,
+                    "address:",
+                    customerAddress,
+                );
             }
         } catch (customerError) {
-            console.warn("Could not create/update Stripe customer:", customerError);
+            console.warn(
+                "Could not create/update Stripe customer:",
+                customerError,
+            );
             // Continue without customer prefill if this fails
         }
 
@@ -166,7 +186,9 @@ export async function POST(req: Request) {
                     userId: user.id,
                     plan,
                     billing,
-                    buyerType: buyerType === "business" ? "business" : "consumer",
+                    buyerType: buyerType === "business"
+                        ? "business"
+                        : "consumer",
                 },
                 line_items: [
                     {
@@ -187,10 +209,13 @@ export async function POST(req: Request) {
                 // Automatic payment methods inside Checkout
                 automatic_tax: { enabled: false },
                 phone_number_collection: { enabled: false },
-                billing_address_collection: 'required', // Always collect billing address
+                billing_address_collection: "required", // Always collect billing address
             });
         } catch (sessionError) {
-            console.error("Failed to create Stripe checkout session:", sessionError);
+            console.error(
+                "Failed to create Stripe checkout session:",
+                sessionError,
+            );
             throw new Error("Failed to create checkout session");
         }
 
@@ -198,32 +223,51 @@ export async function POST(req: Request) {
         let checkoutUrl = session.url;
         if (checkoutUrl) {
             const params = new URLSearchParams();
-            
-            if (customerEmail) params.append('prefilled_email', customerEmail);
-            if (customerName) params.append('prefilled_name', customerName);
-            if (customerAddress?.line1) params.append('prefilled_address[line1]', customerAddress.line1);
-            if (customerAddress?.city) params.append('prefilled_address[city]', customerAddress.city);
-            if (customerAddress?.postal_code) params.append('prefilled_address[postal_code]', customerAddress.postal_code);
-            if (customerAddress?.country) params.append('prefilled_address[country]', customerAddress.country);
+
+            if (customerEmail) params.append("prefilled_email", customerEmail);
+            if (customerName) params.append("prefilled_name", customerName);
+            if (customerAddress?.line1) {
+                params.append(
+                    "prefilled_address[line1]",
+                    customerAddress.line1,
+                );
+            }
+            if (customerAddress?.city) {
+                params.append("prefilled_address[city]", customerAddress.city);
+            }
+            if (customerAddress?.postal_code) {
+                params.append(
+                    "prefilled_address[postal_code]",
+                    customerAddress.postal_code,
+                );
+            }
+            if (customerAddress?.country) {
+                params.append(
+                    "prefilled_address[country]",
+                    customerAddress.country,
+                );
+            }
 
             if (params.toString()) {
                 checkoutUrl += `?${params.toString()}`;
             }
         }
 
-        return NextResponse.json({ 
+        return NextResponse.json({
             clientSecret: session.client_secret, // Return clientSecret for embedded checkout
             url: checkoutUrl, // Also provide URL as fallback
             prefillData: {
                 name: customerName,
                 email: customerEmail,
-                address: customerAddress ? {
-                    line1: customerAddress.line1,
-                    city: customerAddress.city,
-                    postal_code: customerAddress.postal_code,
-                    country: customerAddress.country,
-                } : undefined,
-            }
+                address: customerAddress
+                    ? {
+                        line1: customerAddress.line1,
+                        city: customerAddress.city,
+                        postal_code: customerAddress.postal_code,
+                        country: customerAddress.country,
+                    }
+                    : undefined,
+            },
         });
     } catch (error) {
         console.error("Error creating checkout session:", error);

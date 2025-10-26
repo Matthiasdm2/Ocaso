@@ -60,9 +60,12 @@ export async function POST() {
     // Insert/update L2 subcategories
     if (l2Payload.length) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (sb as any).from("subcategories").upsert(l2Payload, {
-        onConflict: "slug",
-      });
+      const { error } = await (sb as any).from("subcategories").upsert(
+        l2Payload,
+        {
+          onConflict: "slug",
+        },
+      );
       if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });
       }

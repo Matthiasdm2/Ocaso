@@ -52,7 +52,12 @@ export function useProfile() {
         `).eq("id", user.id).maybeSingle();
 
         if (error) {
-          console.error("Profile fetch error:", error.message, error.details, error.hint);
+          console.error(
+            "Profile fetch error:",
+            error.message,
+            error.details,
+            error.hint,
+          );
           console.error("Full error object:", error);
           // Don't set profile, stay with null
         } else if (data) {
@@ -88,7 +93,7 @@ export function useProfile() {
     })();
   }, [supabase]);
 
-    // Luister naar globale profielwijzigingen (bv. avatar, naam)
+  // Luister naar globale profielwijzigingen (bv. avatar, naam)
   useEffect(() => {
     function onUpdated(e: Event) {
       const detail = (e as CustomEvent<
@@ -213,7 +218,9 @@ export function useProfile() {
 
     const interval = setInterval(async () => {
       try {
-        const { data, error } = await supabase.from("profiles").select("ocaso_credits").eq("id", profile.id).maybeSingle();
+        const { data, error } = await supabase.from("profiles").select(
+          "ocaso_credits",
+        ).eq("id", profile.id).maybeSingle();
         if (!error && data) {
           const credits = data.ocaso_credits || 0;
           const cachedCredits = getCachedCredits(profile.id);

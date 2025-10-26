@@ -3,12 +3,12 @@ import { type NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/server";
 
 type CategoryWithSubs = {
-  id: number;
-  name: string;
-  subcategories: {
     id: number;
     name: string;
-  }[];
+    subcategories: {
+        id: number;
+        name: string;
+    }[];
 };
 
 export const runtime = "nodejs";

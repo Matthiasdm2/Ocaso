@@ -83,8 +83,21 @@ export default function EmbeddedCheckoutPage() {
           if (data) setProfileBilling(data as ProfileBilling);
           if (!buyerTypeTouched && !buyerTypeInitialized.current) {
             const hasBiz = !!(data?.company_name || data?.vat || data?.invoice_address?.street || data?.invoice_email);
-            console.log('Auto-detecting buyer type:', hasBiz ? 'business' : 'consumer', 'based on company_name:', data?.company_name, 'vat:', data?.vat, 'invoice_address:', data?.invoice_address, 'invoice_email:', data?.invoice_email);
-            setBuyerType(hasBiz ? 'business' : 'consumer');
+            const hasConsumerData = !!(data?.invoice_address?.firstName || data?.invoice_address?.lastName);
+            
+            // If we have business data, use business mode
+            // If we only have consumer data, use consumer mode
+            // If we have both or neither, default to business for billing
+            const detectedType = hasBiz ? 'business' : hasConsumerData ? 'consumer' : 'business';
+            
+            console.log('Auto-detecting buyer type:', detectedType, {
+              hasBiz, hasConsumerData, 
+              company_name: data?.company_name, 
+              vat: data?.vat, 
+              invoice_address: data?.invoice_address, 
+              invoice_email: data?.invoice_email
+            });
+            setBuyerType(detectedType);
             buyerTypeInitialized.current = true;
           }
         }
@@ -283,6 +296,11 @@ export default function EmbeddedCheckoutPage() {
               </div>
             ) : (
               <div className="space-y-4 text-sm">
+                {/* Debug info */}
+                <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
+                  Debug: buyerType={buyerType}, hasCompany={!!profileBilling?.company_name}, hasInvoiceEmail={!!profileBilling?.invoice_email}, hasInvoiceAddress={!!profileBilling?.invoice_address?.street}
+                </div>
+                
                 {/* Naam bij particulier, Bedrijf bij zakelijk */}
                 {buyerType === 'business' ? (
                   <div>

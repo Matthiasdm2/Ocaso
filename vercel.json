@@ -7,15 +7,9 @@
       "maxDuration": 10
     }
   },
-  "headers": [
-    {
-      "source": "/api/stripe/webhook/:path*",
-      "headers": [
-        {
-          "key": "x-vercel-protection-bypass",
-          "value": "webhook"
-        }
-      ]
-    }
-  ]
+  "protect": {
+    "exclude": [
+      "/api/stripe/webhook/**"
+    ]
+  }
 }

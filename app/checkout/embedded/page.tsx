@@ -73,24 +73,19 @@ export default function EmbeddedCheckoutPage() {
         const supabase = createClient();
         setProfileLoading(true);
         const { data: user, error: userError } = await supabase.auth.getUser();
-        console.log('Auth user result:', { user, userError });
+        console.log('Auth check:', user ? 'logged in' : 'not logged in', userError ? `error: ${userError.message}` : '');
         
         if (user?.user?.id) {
-          console.log('Fetching profile for user ID:', user.user.id);
           const { data, error } = await supabase
             .from('profiles')
             .select('full_name, company_name, vat, registration_nr, invoice_email, invoice_address')
             .eq('id', user.user.id)
             .single();
           
-          console.log('Profile query result:', { data, error });
-          
           if (error) {
-            console.error('Profile query error:', error);
-          }
-          
-          if (data) {
-            console.log('Setting profile billing data:', data);
+            console.error('Profile load error:', error.message);
+          } else if (data) {
+            console.log('Profile loaded successfully');
             setProfileBilling(data as ProfileBilling);
           } else {
             console.log('No profile data found');
@@ -105,13 +100,7 @@ export default function EmbeddedCheckoutPage() {
             // If we have both or neither, default to business for billing
             const detectedType = hasBiz ? 'business' : hasConsumerData ? 'consumer' : 'business';
             
-            console.log('Auto-detecting buyer type:', detectedType, {
-              hasBiz, hasConsumerData, 
-              company_name: data?.company_name, 
-              vat: data?.vat, 
-              invoice_address: data?.invoice_address, 
-              invoice_email: data?.invoice_email
-            });
+            console.log('Auto-detected buyer type:', detectedType, hasBiz ? '(business data found)' : hasConsumerData ? '(consumer data found)' : '(defaulting to business)');
             setBuyerType(detectedType);
             buyerTypeInitialized.current = true;
           }
@@ -189,18 +178,30 @@ export default function EmbeddedCheckoutPage() {
     })();
   }, [mode, credits, plan, billing, buyerType, profileBilling?.invoice_email, profileBilling?.invoice_address?.street, profileBilling?.company_name]);
 
+  const currentCheckoutRef = useRef<{ destroy?: () => void } | null>(null);
+
   useEffect(() => {
-    let cleanup: (() => void) | undefined;
     (async () => {
       if (!clientSecret) return;
+      
+      // Destroy existing checkout if any
+      if (currentCheckoutRef.current?.destroy) {
+        console.log('Destroying existing checkout');
+        currentCheckoutRef.current.destroy();
+        currentCheckoutRef.current = null;
+      }
+      
       const { loadStripe } = await import('@stripe/stripe-js');
-  const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
+      const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
       if (!stripe) {
         setError('Stripe configuratie ontbreekt');
         return;
       }
+      
+      console.log('Initializing new embedded checkout with clientSecret:', clientSecret.substring(0, 20) + '...');
+      
       // Create embedded checkout (fallback if hosted checkout fails)
-  // Types for initEmbeddedCheckout may lag; access via index to avoid type errors
+      // Types for initEmbeddedCheckout may lag; access via index to avoid type errors
       interface EmbeddedCheckout {
         mount: (selector: string) => void;
         destroy?: () => void;
@@ -208,14 +209,26 @@ export default function EmbeddedCheckoutPage() {
       interface StripeExtended {
         initEmbeddedCheckout: (opts: { clientSecret: string }) => Promise<EmbeddedCheckout>;
       }
-      const checkout = await (stripe as unknown as StripeExtended).initEmbeddedCheckout({ clientSecret });
-      checkout.mount('#embedded-checkout');
-      cleanup = () => checkout.destroy?.();
+      
+      try {
+        const checkout = await (stripe as unknown as StripeExtended).initEmbeddedCheckout({ clientSecret });
+        console.log('Checkout initialized, mounting to #embedded-checkout');
+        checkout.mount('#embedded-checkout');
+        currentCheckoutRef.current = checkout;
+      } catch (stripeError) {
+        console.error('Stripe checkout initialization error:', stripeError);
+        setError('Kon checkout niet initialiseren');
+      }
     })();
-    return () => { if (cleanup) cleanup(); };
-  }, [clientSecret]);
-
-  if (loading) {
+    
+    return () => { 
+      if (currentCheckoutRef.current?.destroy) {
+        console.log('Cleaning up checkout on unmount');
+        currentCheckoutRef.current.destroy();
+        currentCheckoutRef.current = null;
+      }
+    };
+  }, [clientSecret]);  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-emerald-50/60 via-white to-white flex items-center justify-center px-4">
         <div className="w-full max-w-xl">
@@ -313,12 +326,6 @@ export default function EmbeddedCheckoutPage() {
               </div>
             ) : (
               <div className="space-y-4 text-sm">
-                {/* Debug info */}
-                <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
-                  Debug: buyerType={buyerType}, hasCompany={!!profileBilling?.company_name}, hasInvoiceEmail={!!profileBilling?.invoice_email}, hasInvoiceAddress={!!profileBilling?.invoice_address?.street}
-                </div>
-                
-                {/* Naam bij particulier, Bedrijf bij zakelijk */}
                 {buyerType === 'business' ? (
                   <div>
                     <label className="text-neutral-500 block mb-1">Bedrijfsnaam</label>

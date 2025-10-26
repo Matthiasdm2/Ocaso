@@ -74,6 +74,7 @@ export default function InfoPageClient() {
     if (sp.get('credits_success') === 'true') {
       push('Credits succesvol toegevoegd! Je saldo is bijgewerkt.');
       window.dispatchEvent(new CustomEvent('ocaso:profile-updated', { detail: { refetch: true } }));
+      window.dispatchEvent(new CustomEvent('ocaso:credits-updated'));
       const url = new URL(window.location.href);
       url.searchParams.delete('credits_success');
       url.searchParams.delete('session_id');

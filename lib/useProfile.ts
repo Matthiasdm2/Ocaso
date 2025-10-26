@@ -58,7 +58,7 @@ export function useProfile() {
     })();
   }, [supabase]);
 
-  // Luister naar globale profielwijzigingen (bv. avatar, naam)
+    // Luister naar globale profielwijzigingen (bv. avatar, naam)
   useEffect(() => {
     function onUpdated(e: Event) {
       const detail = (e as CustomEvent<
@@ -121,18 +121,81 @@ export function useProfile() {
         return next;
       });
     }
+
+    // Luister ook naar credits updates
+    function onCreditsUpdated() {
+      // Refetch the entire profile to get updated credits
+      (async () => {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) return;
+          const { data, error } = await supabase.from("profiles").select(`
+            id, full_name, avatar_url, is_business, ocaso_credits
+          `).eq("id", user.id).maybeSingle();
+          if (error) {
+            console.error("Profile refetch error:", error);
+          } else if (data) {
+            const parts = (data.full_name || "").trim().split(" ");
+            setProfile({
+              id: data.id,
+              firstName: parts[0] || "",
+              lastName: parts.length > 1 ? parts.slice(1).join(" ") : "",
+              avatarUrl: data.avatar_url || "",
+              business: { isBusiness: !!data.is_business },
+              ocasoCredits: data.ocaso_credits || 0,
+            });
+          }
+        } catch (err) {
+          console.error("Profile refetch error:", err);
+        }
+      })();
+    }
+
     if (typeof window !== "undefined") {
       window.addEventListener(
         "ocaso:profile-updated",
         onUpdated as EventListener,
       );
-      return () =>
+      window.addEventListener(
+        "ocaso:credits-updated",
+        onCreditsUpdated as EventListener,
+      );
+      return () => {
         window.removeEventListener(
           "ocaso:profile-updated",
           onUpdated as EventListener,
         );
+        window.removeEventListener(
+          "ocaso:credits-updated",
+          onCreditsUpdated as EventListener,
+        );
+      };
     }
   }, [supabase]);
+
+  // Refresh credits when page becomes visible (user returns from checkout)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    function handleVisibilityChange() {
+      if (!document.hidden && profile?.id) {
+        // Page became visible, refresh credits
+        (async () => {
+          try {
+            const { data, error } = await supabase.from("profiles").select("ocaso_credits").eq("id", profile.id).maybeSingle();
+            if (!error && data && profile.ocasoCredits !== (data.ocaso_credits || 0)) {
+              setProfile((p) => p ? { ...p, ocasoCredits: data.ocaso_credits || 0 } : p);
+            }
+          } catch (err) {
+            console.error("Credits refresh error:", err);
+          }
+        })();
+      }
+    }
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [profile?.id, profile?.ocasoCredits, supabase]);
 
   return { profile, loading, setProfile };
 }

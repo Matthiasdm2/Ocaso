@@ -147,6 +147,9 @@ export async function POST(req: Request) {
                 console.error("credit transaction logging failed", txErr);
               }
               console.log(`Credits topped up: +${inc} for user ${userId} (new balance: ${newCredits})`);
+
+              // Dispatch global event to refresh profile in all components
+              // Note: This is a server-side event, clients need to poll or use real-time subscriptions
             }
           }
         } else if (meta.plan && meta.userId) {

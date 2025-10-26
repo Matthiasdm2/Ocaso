@@ -82,8 +82,8 @@ export default function EmbeddedCheckoutPage() {
           console.log('Loaded profile data:', data);
           if (data) setProfileBilling(data as ProfileBilling);
           if (!buyerTypeTouched && !buyerTypeInitialized.current) {
-            const hasBiz = !!(data?.company_name || data?.vat || data?.invoice_address?.street);
-            console.log('Auto-detecting buyer type:', hasBiz ? 'business' : 'consumer', 'based on company_name:', data?.company_name, 'vat:', data?.vat, 'invoice_address:', data?.invoice_address);
+            const hasBiz = !!(data?.company_name || data?.vat || data?.invoice_address?.street || data?.invoice_email);
+            console.log('Auto-detecting buyer type:', hasBiz ? 'business' : 'consumer', 'based on company_name:', data?.company_name, 'vat:', data?.vat, 'invoice_address:', data?.invoice_address, 'invoice_email:', data?.invoice_email);
             setBuyerType(hasBiz ? 'business' : 'consumer');
             buyerTypeInitialized.current = true;
           }

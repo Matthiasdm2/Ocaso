@@ -128,14 +128,34 @@ export default function EmbeddedCheckoutPage() {
         });
         const data = await res.json();
         if (!res.ok || data.error) throw new Error(data.error || 'Kon checkout niet starten');
-        setClientSecret(data.clientSecret);
+        
+        // Check if we have billing info that should trigger hosted checkout for better prefill
+        const hasBillingInfo = profileBilling?.invoice_email || 
+                              profileBilling?.invoice_address?.street || 
+                              profileBilling?.company_name;
+        
+        // Prefer hosted checkout when billing info is available for better prefill support
+        if (data.url && hasBillingInfo) {
+          // Use hosted checkout for better prefill when billing info exists
+          window.location.href = data.url;
+          return;
+        } else if (data.clientSecret) {
+          // Use embedded checkout as fallback
+          setClientSecret(data.clientSecret);
+        } else if (data.url) {
+          // Fallback to hosted checkout
+          window.location.href = data.url;
+          return;
+        } else {
+          throw new Error('No checkout method available');
+        }
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Onbekende fout');
       } finally {
         setLoading(false);
       }
     })();
-  }, [mode, credits, plan, billing, buyerType]);
+  }, [mode, credits, plan, billing, buyerType, profileBilling?.invoice_email, profileBilling?.invoice_address?.street, profileBilling?.company_name]);
 
   useEffect(() => {
     let cleanup: (() => void) | undefined;
@@ -147,7 +167,7 @@ export default function EmbeddedCheckoutPage() {
         setError('Stripe configuratie ontbreekt');
         return;
       }
-      // Create embedded checkout
+      // Create embedded checkout (fallback if hosted checkout fails)
   // Types for initEmbeddedCheckout may lag; access via index to avoid type errors
       interface EmbeddedCheckout {
         mount: (selector: string) => void;

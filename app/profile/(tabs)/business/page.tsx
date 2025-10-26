@@ -50,7 +50,7 @@ const emptyProfile: Profile = {
     website: '',
     invoiceEmail: '',
     bank: { iban: '', bic: '' },
-    invoiceAddress: { street: '', city: '', zip: '', country: 'België' },
+    invoiceAddress: { firstName: '', lastName: '', street: '', city: '', zip: '', country: 'België' },
     plan: 'basic',
     billingCycle: 'monthly',
     subscriptionActive: false,
@@ -175,6 +175,8 @@ export default function BusinessProfilePage() {
                 invoiceEmail: r.invoice_email ?? '',
                 bank: { iban: r.bank?.iban ?? '', bic: r.bank?.bic ?? '' },
                 invoiceAddress: {
+                  firstName: r.invoice_address?.firstName ?? '',
+                  lastName: r.invoice_address?.lastName ?? '',
                   street: r.invoice_address?.street ?? '',
                   city: r.invoice_address?.city ?? '',
                   zip: r.invoice_address?.zip ?? '',
@@ -270,6 +272,8 @@ export default function BusinessProfilePage() {
               invoiceEmail: r.invoice_email ?? '',
               bank: { iban: r.bank?.iban ?? '', bic: r.bank?.bic ?? '' },
               invoiceAddress: {
+                firstName: r.invoice_address?.firstName ?? '',
+                lastName: r.invoice_address?.lastName ?? '',
                 street: r.invoice_address?.street ?? '',
                 city: r.invoice_address?.city ?? '',
                 zip: r.invoice_address?.zip ?? '',
@@ -1038,6 +1042,67 @@ export default function BusinessProfilePage() {
                   <p className="mt-1 text-sm text-neutral-600">
                     Vul bedrijfsnaam, BTW (moet geldig zijn) en KBO in voor een basis-verificatiebadge.
                   </p>
+                </div>
+              </div>
+            </Section>
+
+            {/* Facturatie */}
+            <Section overline="Facturatie" title="Facturatiegegevens" subtitle="Deze informatie wordt gebruikt voor facturen en automatische invulling bij checkout.">
+              <div className="grid gap-5 md:grid-cols-2">
+                <Field label="Factuur e-mail">
+                  <Input
+                    type="email"
+                    value={profile.business.invoiceEmail}
+                    onChange={(e) => setProfile(p => ({ ...p, business: { ...p.business, invoiceEmail: e.target.value } }))}
+                    placeholder="facturatie@bedrijf.be"
+                  />
+                </Field>
+                <div className="md:col-span-2">
+                  <div className="text-sm font-medium mb-3">Factuuradres</div>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <Field label="Voornaam">
+                      <Input
+                        value={profile.business.invoiceAddress.firstName}
+                        onChange={(e) => setProfile(p => ({ ...p, business: { ...p.business, invoiceAddress: { ...p.business.invoiceAddress, firstName: e.target.value } } }))}
+                        placeholder="Jan"
+                      />
+                    </Field>
+                    <Field label="Achternaam">
+                      <Input
+                        value={profile.business.invoiceAddress.lastName}
+                        onChange={(e) => setProfile(p => ({ ...p, business: { ...p.business, invoiceAddress: { ...p.business.invoiceAddress, lastName: e.target.value } } }))}
+                        placeholder="Janssens"
+                      />
+                    </Field>
+                    <Field label="Straat + nummer">
+                      <Input
+                        value={profile.business.invoiceAddress.street}
+                        onChange={(e) => setProfile(p => ({ ...p, business: { ...p.business, invoiceAddress: { ...p.business.invoiceAddress, street: e.target.value } } }))}
+                        placeholder="Hoofdstraat 123"
+                      />
+                    </Field>
+                    <Field label="Postcode">
+                      <Input
+                        value={profile.business.invoiceAddress.zip}
+                        onChange={(e) => setProfile(p => ({ ...p, business: { ...p.business, invoiceAddress: { ...p.business.invoiceAddress, zip: e.target.value } } }))}
+                        placeholder="9000"
+                      />
+                    </Field>
+                    <Field label="Gemeente">
+                      <Input
+                        value={profile.business.invoiceAddress.city}
+                        onChange={(e) => setProfile(p => ({ ...p, business: { ...p.business, invoiceAddress: { ...p.business.invoiceAddress, city: e.target.value } } }))}
+                        placeholder="Gent"
+                      />
+                    </Field>
+                    <Field label="Land">
+                      <Input
+                        value={profile.business.invoiceAddress.country}
+                        onChange={(e) => setProfile(p => ({ ...p, business: { ...p.business, invoiceAddress: { ...p.business.invoiceAddress, country: e.target.value } } }))}
+                        placeholder="België"
+                      />
+                    </Field>
+                  </div>
                 </div>
               </div>
             </Section>

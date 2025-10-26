@@ -49,6 +49,8 @@ export type Profile = {
     invoiceEmail: string;
     bank: { iban: string; bic: string };
     invoiceAddress: {
+      firstName?: string;
+      lastName?: string;
       street: string;
       city: string;
       zip: string;

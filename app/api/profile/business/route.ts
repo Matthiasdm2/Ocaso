@@ -38,7 +38,7 @@ export async function GET() {
     website: data.website || "",
     invoiceEmail: data.invoice_email || "",
     invoiceAddress: data.invoice_address ||
-      { street: "", city: "", zip: "", country: "België" },
+      { firstName: "", lastName: "", street: "", city: "", zip: "", country: "België" },
     shopName: data.shop_name || "",
     shopSlug: data.shop_slug || "",
     logoUrl: data.business_logo_url || "",
@@ -62,7 +62,7 @@ export async function GET() {
   PUT /api/profile/business
   Body JSON: {
     companyName?, vatNumber?, registrationNr?, website?, invoiceEmail?,
-    invoiceAddress?: { street?: string; city?: string; zip?: string; country?: string },
+    invoiceAddress?: { firstName?: string; lastName?: string; street?: string; city?: string; zip?: string; country?: string },
     shopName?, shopSlug?, description?, socials?: { instagram?, facebook?, tiktok? },
     public?: { showEmail?: boolean; showPhone?: boolean },
     categories?: string[],

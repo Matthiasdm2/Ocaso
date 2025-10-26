@@ -1,8 +1,8 @@
 export const runtime = "nodejs";
-import { getStripeSecretKey } from "@/lib/env";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
+import { getStripeSecretKey } from "@/lib/env";
 import { supabaseServiceRole } from "@/lib/supabaseServiceRole";
 
 export const dynamic = "force-dynamic";

@@ -79,9 +79,11 @@ export default function EmbeddedCheckoutPage() {
             .select('full_name, company_name, vat, registration_nr, invoice_email, invoice_address')
             .eq('id', user.user.id)
             .single();
+          console.log('Loaded profile data:', data);
           if (data) setProfileBilling(data as ProfileBilling);
           if (!buyerTypeTouched && !buyerTypeInitialized.current) {
-            const hasBiz = !!(data?.company_name || data?.vat);
+            const hasBiz = !!(data?.company_name || data?.vat || data?.invoice_address?.street);
+            console.log('Auto-detecting buyer type:', hasBiz ? 'business' : 'consumer', 'based on company_name:', data?.company_name, 'vat:', data?.vat, 'invoice_address:', data?.invoice_address);
             setBuyerType(hasBiz ? 'business' : 'consumer');
             buyerTypeInitialized.current = true;
           }

@@ -12,11 +12,11 @@
   },
   "headers": [
     {
-      "source": "/api/stripe/webhook/:path*",
+      "source": "/api/:path*",
       "headers": [
         {
           "key": "x-vercel-protection-bypass",
-          "value": "webhook"
+          "value": "disable"
         }
       ]
     }

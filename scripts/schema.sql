@@ -46,6 +46,7 @@ create table if not exists public.profiles (
   rating numeric,
   review_count integer,
   avg_rating numeric,
+  ocaso_credits integer default 0,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );

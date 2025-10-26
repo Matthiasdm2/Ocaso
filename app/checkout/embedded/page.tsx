@@ -88,8 +88,9 @@ export default function EmbeddedCheckoutPage() {
             .single();
           
           if (error) {
-            console.error('Profile load error:', error.message);
-            console.error('Full error:', error);
+            console.error('Profile load error:', error.message, error.details, error.hint);
+            console.error('Full error object:', error);
+            // Don't throw, just log and continue with empty profile
           } else if (data) {
             console.log('Profile loaded successfully:', {
               hasFirstName: !!data.first_name,
@@ -131,8 +132,15 @@ export default function EmbeddedCheckoutPage() {
     })();
   }, [buyerTypeTouched]);
 
+  const checkoutInitializedRef = useRef(false);
+
   // Create or refresh embedded checkout session when plan/billing/buyerType changes (or credits mode)
   useEffect(() => {
+    // Prevent multiple initializations
+    if (checkoutInitializedRef.current) {
+      return;
+    }
+
     (async () => {
       if (mode !== 'credits' && (!plan || !billing)) {
         setError('Ontbrekende plan of billing');
@@ -165,22 +173,25 @@ export default function EmbeddedCheckoutPage() {
         });
         const data = await res.json();
         if (!res.ok || data.error) throw new Error(data.error || 'Kon checkout niet starten');
-        
+
         // Check if we have billing info that should trigger hosted checkout for better prefill
-        const hasBillingInfo = profileBilling?.invoice_email || 
-                              profileBilling?.invoice_address?.street || 
+        const hasBillingInfo = profileBilling?.invoice_email ||
+                              profileBilling?.invoice_address?.street ||
                               profileBilling?.company_name;
-        
+
         // Prefer hosted checkout when billing info is available for better prefill support
         if (data.url && hasBillingInfo) {
           // Use hosted checkout for better prefill when billing info exists
+          checkoutInitializedRef.current = true;
           window.location.href = data.url;
           return;
         } else if (data.clientSecret) {
           // Use embedded checkout as fallback
           setClientSecret(data.clientSecret);
+          checkoutInitializedRef.current = true;
         } else if (data.url) {
           // Fallback to hosted checkout
+          checkoutInitializedRef.current = true;
           window.location.href = data.url;
           return;
         } else {
@@ -192,9 +203,7 @@ export default function EmbeddedCheckoutPage() {
         setLoading(false);
       }
     })();
-  }, [mode, credits, plan, billing, buyerType, profileBilling?.invoice_email, profileBilling?.invoice_address?.street, profileBilling?.company_name]);
-
-  const currentCheckoutRef = useRef<{ destroy?: () => void } | null>(null);
+  }, [mode, credits, plan, billing, buyerType, profileBilling?.invoice_email, profileBilling?.invoice_address?.street, profileBilling?.company_name]);  const currentCheckoutRef = useRef<{ destroy?: () => void } | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -243,6 +252,8 @@ export default function EmbeddedCheckoutPage() {
         currentCheckoutRef.current.destroy();
         currentCheckoutRef.current = null;
       }
+      // Reset initialization flag on unmount
+      checkoutInitializedRef.current = false;
     };
   }, [clientSecret]);  if (loading) {
     return (

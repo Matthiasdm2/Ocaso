@@ -52,7 +52,8 @@ export function useProfile() {
         `).eq("id", user.id).maybeSingle();
 
         if (error) {
-          console.error("Profile fetch error:", error);
+          console.error("Profile fetch error:", error.message, error.details, error.hint);
+          console.error("Full error object:", error);
           // Don't set profile, stay with null
         } else if (data) {
           const credits = data.ocaso_credits || 0;

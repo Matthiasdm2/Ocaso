@@ -1,38 +1,16 @@
 import { NextResponse } from "next/server";
-import { supabaseServiceRole } from "@/lib/supabaseServiceRole";
 
 export async function GET() {
   try {
-    const supabase = supabaseServiceRole();
-    
-    // Test database connection
-    const { data: testData, error: testError } = await supabase
-      .from("profiles")
-      .select("id, ocaso_credits")
-      .limit(1);
-    
-    if (testError) {
-      return NextResponse.json({ 
-        status: "error", 
-        message: "Database connection failed",
-        error: testError.message 
-      }, { status: 500 });
-    }
-
-    // Test credit update
-    const testUserId = "test-user-id"; // Replace with actual test user ID
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("ocaso_credits")
-      .eq("id", testUserId)
-      .single();
-
+    // Simple test without database access
     return NextResponse.json({
       status: "ok",
-      message: "Webhook test endpoint working",
-      database: "connected",
-      sample_profile: testData?.[0] || null,
-      test_profile: profile || null
+      message: "Webhook test endpoint is working",
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || "unknown",
+      hasStripeSecret: !!process.env.STRIPE_SECRET_KEY,
+      hasWebhookSecret: !!process.env.STRIPE_WEBHOOK_SECRET,
+      hasSupabaseKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY
     });
   } catch (error) {
     return NextResponse.json({ 

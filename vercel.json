@@ -6,10 +6,5 @@
     "app/api/stripe/webhook/test/route.ts": {
       "maxDuration": 10
     }
-  },
-  "protect": {
-    "exclude": [
-      "/api/stripe/webhook/**"
-    ]
   }
 }

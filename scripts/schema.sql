@@ -501,6 +501,11 @@ DO $$ BEGIN
   ) THEN
     CREATE POLICY "credit_transactions_insert" ON public.credit_transactions FOR INSERT WITH CHECK (auth.uid() = user_id);
   END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='credit_transactions' AND policyname='credit_transactions_service_insert'
+  ) THEN
+    CREATE POLICY "credit_transactions_service_insert" ON public.credit_transactions FOR INSERT WITH CHECK (auth.role() = 'service_role');
+  END IF;
 END $$;
 
 -- =============================

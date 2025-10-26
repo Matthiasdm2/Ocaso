@@ -140,10 +140,9 @@ export async function POST(req: Request) {
                 .insert({
                   user_id: userId,
                   amount: inc,
-                  balance_after: newCredits,
                   transaction_type: "purchase",
                   description: `Credits purchased: ${inc}`,
-                  stripe_payment_intent_id: pi.id,
+                  reference_id: null, // No reference for Stripe payments
                 });
               if (txErr) {
                 console.error("credit transaction logging failed", txErr);

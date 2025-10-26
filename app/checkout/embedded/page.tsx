@@ -84,11 +84,18 @@ export default function EmbeddedCheckoutPage() {
           
           if (error) {
             console.error('Profile load error:', error.message);
+            console.error('Full error:', error);
           } else if (data) {
-            console.log('Profile loaded successfully');
+            console.log('Profile loaded successfully:', {
+              hasCompany: !!data.company_name,
+              hasVat: !!data.vat,
+              hasInvoiceEmail: !!data.invoice_email,
+              hasInvoiceAddress: !!data.invoice_address,
+              invoiceAddressKeys: data.invoice_address ? Object.keys(data.invoice_address) : []
+            });
             setProfileBilling(data as ProfileBilling);
           } else {
-            console.log('No profile data found');
+            console.log('No profile data found - this is unexpected for a logged-in user');
           }
           
           if (!buyerTypeTouched && !buyerTypeInitialized.current) {

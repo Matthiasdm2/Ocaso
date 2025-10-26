@@ -31,6 +31,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
+  console.log(`[stripe/webhook] Received event: ${event.type}`, { id: event.id });
+
   if (!getSupabaseServiceRoleKey()) {
     return NextResponse.json({ error: "service_role_missing" }, {
       status: 503,

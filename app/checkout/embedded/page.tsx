@@ -6,6 +6,11 @@ import { createClient } from '@/lib/supabaseClient';
 
 type ProfileBilling = {
   full_name?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  address?: { street?: string; city?: string; zip?: string; country?: string } | null;
   company_name?: string | null;
   vat?: string | null;
   registration_nr?: string | null;
@@ -78,7 +83,7 @@ export default function EmbeddedCheckoutPage() {
         if (user?.user?.id) {
           const { data, error } = await supabase
             .from('profiles')
-            .select('full_name, company_name, vat, registration_nr, invoice_email, invoice_address')
+            .select('full_name, first_name, last_name, email, phone, address, company_name, vat, registration_nr, invoice_email, invoice_address')
             .eq('id', user.user.id)
             .single();
           
@@ -87,10 +92,14 @@ export default function EmbeddedCheckoutPage() {
             console.error('Full error:', error);
           } else if (data) {
             console.log('Profile loaded successfully:', {
+              hasFirstName: !!data.first_name,
+              hasLastName: !!data.last_name,
+              hasEmail: !!data.email,
+              hasAddress: !!data.address?.street,
               hasCompany: !!data.company_name,
               hasVat: !!data.vat,
               hasInvoiceEmail: !!data.invoice_email,
-              hasInvoiceAddress: !!data.invoice_address,
+              hasInvoiceAddress: !!data.invoice_address?.street,
               invoiceAddressKeys: data.invoice_address ? Object.keys(data.invoice_address) : []
             });
             setProfileBilling(data as ProfileBilling);
@@ -100,7 +109,7 @@ export default function EmbeddedCheckoutPage() {
           
           if (!buyerTypeTouched && !buyerTypeInitialized.current) {
             const hasBiz = !!(data?.company_name || data?.vat || data?.invoice_address?.street || data?.invoice_email);
-            const hasConsumerData = !!(data?.invoice_address?.firstName || data?.invoice_address?.lastName);
+            const hasConsumerData = !!(data?.first_name || data?.last_name || data?.address?.street);
             
             // If we have business data, use business mode
             // If we only have consumer data, use consumer mode
@@ -361,15 +370,14 @@ export default function EmbeddedCheckoutPage() {
                     <div>
                       <label className="text-neutral-500 block mb-1">Voornaam</label>
                       <input
-                        value={profileBilling?.invoice_address?.firstName || ''}
-                        onChange={(e) => setProfileBilling((p) => ({ ...(p || {}), invoice_address: { ...(p?.invoice_address || {}), firstName: e.target.value } }))}
+                        value={profileBilling?.first_name || profileBilling?.invoice_address?.firstName || ''}
+                        onChange={(e) => setProfileBilling((p) => ({ ...(p || {}), first_name: e.target.value }))}
                         onBlur={async (e) => {
-                          const v = e.target.value; setSavingField('invoice_address.firstName'); setSaveMsg(null);
+                          const v = e.target.value; setSavingField('first_name'); setSaveMsg(null);
                           try {
-                            const addr = { ...(profileBilling?.invoice_address || {}), firstName: v };
                             const res = await fetch('/api/profile/business', {
                               method: 'PUT', headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ invoiceAddress: addr }),
+                              body: JSON.stringify({ firstName: v }),
                             }); if (!res.ok) throw new Error('Opslaan mislukt');
                             setSaveMsg('Opgeslagen'); setTimeout(() => setSaveMsg(null), 1500);
                           } finally { setSavingField(null); }
@@ -381,15 +389,14 @@ export default function EmbeddedCheckoutPage() {
                     <div>
                       <label className="text-neutral-500 block mb-1">Achternaam</label>
                       <input
-                        value={profileBilling?.invoice_address?.lastName || ''}
-                        onChange={(e) => setProfileBilling((p) => ({ ...(p || {}), invoice_address: { ...(p?.invoice_address || {}), lastName: e.target.value } }))}
+                        value={profileBilling?.last_name || profileBilling?.invoice_address?.lastName || ''}
+                        onChange={(e) => setProfileBilling((p) => ({ ...(p || {}), last_name: e.target.value }))}
                         onBlur={async (e) => {
-                          const v = e.target.value; setSavingField('invoice_address.lastName'); setSaveMsg(null);
+                          const v = e.target.value; setSavingField('last_name'); setSaveMsg(null);
                           try {
-                            const addr = { ...(profileBilling?.invoice_address || {}), lastName: v };
                             const res = await fetch('/api/profile/business', {
                               method: 'PUT', headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ invoiceAddress: addr }),
+                              body: JSON.stringify({ lastName: v }),
                             }); if (!res.ok) throw new Error('Opslaan mislukt');
                             setSaveMsg('Opgeslagen'); setTimeout(() => setSaveMsg(null), 1500);
                           } finally { setSavingField(null); }
@@ -448,7 +455,7 @@ export default function EmbeddedCheckoutPage() {
                   <label className="text-neutral-500 block mb-1">Facturatie e-mail</label>
                   <input
                     type="email"
-                    value={profileBilling?.invoice_email || ''}
+                    value={profileBilling?.invoice_email || profileBilling?.email || ''}
                     onChange={(e) => setProfileBilling((p) => ({ ...(p || {}), invoice_email: e.target.value }))}
                     onBlur={async (e) => {
                       const v = e.target.value; setSavingField('invoice_email'); setSaveMsg(null);
@@ -469,7 +476,7 @@ export default function EmbeddedCheckoutPage() {
                   <div>
                     <label className="text-neutral-500 block mb-1">Straat</label>
                     <input
-                      value={profileBilling?.invoice_address?.street || ''}
+                      value={profileBilling?.invoice_address?.street || profileBilling?.address?.street || ''}
                       onChange={(e) => setProfileBilling((p) => ({ ...(p || {}), invoice_address: { ...(p?.invoice_address || {}), street: e.target.value } }))}
                       onBlur={async (e) => {
                         const v = e.target.value; setSavingField('invoice_address.street'); setSaveMsg(null);
@@ -490,7 +497,7 @@ export default function EmbeddedCheckoutPage() {
                     <div>
                       <label className="text-neutral-500 block mb-1">Postcode</label>
                       <input
-                        value={profileBilling?.invoice_address?.zip || ''}
+                        value={profileBilling?.invoice_address?.zip || profileBilling?.address?.zip || ''}
                         onChange={(e) => setProfileBilling((p) => ({ ...(p || {}), invoice_address: { ...(p?.invoice_address || {}), zip: e.target.value } }))}
                         onBlur={async (e) => {
                           const v = e.target.value; setSavingField('invoice_address.zip'); setSaveMsg(null);
@@ -510,7 +517,7 @@ export default function EmbeddedCheckoutPage() {
                     <div className="col-span-2">
                       <label className="text-neutral-500 block mb-1">Gemeente</label>
                       <input
-                        value={profileBilling?.invoice_address?.city || ''}
+                        value={profileBilling?.invoice_address?.city || profileBilling?.address?.city || ''}
                         onChange={(e) => setProfileBilling((p) => ({ ...(p || {}), invoice_address: { ...(p?.invoice_address || {}), city: e.target.value } }))}
                         onBlur={async (e) => {
                           const v = e.target.value; setSavingField('invoice_address.city'); setSaveMsg(null);
@@ -531,7 +538,7 @@ export default function EmbeddedCheckoutPage() {
                   <div>
                     <label className="text-neutral-500 block mb-1">Land</label>
                     <input
-                      value={profileBilling?.invoice_address?.country || 'België'}
+                      value={profileBilling?.invoice_address?.country || profileBilling?.address?.country || 'België'}
                       onChange={(e) => setProfileBilling((p) => ({ ...(p || {}), invoice_address: { ...(p?.invoice_address || {}), country: e.target.value } }))}
                       onBlur={async (e) => {
                         const v = e.target.value; setSavingField('invoice_address.country'); setSaveMsg(null);

@@ -5,6 +5,20 @@
     },
     "app/api/stripe/webhook/test/route.ts": {
       "maxDuration": 10
+    },
+    "app/api/stripe/webhook/test-credit/route.ts": {
+      "maxDuration": 10
     }
-  }
+  },
+  "headers": [
+    {
+      "source": "/api/stripe/webhook/:path*",
+      "headers": [
+        {
+          "key": "x-vercel-protection-bypass",
+          "value": "webhook"
+        }
+      ]
+    }
+  ]
 }

@@ -72,15 +72,30 @@ export default function EmbeddedCheckoutPage() {
       try {
         const supabase = createClient();
         setProfileLoading(true);
-        const { data: user } = await supabase.auth.getUser();
+        const { data: user, error: userError } = await supabase.auth.getUser();
+        console.log('Auth user result:', { user, userError });
+        
         if (user?.user?.id) {
-          const { data } = await supabase
+          console.log('Fetching profile for user ID:', user.user.id);
+          const { data, error } = await supabase
             .from('profiles')
             .select('full_name, company_name, vat, registration_nr, invoice_email, invoice_address')
             .eq('id', user.user.id)
             .single();
-          console.log('Loaded profile data:', data);
-          if (data) setProfileBilling(data as ProfileBilling);
+          
+          console.log('Profile query result:', { data, error });
+          
+          if (error) {
+            console.error('Profile query error:', error);
+          }
+          
+          if (data) {
+            console.log('Setting profile billing data:', data);
+            setProfileBilling(data as ProfileBilling);
+          } else {
+            console.log('No profile data found');
+          }
+          
           if (!buyerTypeTouched && !buyerTypeInitialized.current) {
             const hasBiz = !!(data?.company_name || data?.vat || data?.invoice_address?.street || data?.invoice_email);
             const hasConsumerData = !!(data?.invoice_address?.firstName || data?.invoice_address?.lastName);
@@ -100,9 +115,11 @@ export default function EmbeddedCheckoutPage() {
             setBuyerType(detectedType);
             buyerTypeInitialized.current = true;
           }
+        } else {
+          console.log('No authenticated user found');
         }
-      } catch {
-        // ignore
+      } catch (err) {
+        console.error('Error loading profile:', err);
       } finally {
         setProfileLoading(false);
       }

@@ -122,11 +122,32 @@ export async function POST(req: Request) {
               .eq("id", userId)
               .single();
             const current = (profile?.ocaso_credits as number | null) ?? 0;
+            const newCredits = current + inc;
+
+            // Update credits
             const { error: upErr } = await supabase
               .from("profiles")
-              .update({ ocaso_credits: current + inc })
+              .update({ ocaso_credits: newCredits })
               .eq("id", userId);
-            if (upErr) console.error("credits top-up failed", upErr);
+            if (upErr) {
+              console.error("credits top-up failed", upErr);
+            } else {
+              // Log credit transaction
+              const { error: txErr } = await supabase
+                .from("credit_transactions")
+                .insert({
+                  user_id: userId,
+                  amount: inc,
+                  balance_after: newCredits,
+                  transaction_type: "purchase",
+                  description: `Credits purchased: ${inc}`,
+                  stripe_payment_intent_id: pi.id,
+                });
+              if (txErr) {
+                console.error("credit transaction logging failed", txErr);
+              }
+              console.log(`Credits topped up: +${inc} for user ${userId} (new balance: ${newCredits})`);
+            }
           }
         } else if (meta.plan && meta.userId) {
           // Embedded subscription checkout: activate on profile

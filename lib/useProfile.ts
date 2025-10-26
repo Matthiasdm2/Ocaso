@@ -34,7 +34,7 @@ export function useProfile() {
         }
 
         const { data, error } = await supabase.from("profiles").select(`
-          id, full_name, avatar_url, is_business
+          id, full_name, avatar_url, is_business, ocaso_credits
         `).eq("id", user.id).maybeSingle();
 
         if (error) {
@@ -48,7 +48,7 @@ export function useProfile() {
             lastName: parts.length > 1 ? parts.slice(1).join(" ") : "",
             avatarUrl: data.avatar_url || "",
             business: { isBusiness: !!data.is_business },
-            ocasoCredits: 0,
+            ocasoCredits: data.ocaso_credits || 0,
           });
         }
       } catch (err) {
@@ -79,7 +79,7 @@ export function useProfile() {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) return;
             const { data, error } = await supabase.from("profiles").select(`
-              id, full_name, avatar_url, is_business
+              id, full_name, avatar_url, is_business, ocaso_credits
             `).eq("id", user.id).maybeSingle();
             if (error) {
               console.error("Profile refetch error:", error);
@@ -91,7 +91,7 @@ export function useProfile() {
                 lastName: parts.length > 1 ? parts.slice(1).join(" ") : "",
                 avatarUrl: data.avatar_url || "",
                 business: { isBusiness: !!data.is_business },
-                ocasoCredits: 0,
+                ocasoCredits: data.ocaso_credits || 0,
               });
             }
           } catch (err) {

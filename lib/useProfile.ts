@@ -17,6 +17,20 @@ export function useProfile() {
   const [profile, setProfile] = useState<ProfileLite | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Helper function to get credits from localStorage
+  const getCachedCredits = (userId: string): number => {
+    if (typeof window === "undefined") return 0;
+    const cached = localStorage.getItem(`ocaso_credits_${userId}`);
+    return cached ? parseInt(cached, 10) : 0;
+  };
+
+  // Helper function to set credits in localStorage
+  const setCachedCredits = (userId: string, credits: number) => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(`ocaso_credits_${userId}`, credits.toString());
+    }
+  };
+
   useEffect(() => {
     (async () => {
       setLoading(true);
@@ -41,6 +55,8 @@ export function useProfile() {
           console.error("Profile fetch error:", error);
           // Don't set profile, stay with null
         } else if (data) {
+          const credits = data.ocaso_credits || 0;
+          setCachedCredits(user.id, credits); // Cache credits
           const parts = (data.full_name || "").trim().split(" ");
           setProfile({
             id: data.id,
@@ -48,8 +64,21 @@ export function useProfile() {
             lastName: parts.length > 1 ? parts.slice(1).join(" ") : "",
             avatarUrl: data.avatar_url || "",
             business: { isBusiness: !!data.is_business },
-            ocasoCredits: data.ocaso_credits || 0,
+            ocasoCredits: credits,
           });
+        } else {
+          // No data from database, try to use cached credits as fallback
+          const cachedCredits = getCachedCredits(user.id);
+          if (cachedCredits > 0) {
+            setProfile({
+              id: user.id,
+              firstName: "",
+              lastName: "",
+              avatarUrl: "",
+              business: { isBusiness: false },
+              ocasoCredits: cachedCredits,
+            });
+          }
         }
       } catch (err) {
         console.error("Profile load error:", err);
@@ -84,6 +113,8 @@ export function useProfile() {
             if (error) {
               console.error("Profile refetch error:", error);
             } else if (data) {
+              const credits = data.ocaso_credits || 0;
+              setCachedCredits(user.id, credits);
               const parts = (data.full_name || "").trim().split(" ");
               setProfile({
                 id: data.id,
@@ -91,7 +122,7 @@ export function useProfile() {
                 lastName: parts.length > 1 ? parts.slice(1).join(" ") : "",
                 avatarUrl: data.avatar_url || "",
                 business: { isBusiness: !!data.is_business },
-                ocasoCredits: data.ocaso_credits || 0,
+                ocasoCredits: credits,
               });
             }
           } catch (err) {
@@ -135,6 +166,8 @@ export function useProfile() {
           if (error) {
             console.error("Profile refetch error:", error);
           } else if (data) {
+            const credits = data.ocaso_credits || 0;
+            setCachedCredits(user.id, credits);
             const parts = (data.full_name || "").trim().split(" ");
             setProfile({
               id: data.id,
@@ -142,7 +175,7 @@ export function useProfile() {
               lastName: parts.length > 1 ? parts.slice(1).join(" ") : "",
               avatarUrl: data.avatar_url || "",
               business: { isBusiness: !!data.is_business },
-              ocasoCredits: data.ocaso_credits || 0,
+              ocasoCredits: credits,
             });
           }
         } catch (err) {
@@ -173,29 +206,28 @@ export function useProfile() {
     }
   }, [supabase]);
 
-  // Refresh credits when page becomes visible (user returns from checkout)
+  // Periodically refresh credits every 30 seconds
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (!profile?.id) return;
 
-    function handleVisibilityChange() {
-      if (!document.hidden && profile?.id) {
-        // Page became visible, refresh credits
-        (async () => {
-          try {
-            const { data, error } = await supabase.from("profiles").select("ocaso_credits").eq("id", profile.id).maybeSingle();
-            if (!error && data && profile.ocasoCredits !== (data.ocaso_credits || 0)) {
-              setProfile((p) => p ? { ...p, ocasoCredits: data.ocaso_credits || 0 } : p);
-            }
-          } catch (err) {
-            console.error("Credits refresh error:", err);
+    const interval = setInterval(async () => {
+      try {
+        const { data, error } = await supabase.from("profiles").select("ocaso_credits").eq("id", profile.id).maybeSingle();
+        if (!error && data) {
+          const credits = data.ocaso_credits || 0;
+          const cachedCredits = getCachedCredits(profile.id);
+          if (credits !== cachedCredits) {
+            setCachedCredits(profile.id, credits);
+            setProfile((p) => p ? { ...p, ocasoCredits: credits } : p);
           }
-        })();
+        }
+      } catch (err) {
+        console.error("Credits polling error:", err);
       }
-    }
+    }, 30000); // 30 seconds
 
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
-  }, [profile?.id, profile?.ocasoCredits, supabase]);
+    return () => clearInterval(interval);
+  }, [profile?.id, supabase]);
 
   return { profile, loading, setProfile };
 }

@@ -84,7 +84,17 @@ export async function GET(
         params.id,
       );
     }
-    return NextResponse.json({ error: "not_found" }, { status: 404 });
+    const debugResponse = debug ? {
+      error: "not_found",
+      debug: {
+        user_id: user?.id,
+        conversation_id: params.id,
+        conv_found: false,
+        conv_error: convError,
+        participants_in_db: null,
+      },
+    } : { error: "not_found" };
+    return NextResponse.json(debugResponse, { status: 404 });
   }
 
   // Primary query including optional columns; fallback if migration not applied yet.

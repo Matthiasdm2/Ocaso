@@ -5,7 +5,6 @@ import { supabaseServer } from "@/lib/supabaseServer";
 
 // Ensure this route is always executed on Node.js runtime and not statically optimized
 export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 
 function supabaseFromBearer(token?: string | null) {
   if (!token) return null;
@@ -31,7 +30,6 @@ export async function GET(
   { params }: { params: { id: string } },
 ) {
   try {
-    console.log("API route /api/messages/[id] executed for ID:", params.id);
     let supabase = supabaseServer();
     let { data: { user } } = await supabase.auth.getUser();
     if (!user) {

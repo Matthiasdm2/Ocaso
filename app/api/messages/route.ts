@@ -53,37 +53,6 @@ export async function GET(request: Request) {
   }
 
   console.log("[MESSAGES API] Processing for user:", user.id);
-  // Get conversations with last message and unread count
-  // Use a more efficient query with proper filtering
-  console.log("[MESSAGES API] Executing database query for user:", user.id);
-  const { data: conversationsData, error: convError } = await supabase
-    .from("conversations")
-    .select(`
-      id,
-      participants,
-      updated_at,
-      listing_id,
-      messages!inner(
-        id,
-        body,
-        created_at,
-        sender_id
-      )
-    `)
-    .contains("participants", [user.id])
-    .order("updated_at", { ascending: false })
-    .limit(50); // Limit to prevent excessive data
-
-  if (convError) {
-    console.error("[MESSAGES API] Database error:", convError);
-    return NextResponse.json({ error: convError.message }, { status: 500 });
-  }
-
-  console.log(
-    "[MESSAGES API] Found",
-    conversationsData?.length || 0,
-    "conversations",
-  );
 
   interface ConversationOverviewRow {
     id: string;
@@ -97,45 +66,96 @@ export async function GET(request: Request) {
     listing_id?: string | null;
   }
 
-  interface RawConversation {
-    id: string;
-    participants: string[];
-    updated_at: string;
-    listing_id: string | null;
-    messages: Array<{
-      id: string;
-      body: string;
-      created_at: string;
-      sender_id: string;
-    }>;
+  let rows: ConversationOverviewRow[] | null = null;
+
+  // Prefer the database RPC that already handles unread counts & last message lookup
+  try {
+    const { data: rpcRows, error: rpcError } = await supabase
+      .rpc("conversation_overview");
+    if (rpcError) {
+      if (process.env.NODE_ENV !== "production") {
+        console.warn("[MESSAGES API] conversation_overview RPC failed", rpcError.message);
+      }
+    } else if (Array.isArray(rpcRows)) {
+      rows = (rpcRows as ConversationOverviewRow[]).map((r) => ({
+        id: r.id,
+        participants: Array.isArray(r.participants) ? r.participants : [],
+        updated_at: r.updated_at,
+        last_message_id: r.last_message_id || null,
+        last_message_body: r.last_message_body || null,
+        last_message_created_at: r.last_message_created_at || null,
+        last_message_sender: r.last_message_sender || null,
+        unread_count: r.unread_count ?? 0,
+        listing_id: r.listing_id ?? null,
+      }));
+    }
+  } catch (e) {
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("[MESSAGES API] conversation_overview RPC exception", e);
+    }
   }
 
-  // Process conversations to get last message and unread count
-  const processedConversations: ConversationOverviewRow[] =
-    (conversationsData as RawConversation[] || []).map((conv) => {
-      const messages = conv.messages || [];
-      const sortedMessages = messages.sort((a, b) =>
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      );
-      const lastMessage = sortedMessages[0];
+  if (!rows) {
+    // Fallback to manual query for environments where the RPC is unavailable
+    console.log("[MESSAGES API] Falling back to manual conversations query");
+    const { data: conversationsData, error: convError } = await supabase
+      .from("conversations")
+      .select(`
+        id,
+        participants,
+        updated_at,
+        listing_id,
+        messages (
+          id,
+          body,
+          created_at,
+          sender_id
+        )
+      `)
+      .contains("participants", [user.id])
+      .order("updated_at", { ascending: false })
+      .limit(50)
+      // Ensure newest message is first so array index 0 is latest when present
+      .order("created_at", { foreignTable: "messages", ascending: false })
+      // Only fetch the single most recent message per conversation (avoids large payloads)
+      .limit(1, { foreignTable: "messages" });
 
-      // For now, set unread_count to 0 - we can implement this later if needed
-      const unread_count = 0;
+    if (convError) {
+      console.error("[MESSAGES API] Database error:", convError);
+      return NextResponse.json({ error: convError.message }, { status: 500 });
+    }
 
+    interface RawConversation {
+      id: string;
+      participants: string[];
+      updated_at: string;
+      listing_id: string | null;
+      messages: Array<{
+        id: string;
+        body: string;
+        created_at: string;
+        sender_id: string;
+      }>;
+    }
+
+    rows = ((conversationsData as RawConversation[] | null) || []).map((conv) => {
+      const messages = Array.isArray(conv.messages) ? conv.messages : [];
+      const lastMessage = messages[0];
       return {
         id: conv.id,
-        participants: conv.participants,
+        participants: Array.isArray(conv.participants) ? conv.participants : [],
         updated_at: conv.updated_at,
         last_message_id: lastMessage?.id || null,
         last_message_body: lastMessage?.body || null,
         last_message_created_at: lastMessage?.created_at || null,
         last_message_sender: lastMessage?.sender_id || null,
-        unread_count,
+        unread_count: 0,
         listing_id: conv.listing_id,
       };
     });
+  }
 
-  const rows: ConversationOverviewRow[] = processedConversations;
+  rows = rows || [];
   // Fetch listing snippets for all listing-linked conversations to enrich UI (single roundtrip)
   const listingIds = Array.from(
     new Set(

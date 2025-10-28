@@ -30,72 +30,73 @@ export async function GET(
   request: Request,
   { params }: { params: { id: string } },
 ) {
-  let supabase = supabaseServer();
-  let { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    const auth = request.headers.get("authorization");
-    const token = auth?.toLowerCase().startsWith("bearer ")
-      ? auth.slice(7)
-      : null;
-    const alt = supabaseFromBearer(token);
-    if (alt) {
-      const got = await alt.auth.getUser();
-      if (got.data.user) {
-        user = got.data.user;
-        supabase = alt;
+  try {
+    let supabase = supabaseServer();
+    let { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      const auth = request.headers.get("authorization");
+      const token = auth?.toLowerCase().startsWith("bearer ")
+        ? auth.slice(7)
+        : null;
+      const alt = supabaseFromBearer(token);
+      if (alt) {
+        const got = await alt.auth.getUser();
+        if (got.data.user) {
+          user = got.data.user;
+          supabase = alt;
+        }
       }
     }
-  }
-  if (!user) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  }
-
-  const url = new URL(request.url);
-  const before = url.searchParams.get("before");
-  const debug = url.searchParams.has("debug");
-
-  if (debug) {
-    console.log(`[messages/:id DEBUG] request url=${request.url}`);
-    console.log(`[messages/:id DEBUG] auth header present=${request.headers.get("authorization") ? 'yes' : 'no'}`);
-    console.log(`[messages/:id DEBUG] user id resolved=${user?.id ?? 'null'}`);
-  }
-
-  // Verify access by selecting conversation first (will RLS filter)
-  console.log(
-    `[messages/:id] Checking conversation access for ${params.id}, user: ${user?.id}`,
-  );
-  const { data: conv, error: convError } = await supabase
-    .from("conversations")
-    .select("id, participants, listing_id")
-    .eq("id", params.id)
-    .maybeSingle();
-  console.log(`[messages/:id] Conversation query result:`, {
-    conv: !!conv,
-    error: convError,
-    participants: conv?.participants,
-  });
-  if (!conv) {
-    console.log(
-      `[messages/:id] Access denied or conversation not found for ${params.id}`,
-    );
-    if (process.env.NODE_ENV !== "production") {
-      console.debug(
-        "[messages/:id GET] conversation not found or no access",
-        params.id,
-      );
+    if (!user) {
+      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     }
-    const debugResponse = debug ? {
-      error: "not_found",
-      debug: {
-        user_id: user?.id,
-        conversation_id: params.id,
-        conv_found: false,
-        conv_error: convError,
-        participants_in_db: null,
-      },
-    } : { error: "not_found" };
-    return NextResponse.json(debugResponse, { status: 404 });
-  }
+
+    const url = new URL(request.url);
+    const before = url.searchParams.get("before");
+    const debug = url.searchParams.has("debug");
+
+    if (debug) {
+      console.log(`[messages/:id DEBUG] request url=${request.url}`);
+      console.log(`[messages/:id DEBUG] auth header present=${request.headers.get("authorization") ? 'yes' : 'no'}`);
+      console.log(`[messages/:id DEBUG] user id resolved=${user?.id ?? 'null'}`);
+    }
+
+    // Verify access by selecting conversation first (will RLS filter)
+    console.log(
+      `[messages/:id] Checking conversation access for ${params.id}, user: ${user?.id}`,
+    );
+    const { data: conv, error: convError } = await supabase
+      .from("conversations")
+      .select("id, participants, listing_id")
+      .eq("id", params.id)
+      .maybeSingle();
+    console.log(`[messages/:id] Conversation query result:`, {
+      conv: !!conv,
+      error: convError,
+      participants: conv?.participants,
+    });
+    if (!conv) {
+      console.log(
+        `[messages/:id] Access denied or conversation not found for ${params.id}`,
+      );
+      if (process.env.NODE_ENV !== "production") {
+        console.debug(
+          "[messages/:id GET] conversation not found or no access",
+          params.id,
+        );
+      }
+      const debugResponse = debug ? {
+        error: "not_found",
+        debug: {
+          user_id: user?.id,
+          conversation_id: params.id,
+          conv_found: false,
+          conv_error: convError,
+          participants_in_db: null,
+        },
+      } : { error: "not_found" };
+      return NextResponse.json(debugResponse, { status: 404 });
+    }
 
   // Primary query including optional columns; fallback if migration not applied yet.
   let query = supabase
@@ -287,6 +288,10 @@ export async function GET(
     peer_last_read_at,
     debug_reads,
   });
+  } catch (e) {
+    console.error("[messages/:id GET] internal error", e);
+    return NextResponse.json({ error: "internal_error", details: (e as Error)?.message }, { status: 500 });
+  }
 }
 
 // POST new message

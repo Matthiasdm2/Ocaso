@@ -11,9 +11,9 @@ import { cookies } from "next/headers";
  */
 export function supabaseServer() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const serviceRole = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  if (!url || !anon) {
+  if (!url || !serviceRole) {
     // Graceful server-side fallback to avoid 500 during misconfiguration
     if (process.env.NODE_ENV !== "production") {
       console.warn("[supabaseServer] Missing env vars, returning no-op client");
@@ -72,7 +72,7 @@ export function supabaseServer() {
     console.debug("supabaseServer: using anon key server client");
   }
 
-  const client = createServerClient(url, anon, {
+  const client = createServerClient(url, serviceRole, {
     cookies: {
       get(name: string) {
         return cookies().get(name)?.value;

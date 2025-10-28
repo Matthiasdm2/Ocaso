@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+
 import { supabaseServer } from "@/lib/supabaseServer";
 
 export const runtime = "nodejs";
@@ -22,4 +23,3 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 
   return NextResponse.json({ views: listing?.views ?? 0, favorites: favorites ?? 0 });
 }
-import { supabaseServiceRole } from "@/lib/supabaseServiceRole";

@@ -2,17 +2,16 @@ import dynamicImport from "next/dynamic";
 
 import BackBar from "@/components/BackBar";
 import CategorySidebar from "@/components/CategorySidebar";
+import CollapsibleContainer from "../../components/CollapsibleContainer";
 import FeaturedStrip from "@/components/FeaturedStrip";
 import HeroSearch from "@/components/HeroSearch";
+import ListingCard from "../../components/ListingCard";
 import MarketplaceFilters from "@/components/MarketplaceFilters";
 import MarketplaceMapModal from "@/components/MarketplaceMapModal";
 import RatingStars from "@/components/RatingStars";
 import Tooltip from "@/components/Tooltip";
 import { supabaseServer } from "@/lib/supabaseServer";
-import type { Listing as BaseListing, Category, Subcategory } from "@/lib/types";
-
-import CollapsibleContainer from "../../components/CollapsibleContainer";
-import ListingCard from "../../components/ListingCard";
+import type { Category, Listing as BaseListing, Subcategory } from "@/lib/types";
 
 export const dynamic = 'force-dynamic';
 

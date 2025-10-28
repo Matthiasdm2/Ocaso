@@ -31,6 +31,7 @@ export async function GET(
   { params }: { params: { id: string } },
 ) {
   try {
+    console.log("API route /api/messages/[id] executed for ID:", params.id);
     let supabase = supabaseServer();
     let { data: { user } } = await supabase.auth.getUser();
     if (!user) {

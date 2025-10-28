@@ -5,7 +5,6 @@ import { supabaseServer } from "@/lib/supabaseServer";
 
 // Ensure this route is always executed on Node.js runtime and not statically optimized
 // Force redeploy 2
-export const runtime = "nodejs";
 
 function supabaseFromBearer(token?: string | null) {
   if (!token) return null;

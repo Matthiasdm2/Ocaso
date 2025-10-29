@@ -11,8 +11,13 @@ import { supabaseServer } from "@/lib/supabaseServer";
   // parse URL if needed in future
 
     // determine viewer: logged in user or anonymous session
-    const userResp = await supabase.auth.getUser();
-    const user = userResp?.data?.user ?? null;
+    let user = null;
+    try {
+      const userResp = await supabase.auth.getUser();
+      user = userResp?.data?.user ?? null;
+    } catch (authError) {
+      console.warn("[listings/view] Auth error:", authError);
+    }
     const userId = user?.id ?? null;
 
     // parse cookie for session id

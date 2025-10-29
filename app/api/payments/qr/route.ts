@@ -14,7 +14,14 @@ const CHAT_BUCKET = process.env.NEXT_PUBLIC_CHAT_BUCKET || "chat-attachments";
 export async function POST(request: Request) {
   // Identify user (buyer)
   const supabase = supabaseServer();
-  const { data: { user } } = await supabase.auth.getUser();
+  let user = null;
+  try {
+    const { data: { user: u } } = await supabase.auth.getUser();
+    user = u;
+  } catch (authError) {
+    console.warn("[payments/qr] Auth error:", authError);
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
   if (!user) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }

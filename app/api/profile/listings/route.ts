@@ -70,7 +70,13 @@ export async function GET(req: Request) {
   //    zo niet aanwezig: terugvallen op ingelogde user
   let sellerId = searchParams.get("seller_id") ?? undefined;
   // Probeer user af te leiden uit cookies; als dat faalt, val terug op Bearer token
-  let { data: { user } } = await supabase.auth.getUser();
+  let user = null;
+  try {
+    const { data: { user: u } } = await supabase.auth.getUser();
+    user = u;
+  } catch (authError) {
+    console.warn("[profile/listings] Auth error:", authError);
+  }
   if (!sellerId) sellerId = user?.id;
   if (!sellerId || !user) {
     const auth = req.headers.get("authorization");

@@ -755,3 +755,16 @@ export async function DELETE(
     return NextResponse.json({ ok: true });
   }
 }
+
+// CORS preflight handler
+export async function OPTIONS() {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      "Access-Control-Allow-Origin": process.env.ALLOWED_ORIGINS ?? "*",
+      "Access-Control-Allow-Methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      "Access-Control-Max-Age": "86400",
+    },
+  });
+}

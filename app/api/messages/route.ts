@@ -1,13 +1,35 @@
 
-export const runtime = 'nodejs';
-import { NextResponse } from 'next/server';
+
 
 export async function POST() {
-  // maak nieuw bericht
-  return NextResponse.json({ message: 'POST request received' });
+  return new Response(JSON.stringify({ message: 'POST request received' }), {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
 }
 
 export async function GET() {
-  // optioneel: lijst berichten
-  return NextResponse.json({ message: 'GET request received' });
+  return new Response(JSON.stringify({ message: 'GET request received' }), {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
+}
+
+export async function OPTIONS() {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
 }

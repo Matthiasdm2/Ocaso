@@ -7,8 +7,6 @@ ALTER TABLE public.conversations ENABLE ROW LEVEL SECURITY;
 -- Drop oude policies als ze bestaan
 DROP POLICY IF EXISTS "conversations_participant_select" ON public.conversations;
 DROP POLICY IF EXISTS "conversations_insert" ON public.conversations;
-DROP POLICY IF EXISTS "conversations_update" ON public.conversations;
-DROP POLICY IF EXISTS "conversations_delete" ON public.conversations;
 
 -- SELECT policy: Users kunnen alleen conversations zien waar ze participant in zijn
 CREATE POLICY "conversations_participant_select" ON public.conversations

@@ -29,7 +29,13 @@ function supabaseFromBearer(token?: string | null) {
 export async function GET(request: Request) {
   console.log("[MESSAGES API] Starting GET request");
   let supabase = supabaseServer();
-  let { data: { user } } = await supabase.auth.getUser();
+  let user = null;
+  try {
+    const { data: { user: u } } = await supabase.auth.getUser();
+    user = u;
+  } catch (authError) {
+    console.warn("[MESSAGES API] Auth error:", authError);
+  }
   if (!user) {
     console.log("[MESSAGES API] No user found, trying bearer token");
     const auth = request.headers.get("authorization");
@@ -38,11 +44,15 @@ export async function GET(request: Request) {
       : null;
     const alt = supabaseFromBearer(token);
     if (alt) {
-      const got = await alt.auth.getUser();
-      if (got.data.user) {
-        user = got.data.user;
-        supabase = alt;
-        console.log("[MESSAGES API] User found via bearer token:", user.id);
+      try {
+        const got = await alt.auth.getUser();
+        if (got.data.user) {
+          user = got.data.user;
+          supabase = alt;
+          console.log("[MESSAGES API] User found via bearer token:", user.id);
+        }
+      } catch (bearerError) {
+        console.warn("[MESSAGES API] Bearer auth error:", bearerError);
       }
     }
   }

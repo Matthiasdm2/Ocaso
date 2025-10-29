@@ -31,7 +31,13 @@ export async function GET(
   { params }: { params: { id: string } },
 ) {
   let supabase = supabaseServer();
-  let { data: { user } } = await supabase.auth.getUser();
+  let user = null;
+  try {
+    const { data: { user: u } } = await supabase.auth.getUser();
+    user = u;
+  } catch (authError) {
+    console.warn("[messages/:id] Auth error:", authError);
+  }
   if (!user) {
     const auth = request.headers.get("authorization");
     const token = auth?.toLowerCase().startsWith("bearer ")
@@ -39,10 +45,14 @@ export async function GET(
       : null;
     const alt = supabaseFromBearer(token);
     if (alt) {
-      const got = await alt.auth.getUser();
-      if (got.data.user) {
-        user = got.data.user;
-        supabase = alt;
+      try {
+        const got = await alt.auth.getUser();
+        if (got.data.user) {
+          user = got.data.user;
+          supabase = alt;
+        }
+      } catch (bearerError) {
+        console.warn("[messages/:id] Bearer auth error:", bearerError);
       }
     }
   }

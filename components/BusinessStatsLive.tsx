@@ -1,136 +1,105 @@
-"use client";
-import { useEffect, useState } from "react";
+import { Suspense } from "react";
 
-import { createClient } from "../lib/supabaseClient";
+import { supabaseServer } from "../lib/supabaseServer";
+import BusinessStatsClient from "./BusinessStatsClient";
 
 export interface BusinessStatsLiveProps {
   businessId: string;
-  initial: {
-    totalListings?: number;
-    views?: number;
-    bids?: number;
-  } | null | undefined;
-  fallbackListingsCount?: number;
 }
 
-export default function BusinessStatsLive({ businessId, initial, fallbackListingsCount = 0 }: BusinessStatsLiveProps) {
-  console.log('[BusinessStatsLive] Rendered with businessId:', businessId, 'initial:', initial);
-  const supabase = createClient();
-  interface DebugListing { id: string; status?: string | null; views?: unknown; bids?: unknown }
-  const [stats, setStats] = useState<{ totalListings?: number; views?: number; bids?: number; fallback?: boolean; _debugListings?: DebugListing[] } | null | undefined>(initial);
-  const [loading, setLoading] = useState(true);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(initial && Object.keys(initial).length ? new Date() : null);
-  const [error, setError] = useState<string | null>(null);
+interface ListingRow {
+  id: string;
+  price?: number | null;
+  status?: string | null;
+  views?: number | null;
+}
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        console.debug('[BusinessStatsLive] Initial fetch start', { businessId, initial });
-        const debugParam = typeof window !== 'undefined' && window.location.search.includes('statsDebug=1') ? '?debug=1' : '';
-        const res = await fetch(`/api/business/${businessId}/stats${debugParam}`, { cache: 'no-store' });
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        const json = await res.json();
-        if (json && json.error) throw new Error(json.error);
-        if (!json || typeof json !== 'object') throw new Error('Leeg antwoord');
-        if (!cancelled) {
-          console.debug('[BusinessStatsLive] Initial fetch data', json);
-          setStats(s => {
-            console.log('[BusinessStatsLive] Setting stats:', { ...s, ...json });
-            return { ...s, ...json };
-          });
-          setLastUpdated(new Date());
-          setError(null);
-        }
-      } catch (e) {
-        console.warn('[BusinessStatsLive] Lightweight stats fetch failed, probeer full endpoint', e);
+export default async function BusinessStatsLive({ businessId }: BusinessStatsLiveProps) {
+  // Server component voor initial data
+  let initialStats: { totalListings?: number; views?: number; bids?: number; fallback?: boolean } | null = null;
+  let error: string | null = null;
+
+  try {
+    const supabase = supabaseServer();
+
+    // First try to get stats from the pre-calculated dashboard_stats table
+    const { data: dashboardStats, error: dashboardError } = await supabase
+      .from("dashboard_stats")
+      .select("listings,avg_price,views,bids,followers")
+      .eq("business_id", businessId)
+      .maybeSingle();
+
+    if (dashboardStats && !dashboardError) {
+      // Use pre-calculated stats from dashboard_stats table
+      initialStats = {
+        totalListings: dashboardStats.listings || 0,
+        views: dashboardStats.views || 0,
+        bids: dashboardStats.bids || 0,
+        fallback: false,
+      };
+    } else {
+      // Fallback to direct calculation if dashboard_stats doesn't exist or has no data
+      const { data: listings, error: listingsError } = await supabase
+        .from("listings")
+        .select("id,price,status,views")
+        .eq("seller_id", businessId)
+        .in("status", ["active", "published"]);
+
+      if (listingsError) throw listingsError;
+
+      const list = (listings as ListingRow[]) || [];
+
+      // If no listings exist, return fallback stats
+      if (list.length === 0) {
+        initialStats = {
+          totalListings: 0,
+          views: 0,
+          bids: 0,
+          fallback: true,
+        };
+      } else {
+        // Accurate bids total door aparte aggregate
+        let totalBids = 0;
         try {
-          const res2 = await fetch(`/api/business/${businessId}`, { cache: 'no-store' });
-          if (res2.ok) {
-            const full = await res2.json();
-            const fallback = full?.stats ? { ...full.stats } : { fallback: true };
-            if (!cancelled) {
-              console.debug('[BusinessStatsLive] Full endpoint fallback data', fallback);
-              setStats(s => ({ ...s, ...fallback }));
-              setLastUpdated(new Date());
-              setError(null);
-            }
-          } else {
-            if (!cancelled) setError('Kon statistieken niet laden');
+          if (list.length) {
+            const ids = list.map((l: ListingRow) => l.id);
+            const { data: bidCounts } = await supabase
+              .from("bids")
+              .select("listing_id")
+              .in("listing_id", ids);
+            if (Array.isArray(bidCounts)) totalBids = bidCounts.length;
           }
-        } catch (e2) {
-          if (!cancelled) setError('Kon statistieken niet laden');
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [businessId, initial]);
+        } catch { /* ignore bid aggregation errors */ }
 
-  useEffect(() => {
-    const id = setInterval(() => {
-      const debugParam = typeof window !== 'undefined' && window.location.search.includes('statsDebug=1') ? '?debug=1' : '';
-      fetch(`/api/business/${businessId}/stats${debugParam}`, { cache: 'no-store' })
-        .then(r => r.ok ? r.json() : null)
-        .then(d => { if (d) { setStats(s => ({ ...s, ...d })); setLastUpdated(new Date()); } });
-    }, 30000);
-    return () => clearInterval(id);
-  }, [businessId]);
-
-  useEffect(() => {
-    const channel = supabase
-      .channel(`business-stats:${businessId}`)
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'dashboard_stats',
-        filter: `business_id=eq.${businessId}`,
-      }, (payload: { new?: RealtimeRow | null }) => {
-        if (payload?.new) {
-          console.debug('[BusinessStatsLive] Realtime payload', payload.new);
-          setStats(s => ({ ...s, ...mapPayload(payload.new!) }));
-          setLastUpdated(new Date());
-        }
-      })
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          console.debug('[BusinessStatsLive] Realtime SUBSCRIBED');
-        }
-      });
-    return () => { supabase.removeChannel(channel); };
-  }, [businessId, supabase]);
-
-  const isFallback = !!stats?.fallback;
-  useEffect(() => {
-    if (!loading && stats && !isFallback) {
-      const allZero = [stats.totalListings, stats.views, stats.bids].every(v => !v);
-      if (allZero) {
-        console.warn('[BusinessStatsLive] Alle statistieken zijn 0 maar niet in fallback mode – mogelijk geen data in DB of aggregaties ontbreken', stats);
+        initialStats = {
+          totalListings: list.length,
+          views: list.reduce((s: number, l: ListingRow) => s + (typeof l.views === "number" ? l.views : 0), 0),
+          bids: totalBids,
+          fallback: false,
+        };
       }
     }
-  }, [loading, isFallback, stats]);
-  
-  const totalListings = typeof stats?.totalListings === 'number' ? stats.totalListings : fallbackListingsCount;
-  const views = typeof stats?.views === 'number' ? stats.views : 0;
-  const bids = typeof stats?.bids === 'number' ? stats.bids : 0;
+  } catch (e) {
+    console.warn('[BusinessStatsLive] Server-side fetch failed:', e);
+    error = 'Kon statistieken niet laden';
+    initialStats = {
+      totalListings: 0,
+      views: 0,
+      bids: 0,
+      fallback: true
+    };
+  }
 
-  const loadingValue = <span className="inline-block w-10 h-6 bg-gray-200 animate-pulse rounded" />;
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 relative">
-      <Stat label="Actieve zoekertjes" value={loading ? loadingValue : totalListings} />
-      <Stat label="Bezoeken" value={loading ? loadingValue : views} />
-      <Stat label="Biedingen" value={loading ? loadingValue : bids} />
-      {error && !loading && (
-        <div className="col-span-full text-sm text-amber-600 mt-1">{error}</div>
-      )}
-      {!error && !loading && !isFallback && stats?._debugListings && (
-        <pre className="col-span-full mt-2 p-2 bg-gray-50 border text-[10px] max-h-40 overflow-auto">{JSON.stringify(stats._debugListings, null, 2)}</pre>
-      )}
-      {lastUpdated && (
-        <div className="absolute -top-5 right-0 text-[10px] text-gray-400">laatst bijgewerkt {lastUpdated.toLocaleTimeString('nl-BE',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}</div>
-      )}
-    </div>
+    <Suspense fallback={
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 relative">
+        <Stat label="Actieve zoekertjes" value={<span className="inline-block w-10 h-6 bg-gray-200 animate-pulse rounded" />} />
+        <Stat label="Bezoeken" value={<span className="inline-block w-10 h-6 bg-gray-200 animate-pulse rounded" />} />
+        <Stat label="Biedingen" value={<span className="inline-block w-10 h-6 bg-gray-200 animate-pulse rounded" />} />
+      </div>
+    }>
+      <BusinessStatsClient businessId={businessId} initialStats={initialStats} initialError={error} />
+    </Suspense>
   );
 }
 
@@ -141,26 +110,4 @@ function Stat({ label, value }: { label: string; value: number | string | JSX.El
       <div className="mt-1 text-sm text-gray-600">{label}</div>
     </div>
   );
-}
-
-interface RealtimeRow {
-  business_id?: string;
-  listings?: number;
-  totalListings?: number;
-  total_listings?: number;
-  avg_price?: number;
-  avgPrice?: number;
-  views?: number;
-  bids?: number;
-  followers?: number;
-}
-
-function mapPayload(p: RealtimeRow) {
-  return {
-    totalListings: typeof p.listings === 'number' ? p.listings : (typeof p.totalListings === 'number' ? p.totalListings : (typeof p.total_listings === 'number' ? p.total_listings : undefined)),
-    avgPrice: typeof p.avg_price === 'number' ? p.avg_price : (typeof p.avgPrice === 'number' ? p.avgPrice : undefined),
-    views: typeof p.views === 'number' ? p.views : undefined,
-    bids: typeof p.bids === 'number' ? p.bids : undefined,
-    followers: typeof p.followers === 'number' ? p.followers : undefined,
-  };
 }

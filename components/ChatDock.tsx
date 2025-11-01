@@ -693,9 +693,17 @@ export default function ChatDock({
     setEpcBusy(true);
     try {
       const dataUrl = await QRCode.toDataURL(paymentText, { errorCorrectionLevel: 'M', scale: 8, margin: 4, color: { dark: '#000000', light: '#FFFFFF' } });
-      // Convert to Blob
-      const res = await fetch(dataUrl);
-      const blob = await res.blob();
+      // Convert data URL to Blob without using fetch (avoids CSP issues)
+      const dataUrlParts = dataUrl.split(',');
+      const mimeType = dataUrlParts[0].split(':')[1].split(';')[0];
+      const base64Data = dataUrlParts[1];
+      const byteCharacters = atob(base64Data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: mimeType });
       // Some storage backends / client versions behave better when given a File with a name
       // instead of a raw Blob. Create a File wrapper and try uploading that first.
       const fileName = `epc-qr_${cleanIban}${amountText !== 'Bedrag naar keuze' ? `_${amt.toFixed(2)}EUR` : ''}.png`;

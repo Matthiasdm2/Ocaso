@@ -31,7 +31,7 @@ export async function GET(
   { params }: { params: { id: string } },
 ) {
   let supabase = supabaseServer();
-  let user = null;
+  let user: any = null;
   try {
     const { data: { user: u } } = await supabase.auth.getUser();
     user = u;
@@ -64,7 +64,9 @@ export async function GET(
   const before = url.searchParams.get("before");
   const debug = url.searchParams.has("debug");
 
-  // Verify access by selecting conversation first (will RLS filter)
+  if (!user) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
   console.log(
     `[messages/:id] Checking conversation access for ${params.id}, user: ${user?.id}`,
   );
@@ -78,6 +80,16 @@ export async function GET(
     error: convError,
     participants: conv?.participants,
   });
+  if (convError) {
+    console.error(
+      `[messages/:id] Database error checking conversation:`,
+      convError,
+    );
+    return NextResponse.json(
+      { error: `Database error: ${convError.message}` },
+      { status: 500 },
+    );
+  }
   if (!conv) {
     console.log(
       `[messages/:id] Access denied or conversation not found for ${params.id}`,
@@ -88,7 +100,11 @@ export async function GET(
         params.id,
       );
     }
-    return NextResponse.json({ error: "not_found" }, { status: 404 });
+    return NextResponse.json({
+      error: "not_found",
+      conversationId: params.id,
+      userId: user?.id,
+    }, { status: 404 });
   }
 
   // Primary query including optional columns; fallback if migration not applied yet.

@@ -98,7 +98,7 @@ export default async function BusinessStatsLive({ businessId }: BusinessStatsLiv
         <Stat label="Biedingen" value={<span className="inline-block w-10 h-6 bg-gray-200 animate-pulse rounded" />} />
       </div>
     }>
-      <BusinessStatsClient businessId={businessId} initialStats={initialStats} initialError={error} />
+      <BusinessStatsClient initialStats={initialStats} initialError={error} />
     </Suspense>
   );
 }

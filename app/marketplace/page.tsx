@@ -612,7 +612,7 @@ export default async function MarketplacePage({ searchParams }: { searchParams?:
                         <div className="flex items-start gap-3 md:gap-5 w-full">
                           <div className="shrink-0 w-full lg:w-48">
                             <ListingImageSlider
-                              images={item.images && item.images.length > 0 ? item.images : ["/placeholder.png"]}
+                              images={item.images && item.images.length > 0 ? item.images : ["/placeholder.svg"]}
                               title={item.title}
                               link={`/listings/${item.id}`}
                             />

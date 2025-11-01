@@ -71,7 +71,7 @@ export default function SellerPanels({
   // Fallback naar /placeholder.png als /images/avatar-placeholder.png niet bestaat
   let avatar = seller.avatarUrl ?? seller.seller_avatar_url ?? "/images/avatar-placeholder.png";
   if (avatar === "/images/avatar-placeholder.png") {
-    avatar = "/placeholder.png";
+    avatar = "/placeholder.svg";
   }
   const rating = seller.rating ?? seller.seller_rating ?? null;
   const reviewCount = seller.seller_review_count ?? null;

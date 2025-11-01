@@ -9,14 +9,23 @@ import type { Listing } from "@/lib/types";
 import ListingCard from "../../components/ListingCard";
 
 async function getData(): Promise<{ recommended: Listing[] }> {
-  const base = getBaseUrl();
-  const homeRes = await fetch(`${base}/api/home`, { cache: "no-store" });
+  try {
+    const base = getBaseUrl();
+    const homeRes = await fetch(`${base}/api/home`, { cache: "no-store" });
 
-  const homeData = await homeRes.json();
+    if (!homeRes.ok) {
+      console.warn("Failed to fetch recommended listings:", homeRes.status);
+      return { recommended: [] };
+    }
 
-  return {
-    recommended: homeData.recommended || []
-  };
+    const homeData = await homeRes.json();
+    return {
+      recommended: homeData.recommended || []
+    };
+  } catch (error) {
+    console.warn("Error fetching recommended listings:", error);
+    return { recommended: [] };
+  }
 }
 
 export default function ExplorePage() {

@@ -36,15 +36,10 @@ begin
          count(*) filter (where status = 'sold'),
          coalesce(avg(price)::int,0),
          coalesce(sum(l.views),0),
-         coalesce(sum(l.bids),0)
+         coalesce((select count(*) from bids b where b.listing_id = l.id),0)
   into v_listings, v_sold, v_avg, v_views, v_bids
-  from (
-    select id, price, status,
-      coalesce((select sum(vv.count) from views vv where vv.listing_id = l.id),0) as views,
-      coalesce((select sum(bb.count) from bids bb where bb.listing_id = l.id),0) as bids
-    from listings l
-    where l.seller_id = bid or l.organization_id = bid
-  ) l;
+  from listings l
+  where l.seller_id = bid;
 
   -- Followers optioneel: probeer query; als tabel niet bestaat => 0
   begin
@@ -68,9 +63,9 @@ end;$$ language plpgsql security definer;
 create or replace function public.on_listings_change() returns trigger as $$
 begin
   if (TG_OP = 'DELETE') then
-    perform public.recalc_dashboard_stats(coalesce(OLD.seller_id, OLD.organization_id));
+    perform public.recalc_dashboard_stats(coalesce(OLD.seller_id));
   else
-    perform public.recalc_dashboard_stats(coalesce(NEW.seller_id, NEW.organization_id));
+    perform public.recalc_dashboard_stats(coalesce(NEW.seller_id));
   end if;
   return null;
 end;$$ language plpgsql security definer;

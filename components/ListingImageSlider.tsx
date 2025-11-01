@@ -4,7 +4,7 @@ import { useState } from "react";
 
 export default function ListingImageSlider({ images, title, link }: { images: string[]; title: string; link: string }) {
   const [active, setActive] = useState(0);
-  const imgs = images && images.length > 0 ? images : ["/placeholder.png"];
+  const imgs = images && images.length > 0 ? images : ["/placeholder.svg"];
   const prev = () => setActive((a) => (a === 0 ? imgs.length - 1 : a - 1));
   const next = () => setActive((a) => (a === imgs.length - 1 ? 0 : a + 1));
 

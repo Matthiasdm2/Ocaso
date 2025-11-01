@@ -16,20 +16,60 @@ export async function GET(
   const url = new URL(req.url);
   const debug = url.searchParams.get("debug") === "1";
   try {
+    // First try to get stats from the pre-calculated dashboard_stats table
+    const { data: dashboardStats, error: dashboardError } = await supabase
+      .from("dashboard_stats")
+      .select("listings,avg_price,views,bids,followers")
+      .eq("business_id", id)
+      .maybeSingle();
+
+    if (dashboardStats && !dashboardError) {
+      // Use pre-calculated stats from dashboard_stats table
+      const stats = {
+        totalListings: dashboardStats.listings || 0,
+        avgPrice: dashboardStats.avg_price || 0,
+        views: dashboardStats.views || 0,
+        bids: dashboardStats.bids || 0,
+        followers: dashboardStats.followers || 0,
+        fallback: false,
+        ...(debug ? { _debugSource: "dashboard_stats" } : {}),
+      };
+      if (debug) {
+        console.debug("[api business stats] dashboard_stats payload", stats);
+      }
+      return NextResponse.json(stats);
+    }
+
+    // Fallback to direct calculation if dashboard_stats doesn't exist or has no data
+    console.warn("[api business stats] dashboard_stats not found, falling back to direct calculation");
     const { data: listings, error } = await supabase
       .from("listings")
-      .select("id,price,status,views,bids(count)")
-      .eq("seller_id", id);
+      .select("id,price,status,views")
+      .eq("seller_id", id)
+      .in("status", ["active", "published"]);
     if (error) throw error;
     interface Row {
       id: string;
       price?: number | null;
       status?: string | null;
       views?: number | null;
-      bids?: { count: number }[] | null;
     }
     const list = (listings as Row[]) || [];
-    // Accurate bids total door aparte aggregate (kan sneller zijn bij veel rows, maar simpel hier)
+    
+    // If no listings exist, return fallback stats
+    if (list.length === 0) {
+      return NextResponse.json({
+        totalListings: 0,
+        avgPrice: 0,
+        views: 0,
+        bids: 0,
+        followers: 0,
+        fallback: true,
+        ...(debug ? { _debugSource: "no_listings" } : {}),
+      });
+    }
+    
+    // Accurate bids total door aparte aggregate
     let totalBids = 0;
     try {
       if (list.length) {
@@ -51,6 +91,7 @@ export async function GET(
         0,
       ),
       bids: totalBids,
+      followers: 0, // followers not available in fallback
       fallback: false,
       ...(debug
         ? {
@@ -59,11 +100,12 @@ export async function GET(
             status: l.status,
             views: l.views,
           })),
+          _debugSource: "direct_calculation",
         }
         : {}),
     };
     if (debug) {
-      console.debug("[api business stats] debug payload", stats);
+      console.debug("[api business stats] direct calculation payload", stats);
     }
     return NextResponse.json(stats);
   } catch (e) {
@@ -73,6 +115,7 @@ export async function GET(
       avgPrice: 0,
       views: 0,
       bids: 0,
+      followers: 0,
       fallback: true,
     }, { status: 200 });
   }

@@ -769,7 +769,7 @@ export default function ChatDock({
   };
 
   const removeDraftAttachment = (url: string) => {
-    setDraftAttachments(prev => prev.filter(a => a.url !== url));
+    setDraftAttachments(prev => Array.isArray(prev) ? prev.filter(a => a.url !== url) : []);
   };
 
   const baseWidth = expanded ? 560 : 420; // px
@@ -1017,14 +1017,14 @@ export default function ChatDock({
                   <Avatar src={peer?.avatar_url || null} name={peer?.full_name || 'Gebruiker'} size={20} />
                 )}
                 <div className={`max-w-[78%] rounded-2xl px-3 py-2 text-sm shadow-sm leading-relaxed space-y-2 ${own ? 'bg-primary text-black rounded-br-sm' : 'bg-gray-100 rounded-bl-sm'}`}>
-                  {m.attachments && m.attachments.length > 0 && (
+                  {m.attachments && Array.isArray(m.attachments) && m.attachments.length > 0 && (
                     <>
                       {/* Payment QR codes apart weergeven met volledige breedte */}
-                      {m.attachments
+                      {(Array.isArray(m.attachments) ? m.attachments
                         .filter(att => {
                           const iban = extractIbanFromAttachment(att);
                           return iban !== null;
-                        })
+                        }) : [])
                         .map(att => {
                           const url = att.url || '';
                           const iban = extractIbanFromAttachment(att);
@@ -1063,16 +1063,16 @@ export default function ChatDock({
                           );
                         })}
                       {/* Andere attachments in grid */}
-                      {m.attachments.filter(att => {
+                      {(Array.isArray(m.attachments) ? m.attachments.filter(att => {
                         const iban = extractIbanFromAttachment(att);
                         return iban === null;
-                      }).length > 0 && (
+                      }) : []).length > 0 && (
                         <div className="grid grid-cols-3 gap-1">
-                          {m.attachments
+                          {(Array.isArray(m.attachments) ? m.attachments
                             .filter(att => {
                               const iban = extractIbanFromAttachment(att);
                               return iban === null;
-                            })
+                            }) : [])
                             .map(att => {
                               const url = att.url || '';
                               const isImg = (att.content_type || '').startsWith('image/');

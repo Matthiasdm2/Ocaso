@@ -156,7 +156,7 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
 				<div className="container">
 					<div className="relative h-[220px] md:h-[260px] w-full overflow-hidden rounded-2xl md:rounded-3xl border bg-neutral-100 shadow-sm">
 						<Image
-							src={profile.business_banner_url || '/placeholder.png'}
+							src={profile.business_banner_url || '/placeholder.svg'}
 							alt="Banner"
 							fill
 							priority
@@ -172,7 +172,7 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
 						<div className="flex flex-col md:flex-row md:items-start gap-4">
 							<div className="flex items-start gap-4">
 								<div className="relative w-20 h-20 md:w-24 md:h-24 rounded-2xl overflow-hidden ring-2 ring-white shadow bg-white border flex-shrink-0">
-									<Image src={profile.business_logo_url || profile.avatar_url || '/placeholder.png'} alt={displayName || 'Logo'} fill className="object-cover" />
+									<Image src={profile.business_logo_url || profile.avatar_url || '/placeholder.svg'} alt={displayName || 'Logo'} fill className="object-cover" />
 								</div>
 								<div className="space-y-2 min-w-0 flex-1">
 									<div className="flex flex-col gap-2">
@@ -258,7 +258,7 @@ export default async function BusinessDetailPage({ params }: { params: { id: str
 						<section id="statistieken" className="space-y-3">
 							<h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Statistieken</h2>
 							<div className="card p-5">
-							<BusinessStatsLive businessId={profile.id} initial={{ totalListings: listings?.length }} />
+							<BusinessStatsLive businessId={profile.id} />
 						</div>
 					</section>
 						<section id="contact" className="space-y-3">

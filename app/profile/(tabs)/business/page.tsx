@@ -761,7 +761,7 @@ export default function BusinessProfilePage() {
                   <div className="overflow-hidden rounded-2xl border bg-neutral-100">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={profile.business.bannerUrl || '/placeholder.png'}
+                      src={profile.business.bannerUrl || '/placeholder.svg'}
                       alt="banner"
                       className="h-36 w-full object-cover"
                     />
@@ -1283,7 +1283,7 @@ function ThumbLarge({ url, rounded = false }: { url?: string | null; rounded?: b
   return (
     <div className={`h-20 w-20 overflow-hidden ${rounded ? 'rounded-2xl' : 'rounded-md'} border bg-neutral-100`}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={url || '/placeholder.png'} alt="" className="h-full w-full object-cover" />
+      <img src={url || '/placeholder.svg'} alt="" className="h-full w-full object-cover" />
     </div>
   );
 }
@@ -1364,11 +1364,11 @@ function ShopPreview({
       <div className="relative">
         {/* Banner */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={banner || '/placeholder.png'} alt="" className="h-36 w-full object-cover" />
+        <img src={banner || '/placeholder.svg'} alt="" className="h-36 w-full object-cover" />
         {/* Logo */}
         <div className="absolute -bottom-8 left-6 h-16 w-16 overflow-hidden rounded-2xl border-4 border-white shadow">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={logo || '/placeholder.png'} alt="" className="h-full w-full object-cover" />
+          <img src={logo || '/placeholder.svg'} alt="" className="h-full w-full object-cover" />
         </div>
       </div>
       <div className="px-6 pb-6 pt-10">

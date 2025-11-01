@@ -8,7 +8,12 @@
 // 5. Fallback http://localhost:3000
 
 export function getBaseUrl() {
-  // 1) Expliciete env-configuratie heeft voorrang
+  // In de browser: altijd het huidige origin gebruiken voor API calls
+  if (typeof window !== "undefined" && window.location?.origin) {
+    return window.location.origin.replace(/\/$/, "");
+  }
+
+  // Server-side: expliciete env-configuratie heeft voorrang
   const cand = process.env.NEXT_PUBLIC_SITE_URL ||
     process.env.NEXT_PUBLIC_BASE_URL ||
     process.env.BASE_URL;
@@ -16,17 +21,12 @@ export function getBaseUrl() {
     return cand.replace(/\/$/, "");
   }
 
-  // 2) In de browser: val terug op het huidige origin (correct domain in prod)
-  if (typeof window !== "undefined" && window.location?.origin) {
-    return window.location.origin.replace(/\/$/, "");
-  }
-
-  // 3) Node/dev fallback
+  // Node/dev fallback
   if (process.env.NODE_ENV !== "production") {
     return "http://localhost:3000";
   }
 
-  // 4) Productie server without env: laatste redmiddel (liever waarschuwing)
+  // Productie server without env: laatste redmiddel (liever waarschuwing)
   console.warn(
     "[getBaseUrl] Geen site URL gezet en geen window.origin beschikbaar. Zet NEXT_PUBLIC_SITE_URL in de omgeving.",
   );

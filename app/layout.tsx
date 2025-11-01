@@ -1,5 +1,5 @@
 import "./globals.css";
-// Global fetch patch to ensure relative /api/* calls are absolutized on server
+// Global fetch patch to ensure relative /a      { url: "/placeholder.svg", sizes: "512x512" },i/* calls are absolutized on server
 import "@/lib/ensureAbsoluteApiFetch";
 
 import type { Metadata, Viewport } from "next";
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
     description: "Marktplaats met AI-zoek en prijscontrole",
     images: [
       {
-        url: "/placeholder.png",
+        url: "/placeholder.svg",
         width: 1200,
         height: 630,
         alt: "OCASO",
@@ -55,7 +55,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "OCASO — Slim tweedehands kopen en verkopen",
     description: "Marktplaats met AI-zoek en prijscontrole",
-    images: ["/placeholder.png"],
+    images: ["/placeholder.svg"],
   },
   robots: {
     index: true,

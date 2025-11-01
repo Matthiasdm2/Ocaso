@@ -75,7 +75,7 @@ export default function FeaturedStrip({ title = "Uitgelicht in deze categorie", 
             <div className="aspect-[4/3] w-full overflow-hidden bg-neutral-100 rounded-t-2xl">
               {/* Gebruik je eigen Next/Image als je wil; hieronder Next.js <Image> voor optimalisatie */}
               <Image
-                src={it.image || "/placeholder.png"}
+                src={it.image || "/placeholder.svg"}
                 alt={it.title}
                 className="h-full w-full object-cover"
                 fill

@@ -230,8 +230,8 @@ export default async function BusinessFullAanbodPage({ params, searchParams }: {
   }
 
   const displayName = profile.shop_name || profile.display_name || profile.full_name || 'Winkel';
-  const bannerSrc = profile.business_banner_url || '/placeholder.png';
-  const logoSrc = profile.business_logo_url || profile.avatar_url || '/placeholder.png';
+  const bannerSrc = profile.business_banner_url || '/placeholder.svg';
+  const logoSrc = profile.business_logo_url || profile.avatar_url || '/placeholder.svg';
 
   return (
     <div className="min-h-screen flex flex-col">

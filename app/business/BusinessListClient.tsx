@@ -653,7 +653,7 @@ function BizCard({ biz }: { biz: Biz }) {
       {/* Logo bovenaan */}
       <div className="w-full aspect-[4/3] overflow-hidden bg-neutral-100 rounded-t-2xl">
         <Image
-          src={biz.logoUrl || "/placeholder.png"}
+          src={biz.logoUrl || "/placeholder.svg"}
           alt={biz.shopName || biz.name || "Logo"}
           width={400}
           height={300}

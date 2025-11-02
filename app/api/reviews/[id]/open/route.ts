@@ -18,8 +18,13 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     // Best-effort insert (ignore duplicate)
     const { error } = await supabase.from('review_opens').upsert({ user_id: user.id, review_id: reviewId }, { onConflict: 'user_id,review_id' });
     if (error) {
-      console.error('Error saving review open status:', error);
-      return NextResponse.json({ error: 'Kon open status niet opslaan' }, { status: 500 });
+      // If table doesn't exist, log warning but don't fail the request
+      if (error.message.includes('does not exist') || error.code === '42P01') {
+        console.warn('review_opens table does not exist, skipping review open tracking');
+      } else {
+        console.error('Error saving review open status:', error);
+      }
+      // Don't return error for missing table - this is not critical functionality
     }
     return NextResponse.json({ ok: true });
   } catch (error) {

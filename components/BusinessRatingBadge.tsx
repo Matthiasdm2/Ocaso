@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef,useState } from "react";
 
 import RatingStars from "./RatingStars";
 
@@ -11,6 +11,23 @@ interface Props {
 export default function BusinessRatingBadge({ initialAvg, initialCount }: Props) {
   const [avg, setAvg] = useState(initialAvg);
   const [count, setCount] = useState(initialCount);
+
+  const prevInitialAvgRef = useRef<number>();
+  const prevInitialCountRef = useRef<number>();
+
+  useEffect(() => {
+    if (prevInitialAvgRef.current !== initialAvg) {
+      prevInitialAvgRef.current = initialAvg;
+      setAvg(initialAvg);
+    }
+  }, [initialAvg]);
+
+  useEffect(() => {
+    if (prevInitialCountRef.current !== initialCount) {
+      prevInitialCountRef.current = initialCount;
+      setCount(initialCount);
+    }
+  }, [initialCount]);
 
   useEffect(() => {
     function onUpdate(e: Event) {

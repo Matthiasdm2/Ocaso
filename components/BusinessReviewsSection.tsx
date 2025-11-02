@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef,useState } from "react";
 
 import { createClient } from "../lib/supabaseClient";
 import LoginPrompt from "./LoginPrompt";
@@ -25,12 +25,29 @@ export default function BusinessReviewsSection({ businessId, reviews: initialRev
   const [count, setCount] = useState<number>(reviewCount);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
+  const prevInitialReviewsRef = useRef<Review[]>();
+  const prevRatingRef = useRef<number>();
+  const prevReviewCountRef = useRef<number>();
+
   // Sync when parent provides new data (e.g. after fetch in profile tab)
   useEffect(() => {
-    setReviews(initialReviews ?? []);
+    if (prevInitialReviewsRef.current !== initialReviews) {
+      prevInitialReviewsRef.current = initialReviews;
+      setReviews(initialReviews ?? []);
+    }
   }, [initialReviews]);
-  useEffect(() => { setAvg(rating); }, [rating]);
-  useEffect(() => { setCount(reviewCount); }, [reviewCount]);
+  useEffect(() => {
+    if (prevRatingRef.current !== rating) {
+      prevRatingRef.current = rating;
+      setAvg(rating);
+    }
+  }, [rating]);
+  useEffect(() => {
+    if (prevReviewCountRef.current !== reviewCount) {
+      prevReviewCountRef.current = reviewCount;
+      setCount(reviewCount);
+    }
+  }, [reviewCount]);
   // Load opened state best-effort (no blocking UI)
   useEffect(() => {
     // Placeholder for potential batch opened-state fetch (not implemented yet)
@@ -219,7 +236,7 @@ export default function BusinessReviewsSection({ businessId, reviews: initialRev
       {showLoginPrompt && <LoginPrompt onClose={() => setShowLoginPrompt(false)} />}
     </div>
     {selected && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-modal="true" aria-label="Review details">
+      <div key={selected.id} className="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-modal="true" aria-label="Review details">
         <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setSelected(null)} />
         <div className="relative w-full max-w-md mx-auto bg-white rounded-2xl shadow-xl border border-gray-200 p-6 animate-in fade-in zoom-in">
           <button

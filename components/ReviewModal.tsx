@@ -1,6 +1,6 @@
 /* eslint-disable simple-import-sort/imports */
 "use client";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { createClient } from "../lib/supabaseClient";
 
 export default function ReviewModal({ listingId, onClose, onReview, isBusiness }: { listingId: string; onClose: () => void; onReview: (review: unknown) => void; isBusiness?: boolean }) {
@@ -8,6 +8,18 @@ export default function ReviewModal({ listingId, onClose, onReview, isBusiness }
   const [rating, setRating] = useState(5);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const prevListingIdRef = useRef<string>();
+  const prevIsBusinessRef = useRef<boolean>();
+
+  // Reset form when props change
+  if (prevListingIdRef.current !== listingId || prevIsBusinessRef.current !== isBusiness) {
+    prevListingIdRef.current = listingId;
+    prevIsBusinessRef.current = isBusiness;
+    setComment("");
+    setRating(5);
+    setError(null);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

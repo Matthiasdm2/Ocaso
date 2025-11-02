@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useRef,useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { createClient } from "../lib/supabaseClient";
 import LoginPrompt from "./LoginPrompt";
@@ -18,35 +18,24 @@ type Review = {
 export default function BusinessReviewsSection({ businessId, reviews: initialReviews, rating, reviewCount, hideCreate = false }: { businessId: string; reviews: Review[]; rating: number; reviewCount: number; hideCreate?: boolean; }) {
   const [showModal, setShowModal] = useState(false);
   const [reviews, setReviews] = useState<Review[]>(initialReviews ?? []);
-  const [opened, setOpened] = useState<Set<string>>(new Set());
+  const [opened, setOpened] = useState<string[]>([]);
   const [selected, setSelected] = useState<Review | null>(null);
   const [sort, setSort] = useState<"relevant"|"newest"|"oldest"|"highest"|"lowest">("relevant");
   const [avg, setAvg] = useState<number>(rating);
   const [count, setCount] = useState<number>(reviewCount);
   const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
-  const prevInitialReviewsRef = useRef<Review[]>();
-  const prevRatingRef = useRef<number>();
-  const prevReviewCountRef = useRef<number>();
-
   // Sync when parent provides new data (e.g. after fetch in profile tab)
   useEffect(() => {
-    if (prevInitialReviewsRef.current !== initialReviews) {
-      prevInitialReviewsRef.current = initialReviews;
-      setReviews(initialReviews ?? []);
-    }
+    setReviews(initialReviews ?? []);
   }, [initialReviews]);
+
   useEffect(() => {
-    if (prevRatingRef.current !== rating) {
-      prevRatingRef.current = rating;
-      setAvg(rating);
-    }
+    setAvg(rating);
   }, [rating]);
+
   useEffect(() => {
-    if (prevReviewCountRef.current !== reviewCount) {
-      prevReviewCountRef.current = reviewCount;
-      setCount(reviewCount);
-    }
+    setCount(reviewCount);
   }, [reviewCount]);
   // Load opened state best-effort (no blocking UI)
   useEffect(() => {
@@ -54,14 +43,16 @@ export default function BusinessReviewsSection({ businessId, reviews: initialRev
   }, [reviews]);
 
   async function markOpened(id: string, review?: Review) {
-    if (review) setSelected(review);
+    if (review && selected?.id !== review.id) {
+      setSelected(review);
+    }
     // fire optimistic per-review event
     window.dispatchEvent(new CustomEvent('ocaso:review-open-optimistic', { detail: { id } }));
-    if (opened.has(id)) {
+    if (opened.includes(id)) {
       window.dispatchEvent(new CustomEvent('ocaso:reviews-open-changed'));
       return;
     }
-    setOpened(prev => new Set(prev).add(id));
+    setOpened(prev => [...prev, id]);
     window.dispatchEvent(new CustomEvent('ocaso:reviews-open-changed'));
     try {
       const res = await fetch(`/api/reviews/${id}/open`, { method: 'POST' });
@@ -92,15 +83,15 @@ export default function BusinessReviewsSection({ businessId, reviews: initialRev
       ratingAvg: incoming.ratingAvg,
       reviewCount: incoming.reviewCount,
     };
-    setReviews([mapped, ...reviews]);
-    if (typeof mapped.ratingAvg === "number") setAvg(mapped.ratingAvg);
-    else {
-      // fallback naive recalc
-      const sum = [mapped, ...reviews].reduce((s, r) => s + (r.rating || 0), 0);
-      setAvg(sum / (reviews.length + 1));
+
+    setReviews(prevReviews => [mapped, ...prevReviews]);
+
+    if (typeof mapped.ratingAvg === "number") {
+      setAvg(mapped.ratingAvg);
     }
-    if (typeof mapped.reviewCount === "number") setCount(mapped.reviewCount);
-    else setCount(count + 1);
+    if (typeof mapped.reviewCount === "number") {
+      setCount(mapped.reviewCount);
+    }
   }
 
   const sorted = useMemo(() => {
@@ -192,7 +183,7 @@ export default function BusinessReviewsSection({ businessId, reviews: initialRev
             <li
               key={r.id}
               onClick={() => markOpened(r.id, r)}
-              className={`group cursor-pointer rounded-xl border border-gray-200 bg-white/60 backdrop-blur-sm p-4 hover:shadow-sm transition ${idx >= 5 ? 'opacity-90' : ''} ${opened.has(r.id) ? 'opacity-70' : ''}`}
+              className={`group cursor-pointer rounded-xl border border-gray-200 bg-white/60 backdrop-blur-sm p-4 hover:shadow-sm transition ${idx >= 5 ? 'opacity-90' : ''} ${opened.includes(r.id) ? 'opacity-70' : ''}`}
             >
               <div className="flex items-start gap-4">
                 <div className="shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-primary/70 to-primary/40 flex items-center justify-center text-sm font-semibold text-black ring-2 ring-white overflow-hidden">

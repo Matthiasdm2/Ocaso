@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef,useState } from "react";
+import { useEffect, useState } from "react";
 
 import RatingStars from "./RatingStars";
 
@@ -12,21 +12,12 @@ export default function BusinessRatingBadge({ initialAvg, initialCount }: Props)
   const [avg, setAvg] = useState(initialAvg);
   const [count, setCount] = useState(initialCount);
 
-  const prevInitialAvgRef = useRef<number>();
-  const prevInitialCountRef = useRef<number>();
-
   useEffect(() => {
-    if (prevInitialAvgRef.current !== initialAvg) {
-      prevInitialAvgRef.current = initialAvg;
-      setAvg(initialAvg);
-    }
+    setAvg(initialAvg);
   }, [initialAvg]);
 
   useEffect(() => {
-    if (prevInitialCountRef.current !== initialCount) {
-      prevInitialCountRef.current = initialCount;
-      setCount(initialCount);
-    }
+    setCount(initialCount);
   }, [initialCount]);
 
   useEffect(() => {

@@ -7,9 +7,8 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { createClient } from "@/lib/supabaseClient";
 import { useProfile } from "@/lib/useProfile";
-
-import { createClient } from "../../../lib/supabaseClient";
 
 const ListingCardStats = dynamic(() => import("@/components/ListingCardStats"), { ssr: false });
 

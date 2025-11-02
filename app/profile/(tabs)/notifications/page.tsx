@@ -2,7 +2,7 @@
 "use client";
 import { useEffect, useState } from "react";
 
-import { createClient } from "../../../../lib/supabaseClient";
+import { createClient } from "@/lib/supabaseClient";
 
 type Notifs = { newMessages: boolean; bids: boolean; priceDrops: boolean; tips: boolean; };
 

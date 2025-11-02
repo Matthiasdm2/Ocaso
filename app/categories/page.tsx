@@ -4,10 +4,11 @@ import { createClient } from "@supabase/supabase-js";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 
+import type { Listing } from "@/lib/types";
+
 import HighlightedSlider from "../../components/HighlightedSlider";
 import ListingRow from "../../components/ListingRow";
 import Pagination from "../../components/Pagination";
-import type { Listing } from "../../lib/types";
 
 /** ---------- Types ---------- */
 type Facets = {

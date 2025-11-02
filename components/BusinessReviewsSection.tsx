@@ -47,7 +47,10 @@ export default function BusinessReviewsSection({ businessId, reviews: initialRev
     setOpened(prev => new Set(prev).add(id));
     window.dispatchEvent(new CustomEvent('ocaso:reviews-open-changed'));
     try {
-      await fetch(`/api/reviews/${id}/open`, { method: 'POST' });
+      const res = await fetch(`/api/reviews/${id}/open`, { method: 'POST' });
+      if (!res.ok) {
+        console.debug('Failed to mark review as opened:', res.status, id);
+      }
       // Update last_seen_reviews_at naar huidige tijd wanneer een review wordt geopend
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
@@ -55,7 +58,9 @@ export default function BusinessReviewsSection({ businessId, reviews: initialRev
         const now = new Date().toISOString();
         await supabase.from('profiles').update({ last_seen_reviews_at: now }).eq('id', user.id);
       }
-    } catch {/* ignore */}
+    } catch (error) {
+      console.debug('Error marking review as opened:', error);
+    }
   }
 
   function handleAddReview(incoming: any) { // eslint-disable-line @typescript-eslint/no-explicit-any

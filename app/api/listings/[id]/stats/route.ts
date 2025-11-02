@@ -7,8 +7,13 @@ import { supabaseServiceRole } from "@/lib/supabaseServiceRole";
 type ListingRow = { views?: unknown; favorites_count?: unknown } | null;
 
 export async function GET(req: Request, { params }: { params: { id: string } }) {
-  const listingId = params.id;
-  const sAnon = supabaseServer();
+  try {
+    const listingId = params.id;
+    if (!listingId) {
+      return NextResponse.json({ views: 0, favorites: 0 });
+    }
+    
+    const sAnon = supabaseServer();
 
   // Probeer eerst met RLS (anon/cookie). Als dit faalt, val terug op service role (alleen lezen van publieke cijfers).
   let views: number | null = null;
@@ -83,4 +88,9 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   }
 
   return NextResponse.json({ views: Number(views ?? 0), favorites: Number(favorites ?? 0) });
+  } catch (error) {
+    // Always return a valid response, even on errors
+    console.error('Error in listing stats API:', error);
+    return NextResponse.json({ views: 0, favorites: 0 });
+  }
 }

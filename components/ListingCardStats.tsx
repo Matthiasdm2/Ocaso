@@ -9,15 +9,18 @@ export default function ListingCardStats({ id, initViews = 0, initFavorites = 0 
 
   useEffect(() => {
     let mounted = true;
-  fetch(`/api/listings/${id}/stats`, { cache: 'no-store' })
+    fetch(`/api/listings/${id}/stats`, { cache: 'no-store' })
       .then((res) => {
-        if (!res.ok) throw new Error("stats fetch failed");
+        if (!res.ok) {
+          // Don't throw error, just use fallback values
+          if (process.env.NODE_ENV !== "production") console.debug("ListingCardStats -> fetch failed with status", res.status, id);
+          return null;
+        }
         return res.json();
       })
       .then((d) => {
-        if (!mounted) return;
+        if (!mounted || !d) return;
         setStats({ views: Number(d.views ?? initViews), favorites: Number(d.favorites ?? initFavorites) });
-        
       })
       .catch((err) => {
         if (process.env.NODE_ENV !== "production") console.debug("ListingCardStats -> fetch error", id, err?.message ?? err);

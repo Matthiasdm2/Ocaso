@@ -685,6 +685,7 @@ export default function SellPage() {
       }
       if (ins.error) {
         // Log the full response for easier debugging and show a short message to the user
+        console.error("[sell] insert error details:", ins.error.message, ins.error.details, ins.error.hint);
         console.error("[sell] insert error:", ins);
         const msg = ins.error?.message || "onbekende fout";
         // Common cases: env-missing, permission denied (RLS), column does not exist, constraint violation

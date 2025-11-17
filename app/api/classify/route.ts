@@ -11,14 +11,25 @@ export async function POST(req: Request) {
     const body = await req.json();
 
     const classifierUrl = process.env.CLASSIFIER_URL || process.env.NEXT_PUBLIC_CLASSIFIER_URL || 'http://localhost:8000/classify';
+    const classifierToken = process.env.CLASSIFIER_TOKEN;
+
+    // Use a short fetch timeout to avoid long-hanging requests
+    const controller = new AbortController();
+    const timeoutMs = Number(process.env.CLASSIFIER_TIMEOUT_MS || '8000');
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (classifierToken) headers['Authorization'] = `Bearer ${classifierToken}`;
 
     const res = await fetch(classifierUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify(body),
+      signal: controller.signal,
     });
+    clearTimeout(timeout);
 
     const text = await res.text();
     const contentType = res.headers.get('content-type') || 'application/json';
@@ -29,6 +40,10 @@ export async function POST(req: Request) {
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
+    // Distinguish timeout/abort
+    if (typeof (err as Error)?.name === 'string' && (err as Error).name === 'AbortError') {
+      return NextResponse.json({ error: 'proxy_timeout', message: 'Upstream classifier timed out' }, { status: 504 });
+    }
     return NextResponse.json({ error: 'proxy_error', message }, { status: 500 });
   }
 }

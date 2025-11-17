@@ -4,6 +4,15 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { createClient } from '@/lib/supabaseClient';
 
+// Extend window interface for Stripe global flag
+declare global {
+  interface Window {
+    __stripeEmbeddedCheckout?: {
+      active: boolean;
+    };
+  }
+}
+
 type ProfileBilling = {
   full_name?: string | null;
   first_name?: string | null;
@@ -204,16 +213,33 @@ export default function EmbeddedCheckoutPage() {
       }
     })();
   }, [mode, credits, plan, billing, buyerType, profileBilling?.invoice_email, profileBilling?.invoice_address?.street, profileBilling?.company_name]);  const currentCheckoutRef = useRef<{ destroy?: () => void } | null>(null);
+  const stripeInitializedRef = useRef(false);
+
+  // Global flag to prevent multiple embedded checkout instances
+  if (typeof window !== 'undefined' && !window.__stripeEmbeddedCheckout) {
+    window.__stripeEmbeddedCheckout = { active: false };
+  }
 
   useEffect(() => {
     (async () => {
-      if (!clientSecret) return;
-      
+      if (!clientSecret || stripeInitializedRef.current) return;
+
+      // Check global flag to prevent multiple instances
+      if (window.__stripeEmbeddedCheckout?.active) {
+        console.log('Stripe embedded checkout already active, skipping initialization');
+        return;
+      }
+
       // Destroy existing checkout if any
       if (currentCheckoutRef.current?.destroy) {
         console.log('Destroying existing checkout');
         currentCheckoutRef.current.destroy();
         currentCheckoutRef.current = null;
+      }
+
+      stripeInitializedRef.current = true;
+      if (window.__stripeEmbeddedCheckout) {
+        window.__stripeEmbeddedCheckout.active = true;
       }
       
       const { loadStripe } = await import('@stripe/stripe-js');
@@ -252,8 +278,11 @@ export default function EmbeddedCheckoutPage() {
         currentCheckoutRef.current.destroy();
         currentCheckoutRef.current = null;
       }
-      // Reset initialization flag on unmount
-      checkoutInitializedRef.current = false;
+      // Reset initialization flags on unmount
+      stripeInitializedRef.current = false;
+      if (window.__stripeEmbeddedCheckout) {
+        window.__stripeEmbeddedCheckout.active = false;
+      }
     };
   }, [clientSecret]);  if (loading) {
     return (

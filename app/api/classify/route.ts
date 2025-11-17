@@ -1,49 +1,42 @@
-export const runtime = 'nodejs';
-import { NextResponse } from 'next/server';
+import { NextResponse } from "next/server";
 
-/**
- * Proxy route that forwards image classification requests to an internal
- * classifier service configured by the CLASSIFIER_URL env var. Keeps the
- * classifier URL off the client and avoids CSP/connect-src issues.
- */
+export const runtime = "nodejs";
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
+    // Support both images-based classification and text (future-proof)
+    const classifierUrl = process.env.CLASSIFIER_URL || process.env.NEXT_PUBLIC_CLASSIFIER_URL || "http://localhost:8000/classify";
+    const token = process.env.CLASSIFIER_TOKEN || process.env.NEXT_PUBLIC_CLASSIFIER_TOKEN;
 
-    const classifierUrl = process.env.CLASSIFIER_URL || process.env.NEXT_PUBLIC_CLASSIFIER_URL || 'http://localhost:8000/classify';
-    const classifierToken = process.env.CLASSIFIER_TOKEN;
+    // Mock behavior if we want development fast-path
+    if ((process.env.CLASSIFIER_MOCK || process.env.NEXT_PUBLIC_CLASSIFIER_MOCK) === "true") {
+      const mock = { category_index: 4, confidence: 0.3, received: body };
+      return NextResponse.json(mock, { status: 200 });
+    }
 
-    // Use a short fetch timeout to avoid long-hanging requests
     const controller = new AbortController();
-    const timeoutMs = Number(process.env.CLASSIFIER_TIMEOUT_MS || '8000');
+    const timeoutMs = Number(process.env.CLASSIFIER_TIMEOUT_MS || 8000);
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-    if (classifierToken) headers['Authorization'] = `Bearer ${classifierToken}`;
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (token) headers["Authorization"] = `Bearer ${token}`;
 
     const res = await fetch(classifierUrl, {
-      method: 'POST',
+      method: "POST",
       headers,
       body: JSON.stringify(body),
       signal: controller.signal,
     });
     clearTimeout(timeout);
 
-    const text = await res.text();
-    const contentType = res.headers.get('content-type') || 'application/json';
-
-    return new NextResponse(text, {
-      status: res.status,
-      headers: { 'Content-Type': contentType },
-    });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    // Distinguish timeout/abort
-    if (typeof (err as Error)?.name === 'string' && (err as Error).name === 'AbortError') {
-      return NextResponse.json({ error: 'proxy_timeout', message: 'Upstream classifier timed out' }, { status: 504 });
+    const data = await res.json().catch(() => null);
+    return NextResponse.json(data ?? { error: "no-json" }, { status: res.status });
+  } catch (err: unknown) {
+    if (err instanceof Error && err.name === "AbortError") {
+      return NextResponse.json({ error: "Classifier request timed out" }, { status: 504 });
     }
-    return NextResponse.json({ error: 'proxy_error', message }, { status: 500 });
+    console.error("/api/classify error:", err);
+    return NextResponse.json({ error: String(err) }, { status: 500 });
   }
 }

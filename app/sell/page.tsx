@@ -93,23 +93,35 @@ export default function SellPage() {
 
       try {
         // Haal categorie naam op
+        const categoryId = parseInt(category);
+        if (isNaN(categoryId)) {
+          setCategoryName("");
+          setSubcategoryName("");
+          return;
+        }
+
         const { data: catData } = await supabase
           .from("categories")
           .select("name")
-          .eq("id", parseInt(category))
+          .eq("id", categoryId)
           .maybeSingle();
 
         setCategoryName(catData?.name || category);
 
         // Haal subcategorie naam op als er een subcategorie is
         if (subcategory) {
-          const { data: subData } = await supabase
-            .from("subcategories")
-            .select("name")
-            .eq("id", parseInt(subcategory))
-            .maybeSingle();
+          const subcategoryId = parseInt(subcategory);
+          if (!isNaN(subcategoryId)) {
+            const { data: subData } = await supabase
+              .from("subcategories")
+              .select("name")
+              .eq("id", subcategoryId)
+              .maybeSingle();
 
-          setSubcategoryName(subData?.name || subcategory);
+            setSubcategoryName(subData?.name || subcategory);
+          } else {
+            setSubcategoryName("");
+          }
         } else {
           setSubcategoryName("");
         }
@@ -557,10 +569,12 @@ export default function SellPage() {
       const sHei = allowShipping ? Number(shipping.height) : NaN;
       const sWei = allowShipping ? Number(shipping.weight) : NaN;
 
-      // Prepare categories payload
-      const categoriesPayload = subcategory ? [category, subcategory] : [category];
-      const categoryId = category ? parseInt(category) : null;
-      const subcategoryId = subcategory ? parseInt(subcategory) : null;
+      // Prepare categories payload - convert to integer array for database
+      const categoryId = category && !isNaN(parseInt(category)) ? parseInt(category) : null;
+      const subcategoryId = subcategory && !isNaN(parseInt(subcategory)) ? parseInt(subcategory) : null;
+      const categoriesPayload = [];
+      if (categoryId) categoriesPayload.push(categoryId);
+      if (subcategoryId) categoriesPayload.push(subcategoryId);
 
   const basePayload: {
     created_by: string;
@@ -569,6 +583,8 @@ export default function SellPage() {
     description: string | null;
     price: number;
     allowoffers: boolean;
+    allow_offers?: boolean; // Duplicate column
+    allowOffers?: boolean; // Another duplicate column
     state: string;
     location: string | null;
     allow_shipping: boolean;
@@ -582,7 +598,7 @@ export default function SellPage() {
     promo_top: boolean;
     min_bid: number | null;
     secure_pay: boolean;
-    categories: string[];
+    categories: number[];
     status?: string;
     organization_id?: string | null;
     stock: number;
@@ -595,6 +611,8 @@ export default function SellPage() {
     description: desc || null,
     price: priceNum,
     allowoffers: !!allowOffers,
+    allow_offers: !!allowOffers, // Duplicate column for compatibility
+    allowOffers: !!allowOffers, // Another duplicate column
     state: condition,
     location: location || null,
     allow_shipping: !!allowShipping,
@@ -620,8 +638,15 @@ export default function SellPage() {
       }
 
       // Insert + fallback (join-table)
+      // Debug: log the payload before inserting so we can see shape issues in client console
+      // (in development only — avoid logging sensitive info in production)
+      try {
+        if (process.env.NODE_ENV !== "production") console.debug("[sell] basePayload:", { ...basePayload, images: basePayload.images?.length });
+      } catch (e) {
+        // ignore logging errors
+      }
       let ins = await supabase.from("listings").insert([basePayload]).select("id").maybeSingle();
-      if (ins.error && tryWithOrg) {
+  if (ins.error && tryWithOrg) {
         // Fallback: remove organization_id and try again
         const fallbackPayload = { ...basePayload };
         delete fallbackPayload.organization_id;
@@ -632,7 +657,53 @@ export default function SellPage() {
             .insert([{ organization_id: orgId, listing_id: ins.data?.id }]);
         }
       }
-      if (ins.error) { push(`Plaatsen mislukt: ${ins.error.message}`); return; }
+
+      // If still an error and it looks like a schema mismatch (unknown column / invalid input),
+      // try inserting a minimal safe payload to isolate whether the problem is an unknown column.
+      if (
+        ins.error &&
+        /column|does not exist|invalid input syntax|unknown column/i.test(String(ins.error.message))
+      ) {
+        console.warn("[sell] retrying with safe minimal payload due to schema mismatch", ins.error);
+        const safePayload = {
+          seller_id: basePayload.seller_id,
+          created_by: basePayload.created_by,
+          title: basePayload.title,
+          description: basePayload.description,
+          price: basePayload.price,
+          images: basePayload.images,
+          main_photo: basePayload.main_photo,
+          category_id: basePayload.category_id,
+          subcategory_id: basePayload.subcategory_id,
+          stock: basePayload.stock,
+          status: basePayload.status,
+        };
+        const safeIns = await supabase.from("listings").insert([safePayload]).select("id").maybeSingle();
+        if (!safeIns.error) {
+          ins = safeIns; // use the success result
+        } else {
+          console.warn("[sell] safe fallback insert also failed:", safeIns.error);
+        }
+      }
+      if (ins.error) {
+        // Log the full response for easier debugging and show a short message to the user
+        console.error("[sell] insert error:", ins);
+        const msg = ins.error?.message || "onbekende fout";
+        // Common cases: env-missing, permission denied (RLS), column does not exist, constraint violation
+        if (msg.includes("env-missing")) {
+          push("Plaatsen mislukt: Supabase niet geconfigureerd (controleer NEXT_PUBLIC_SUPABASE_URL/ANON_KEY). Bekijk console voor details.");
+        } else if (msg.toLowerCase().includes("permission denied")) {
+          push("Plaatsen mislukt: Toestemming geweigerd (RLS). Controleer of je ingelogd bent en RLS policies.");
+        } else if (msg.toLowerCase().includes("column") || msg.toLowerCase().includes("does not exist")) {
+          push("Plaatsen mislukt: Database mismatch. Voer eventuele migraties uit en controleer kolommen.");
+        } else if (msg.toLowerCase().includes("null value in column")) {
+          push("Plaatsen mislukt: Vereiste velden ontbreken. Controleer titel, prijs en categorie.");
+        } else {
+          const hint = ins.error?.details || ins.error?.hint || msg;
+          push(`Plaatsen mislukt: ${hint ?? "onbekende fout"}`);
+        }
+        return;
+      }
 
       await revalidateCategory(category, subcategory);
       if (isBusiness && orgSlug) await revalidateCompany(String(orgSlug));

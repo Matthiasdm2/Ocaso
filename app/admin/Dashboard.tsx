@@ -221,7 +221,7 @@ export default function Dashboard() {
                   <td className="px-4 py-2 text-right">{category.count}</td>
                   <td className="px-4 py-2">
                     <div className="flex flex-wrap gap-2">
-                      {category.subcategories
+                      {(category.subcategories || [])
                         .filter(sub => sub.count > 0)
                         .map((sub, subIndex) => (
                         <span key={subIndex} className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm">

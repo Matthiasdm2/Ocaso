@@ -102,6 +102,10 @@ export default function RootLayout({
         <Script id="ocaso-consent-init" strategy="afterInteractive">
           {`(function(){try{const ev=new CustomEvent('ocaso:cookie-prefs-changed',{detail: (function(){try{return JSON.parse(decodeURIComponent((document.cookie.split('; ').find(r=>r.startsWith('ocaso_cookie_prefs='))||'').split('=').slice(1).join('=')))||{};}catch(e){return {};}})()});window.dispatchEvent(ev);}catch(e){}})();`}
         </Script>
+        {/* Fix Next.js router console error handling */}
+        <Script id="nextjs-console-fix" strategy="beforeInteractive">
+          {`(function(){try{const o=console.error;console.error=function(){try{if(arguments.length>0&&typeof arguments[0]==='object'&&arguments[0]!==null&&typeof arguments[0].isNextRouterError==='boolean'){return;}}catch(e){}return o.apply(this,arguments);};}catch(e){}})();`}
+        </Script>
       </body>
     </html>
   );

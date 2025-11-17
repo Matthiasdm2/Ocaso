@@ -1,6 +1,6 @@
 /* eslint-disable simple-import-sort/imports */
 "use client";
-import { useState, useRef } from "react";
+import { useRef, useState } from "react";
 import { createClient } from "../lib/supabaseClient";
 
 export default function ReviewModal({ listingId, onClose, onReview, isBusiness }: { listingId: string; onClose: () => void; onReview: (review: unknown) => void; isBusiness?: boolean }) {

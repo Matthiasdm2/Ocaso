@@ -41,7 +41,9 @@ export async function GET(
     }
 
     // Fallback to direct calculation if dashboard_stats doesn't exist or has no data
-    console.warn("[api business stats] dashboard_stats not found, falling back to direct calculation");
+    console.warn(
+      "[api business stats] dashboard_stats not found, falling back to direct calculation",
+    );
     const { data: listings, error } = await supabase
       .from("listings")
       .select("id,price,status,views")
@@ -55,7 +57,7 @@ export async function GET(
       views?: number | null;
     }
     const list = (listings as Row[]) || [];
-    
+
     // If no listings exist, return fallback stats
     if (list.length === 0) {
       return NextResponse.json({
@@ -68,7 +70,7 @@ export async function GET(
         ...(debug ? { _debugSource: "no_listings" } : {}),
       });
     }
-    
+
     // Accurate bids total door aparte aggregate
     let totalBids = 0;
     try {

@@ -33,8 +33,8 @@ create policy "update own review opens" on public.review_opens
   `;
 
   return NextResponse.json({
-    error: 'review_opens tabel ontbreekt',
-    message: 'Run deze SQL in Supabase SQL Editor (Dashboard > SQL Editor):',
-    sql: sql.trim()
+    error: "review_opens tabel ontbreekt",
+    message: "Run deze SQL in Supabase SQL Editor (Dashboard > SQL Editor):",
+    sql: sql.trim(),
   }, { status: 500 });
 }

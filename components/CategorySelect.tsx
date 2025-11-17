@@ -112,10 +112,16 @@ export default function CategorySelect({
       if (!q.error) {
         setSubs(q.data ?? []);
         const valid = new Set((q.data ?? []).map((s: Subcategory) => String(s.id)));
-        if (!valid.has(valueSubcategory)) onChangeSubcategory("");
+        // Only reset subcategory if it's not valid AND it's not already empty
+        if (valueSubcategory && !valid.has(valueSubcategory)) {
+          onChangeSubcategory("");
+        }
       } else {
         setSubs([]);
-        onChangeSubcategory("");
+        // Only reset if there are no subcategories and subcategory is not already empty
+        if (valueSubcategory) {
+          onChangeSubcategory("");
+        }
       }
       setLoadingSubs(false);
     }

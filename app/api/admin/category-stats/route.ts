@@ -93,7 +93,7 @@ export async function GET(request: NextRequest) {
                 return {
                     name: category.name,
                     count: mainCount || 0,
-                    subcategories: filteredSubcategories,
+                    subcategories: filteredSubcategories || [],
                 };
             }),
         );

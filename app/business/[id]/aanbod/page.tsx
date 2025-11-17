@@ -141,12 +141,6 @@ export default async function BusinessFullAanbodPage({ params, searchParams }: {
       return a.name.localeCompare(b.name);
     });
     const orderedParents = parentsRaw.map(c => ({ id: c.id, name: c.name, sort_order: c.sort_order ?? 0 }));
-    // Build name->id map from ordered list
-    const nameToId = new Map<string, number>(orderedParents.map(c => [c.name, c.id]));
-
-    // Get seller's selected categories (names) and convert to ids
-    const selectedCatNames = Array.isArray(profile.categories) ? profile.categories : [];
-    const selectedCatIds = selectedCatNames.map(name => nameToId.get(name)).filter(id => id != null) as number[];
 
     let query = supabase
   .from('listings')
@@ -194,34 +188,36 @@ export default async function BusinessFullAanbodPage({ params, searchParams }: {
         favorites: l.favorites_count != null ? l.favorites_count : 0,
         status: l.status === 'actief' ? 'active' : l.status,
       }));
-      // Calculate counts for selected categories
+      // Calculate counts for categories used by this seller's listings
       const countMap = new Map<number, number>();
-      if (selectedCatIds.length) {
-        // Count listings per selected category
-        let catQuery = supabase
-          .from('listings')
-          .select('category_id', { count: 'exact', head: false })
-          .eq('seller_id', businessId)
-          .in('category_id', selectedCatIds);
-        if (qText) catQuery = catQuery.ilike('title', `%${qText}%`);
-        if (minPrice != null && !Number.isNaN(minPrice)) catQuery = catQuery.gte('price', minPrice);
-        if (maxPrice != null && !Number.isNaN(maxPrice)) catQuery = catQuery.lte('price', maxPrice);
-        const catRes = await catQuery;
-        if (catRes.data) {
-          type Row = { category_id: number | null };
-          for (const r of catRes.data as unknown as Row[]) {
-            if (r.category_id != null && selectedCatIds.includes(r.category_id)) {
-              countMap.set(r.category_id, (countMap.get(r.category_id) || 0) + 1);
-            }
+
+      // Get all categories that this seller actually uses in their listings
+      let usedCatQuery = supabase
+        .from('listings')
+        .select('category_id', { count: 'exact', head: false })
+        .eq('seller_id', businessId)
+        .not('category_id', 'is', null);
+
+      if (qText) usedCatQuery = usedCatQuery.ilike('title', `%${qText}%`);
+      if (minPrice != null && !Number.isNaN(minPrice)) usedCatQuery = usedCatQuery.gte('price', minPrice);
+      if (maxPrice != null && !Number.isNaN(maxPrice)) usedCatQuery = usedCatQuery.lte('price', maxPrice);
+
+      const usedCatRes = await usedCatQuery;
+      if (usedCatRes.data) {
+        type Row = { category_id: number | null };
+        for (const r of usedCatRes.data as unknown as Row[]) {
+          if (r.category_id != null) {
+            countMap.set(r.category_id, (countMap.get(r.category_id) || 0) + 1);
           }
         }
       }
 
-      // Build categories list from selected ones; preserve EXACT marketplace order by intersecting orderedParents
-      if (selectedCatIds.length) {
-        const selectedSet = new Set(selectedCatIds);
+      // Build categories list from actually used categories; preserve marketplace order
+      const usedCatIds = Array.from(countMap.keys());
+      if (usedCatIds.length) {
+        const usedSet = new Set(usedCatIds);
         categories = orderedParents
-          .filter(c => selectedSet.has(c.id))
+          .filter(c => usedSet.has(c.id))
           .map(c => ({ id: c.id, name: c.name, count: countMap.get(c.id) || 0 }));
       }
     }

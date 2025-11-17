@@ -47,6 +47,7 @@ export default function LoginPage() {
   const siteUrl = getBaseUrl();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
@@ -201,15 +202,38 @@ export default function LoginPage() {
             className="w-full rounded-xl border border-gray-200 px-3 py-2"
             required
           />
-          <input
-            type="password"
-            placeholder="Wachtwoord"
-            autoComplete="current-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-xl border border-gray-200 px-3 py-2"
-            required
-          />
+          <div className="relative">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              placeholder="Wachtwoord"
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full rounded-xl border border-gray-200 px-3 py-2 pr-10"
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-500 hover:text-gray-700"
+              aria-label={showPassword ? 'Verberg wachtwoord' : 'Toon wachtwoord'}
+              title={showPassword ? 'Verberg wachtwoord' : 'Toon wachtwoord'}
+            >
+              {/* eenvoudige oog/doorstreep icoon */}
+              {showPassword ? (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+                  <path d="M3 3l18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M10.58 10.58A3 3 0 0113.42 13.42" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M17.94 17.94C16.08 19.17 14.09 20 12 20 7 20 3.1 16.36 1 12c1.15-2.18 2.95-4.06 5.14-5.37" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              ) : (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+                  <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
+            </button>
+          </div>
           <button
             className="w-full rounded-xl bg-primary text-black px-4 py-2 font-medium disabled:opacity-60"
             disabled={loading || cooldown > 0}

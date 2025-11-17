@@ -54,11 +54,15 @@ export async function POST() {
       });
 
     if (error) {
-      return NextResponse.json({ error: `Failed to update function: ${error.message}` }, { status: 500 });
+      return NextResponse.json({
+        error: `Failed to update function: ${error.message}`,
+      }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, message: "Dashboard stats function updated successfully" });
-
+    return NextResponse.json({
+      success: true,
+      message: "Dashboard stats function updated successfully",
+    });
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }

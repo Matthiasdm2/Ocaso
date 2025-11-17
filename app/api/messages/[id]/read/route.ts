@@ -11,32 +11,48 @@ function supabaseFromBearer(token?: string | null) {
     const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
     return createClient(url, anon, {
       global: { headers: { Authorization: `Bearer ${token}` } },
-      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      },
     });
   } catch {
     return null;
   }
 }
 
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(
+  req: Request,
+  { params }: { params: { id: string } },
+) {
   let supabase = supabaseServer();
   let { data: { user } } = await supabase.auth.getUser();
   if (!user) {
-    const auth = req.headers.get('authorization');
-    const token = auth?.toLowerCase().startsWith('bearer ') ? auth.slice(7) : null;
+    const auth = req.headers.get("authorization");
+    const token = auth?.toLowerCase().startsWith("bearer ")
+      ? auth.slice(7)
+      : null;
     const alt = supabaseFromBearer(token);
     if (alt) {
       const got = await alt.auth.getUser();
-      if (got.data.user) { user = got.data.user; supabase = alt; }
+      if (got.data.user) {
+        user = got.data.user;
+        supabase = alt;
+      }
     }
   }
-  if (!user) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  if (!user) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
 
-  const { error } = await supabase.from('conversation_reads').upsert({
+  const { error } = await supabase.from("conversation_reads").upsert({
     conversation_id: params.id,
     user_id: user.id,
-    last_read_at: new Date().toISOString()
+    last_read_at: new Date().toISOString(),
   });
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 400 });
+  }
   return NextResponse.json({ ok: true });
 }

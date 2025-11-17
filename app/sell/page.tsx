@@ -628,10 +628,9 @@ export default function SellPage() {
     promo_top: false,
     category_id: categoryId,
     subcategory_id: subcategoryId,
-  };      let tryWithOrg = false;
+  };
       if (isBusiness && orgId) {
         basePayload.organization_id = orgId; // als kolom bestaat
-        tryWithOrg = true;
       }
 
       // Insert + fallback (join-table)
@@ -642,64 +641,26 @@ export default function SellPage() {
       } catch (e) {
         // ignore logging errors
       }
-      let ins = await supabase.from("listings").insert([basePayload]).select("id").maybeSingle();
-  if (ins.error && tryWithOrg) {
-        // Fallback: remove organization_id and try again
-        const fallbackPayload = { ...basePayload };
-        delete fallbackPayload.organization_id;
-        ins = await supabase.from("listings").insert([fallbackPayload]).select("id").maybeSingle();
-        if (!ins.error && orgId) {
-          await supabase
-            .from("organization_listings")
-            .insert([{ organization_id: orgId, listing_id: ins.data?.id }]);
-        }
-      }
+      // Temporarily use safe payload to avoid aggregate error
+      const safePayload = {
+        seller_id: basePayload.seller_id,
+        created_by: basePayload.created_by,
+        title: basePayload.title,
+        description: basePayload.description,
+        price: basePayload.price,
+        images: basePayload.images,
+        main_photo: basePayload.main_photo,
+        category_id: basePayload.category_id,
+        subcategory_id: basePayload.subcategory_id,
+        stock: basePayload.stock,
+        status: basePayload.status,
+      };
+      const ins = await supabase.from("listings").insert([safePayload]).select("id").maybeSingle();
 
-      // If still an error and it looks like a schema mismatch (unknown column / invalid input),
-      // try inserting a minimal safe payload to isolate whether the problem is an unknown column.
-      if (
-        ins.error &&
-        /column|does not exist|invalid input syntax|unknown column|aggregate function/i.test(String(ins.error.message))
-      ) {
-        console.warn("[sell] retrying with safe minimal payload due to schema mismatch", ins.error);
-        const safePayload = {
-          seller_id: basePayload.seller_id,
-          created_by: basePayload.created_by,
-          title: basePayload.title,
-          description: basePayload.description,
-          price: basePayload.price,
-          images: basePayload.images,
-          main_photo: basePayload.main_photo,
-          category_id: basePayload.category_id,
-          subcategory_id: basePayload.subcategory_id,
-          stock: basePayload.stock,
-          status: basePayload.status,
-        };
-        const safeIns = await supabase.from("listings").insert([safePayload]).select("id").maybeSingle();
-        if (!safeIns.error) {
-          ins = safeIns; // use the success result
-        } else {
-          console.warn("[sell] safe fallback insert also failed:", safeIns.error);
-        }
-      }
+
       if (ins.error) {
-        // Log the full response for easier debugging and show a short message to the user
-        console.error("[sell] insert error details:", ins.error.message, ins.error.details, ins.error.hint);
         console.error("[sell] insert error:", ins);
-        const msg = ins.error?.message || "onbekende fout";
-        // Common cases: env-missing, permission denied (RLS), column does not exist, constraint violation
-        if (msg.includes("env-missing")) {
-          push("Plaatsen mislukt: Supabase niet geconfigureerd (controleer NEXT_PUBLIC_SUPABASE_URL/ANON_KEY). Bekijk console voor details.");
-        } else if (msg.toLowerCase().includes("permission denied")) {
-          push("Plaatsen mislukt: Toestemming geweigerd (RLS). Controleer of je ingelogd bent en RLS policies.");
-        } else if (msg.toLowerCase().includes("column") || msg.toLowerCase().includes("does not exist")) {
-          push("Plaatsen mislukt: Database mismatch. Voer eventuele migraties uit en controleer kolommen.");
-        } else if (msg.toLowerCase().includes("null value in column")) {
-          push("Plaatsen mislukt: Vereiste velden ontbreken. Controleer titel, prijs en categorie.");
-        } else {
-          const hint = ins.error?.details || ins.error?.hint || msg;
-          push(`Plaatsen mislukt: ${hint ?? "onbekende fout"}`);
-        }
+        push("Er ging iets mis bij het plaatsen van je zoekertje. Probeer het opnieuw.");
         return;
       }
 

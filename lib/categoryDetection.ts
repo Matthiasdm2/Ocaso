@@ -9,18 +9,6 @@ export interface DetectedCategory {
     detectedLabel?: string;
 }
 
-// Mapping van image service category index naar categorie slug
-const imageServiceIndexToCategorySlug: Record<number, string> = {
-    0: "auto-s", // Voertuigen -> Auto's
-    1: "fietsen", // Fietsen -> Fietsen
-    2: "huis-en-inrichting", // Huis & Inrichting -> Huis & Inrichting
-    3: "tuin-en-doe-het-zelf", // Tuin & Terras -> Tuin & Doe-het-zelf
-    4: "elektronica", // Elektronica -> Elektronica
-    5: "elektronica", // Computers -> Elektronica
-    6: "kleding-en-accessoires", // Kleding -> Kleding & Accessoires
-    7: "sport-en-vrije-tijd", // Sport & Hobby -> Sport & Vrije tijd
-};
-
 // Mapping van categorie slugs naar database IDs
 const categorySlugToId: Record<string, number> = {
     "auto-s": 1, // Auto's

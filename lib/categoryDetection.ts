@@ -956,7 +956,7 @@ export async function detectCategoryFromImages(
     if (!images || images.length === 0) return null;
 
     try {
-        const response = await fetch("http://localhost:8000/classify", {
+    const response = await fetch("/api/classify", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -965,7 +965,11 @@ export async function detectCategoryFromImages(
         });
 
         if (!response.ok) {
-            console.warn("Image classification service not available");
+            console.warn(
+                "Image classification service not available (status:",
+                response.status,
+                ")",
+            );
             return null;
         }
 

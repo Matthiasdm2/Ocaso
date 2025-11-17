@@ -660,7 +660,7 @@ export default function SellPage() {
       // try inserting a minimal safe payload to isolate whether the problem is an unknown column.
       if (
         ins.error &&
-        /column|does not exist|invalid input syntax|unknown column/i.test(String(ins.error.message))
+        /column|does not exist|invalid input syntax|unknown column|aggregate function/i.test(String(ins.error.message))
       ) {
         console.warn("[sell] retrying with safe minimal payload due to schema mismatch", ins.error);
         const safePayload = {

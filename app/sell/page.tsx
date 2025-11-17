@@ -611,8 +611,6 @@ export default function SellPage() {
     description: desc || null,
     price: priceNum,
     allowoffers: !!allowOffers,
-    allow_offers: !!allowOffers, // Duplicate column for compatibility
-    allowOffers: !!allowOffers, // Another duplicate column
     state: condition,
     location: location || null,
     allow_shipping: !!allowShipping,

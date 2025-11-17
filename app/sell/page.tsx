@@ -598,7 +598,7 @@ export default function SellPage() {
     promo_top: boolean;
     min_bid: number | null;
     secure_pay: boolean;
-    categories: string[];
+    categories?: string[];
     status?: string;
     organization_id?: string | null;
     stock: number;
@@ -622,7 +622,6 @@ export default function SellPage() {
     main_photo,
     min_bid: minBid ? parsePrice(minBid) : null,
     secure_pay: !!allowSecurePay && hasSecurePayPermission,
-    categories: categoriesPayload,
     status: "actief", // Zorg dat elk nieuw zoekertje zichtbaar is in queries
     stock: stock,
     promo_featured: false,

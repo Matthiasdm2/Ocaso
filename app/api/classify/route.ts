@@ -35,9 +35,17 @@ function classifyText(text: string): { category_index: number; confidence: numbe
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { text } = body;
+    // Handle both { text } and { images } for backward compatibility
+    let text = body.text;
+    if (!text && body.images) {
+      // If no text, use a placeholder or try to infer from images (not implemented)
+      text = "algemeen"; // Placeholder
+    }
+    if (!text) {
+      return NextResponse.json({ category_index: 8, confidence: 0.1 }, { status: 200 });
+    }
 
-    // Use text-based classification for now
+    // Use text-based classification
     const result = classifyText(text);
 
     return NextResponse.json(result, { status: 200 });

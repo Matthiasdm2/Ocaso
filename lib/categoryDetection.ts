@@ -951,50 +951,9 @@ export function detectCategory(text: string): DetectedCategory | null {
  * Detecteert categorie op basis van afbeeldingen via de image service
  */
 export async function detectCategoryFromImages(
-    images: string[],
 ): Promise<DetectedCategory | null> {
-    if (!images || images.length === 0) return null;
-
-    try {
-    const response = await fetch("/api/classify", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ images }),
-        });
-
-        if (!response.ok) {
-            console.warn(
-                "Image classification service not available (status:",
-                response.status,
-                ")",
-            );
-            return null;
-        }
-
-        const data = await response.json();
-        const categoryIndex = data.category_index;
-        const confidence = data.confidence || 0;
-
-        if (confidence < 0.3) return null; // Te lage confidence
-
-        const categorySlug = imageServiceIndexToCategorySlug[categoryIndex];
-        if (!categorySlug) return null;
-
-        const categoryId = categorySlugToId[categorySlug];
-        if (!categoryId) return null;
-
-        return {
-            categoryId,
-            categorySlug,
-            confidence: confidence * 100,
-            detectedLabel: `image-${categoryIndex}`,
-        };
-    } catch (error) {
-        console.warn("Error calling image classification service:", error);
-        return null;
-    }
+    // Temporarily disabled image classification, return null to use text-based
+    return null;
 }
 
 /**
@@ -1010,7 +969,7 @@ export async function detectCategorySmart(
     // Als we images hebben, probeer ook image-detectie
     let imageResult: DetectedCategory | null = null;
     if (images && images.length > 0) {
-        imageResult = await detectCategoryFromImages(images);
+        imageResult = await detectCategoryFromImages();
     }
 
     // Kies het beste resultaat gebaseerd op confidence

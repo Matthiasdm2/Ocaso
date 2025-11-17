@@ -573,8 +573,8 @@ export default function SellPage() {
       const categoryId = category && !isNaN(parseInt(category)) ? parseInt(category) : null;
       const subcategoryId = subcategory && !isNaN(parseInt(subcategory)) ? parseInt(subcategory) : null;
       const categoriesPayload = [];
-      if (categoryId) categoriesPayload.push(categoryId);
-      if (subcategoryId) categoriesPayload.push(subcategoryId);
+      if (categoryId) categoriesPayload.push(String(categoryId));
+      if (subcategoryId) categoriesPayload.push(String(subcategoryId));
 
   const basePayload: {
     created_by: string;
@@ -598,7 +598,7 @@ export default function SellPage() {
     promo_top: boolean;
     min_bid: number | null;
     secure_pay: boolean;
-    categories: number[];
+    categories: string[];
     status?: string;
     organization_id?: string | null;
     stock: number;

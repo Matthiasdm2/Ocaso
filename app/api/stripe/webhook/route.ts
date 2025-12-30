@@ -118,50 +118,7 @@ export async function POST(req: Request) {
         const pi = event.data.object as Stripe.PaymentIntent;
         const meta = (pi.metadata || {}) as Record<string, string | undefined>;
 
-        if (meta.type === "credits" && meta.userId && meta.credits) {
-          // Credits top-up: increment user's credits
-          const userId = String(meta.userId);
-          const inc = parseInt(String(meta.credits), 10) || 0;
-          if (inc > 0) {
-            // Fetch current credits
-            const { data: profile } = await supabase
-              .from("profiles")
-              .select("ocaso_credits")
-              .eq("id", userId)
-              .single();
-            const current = (profile?.ocaso_credits as number | null) ?? 0;
-            const newCredits = current + inc;
-
-            // Update credits
-            const { error: upErr } = await supabase
-              .from("profiles")
-              .update({ ocaso_credits: newCredits })
-              .eq("id", userId);
-            if (upErr) {
-              console.error("credits top-up failed", upErr);
-            } else {
-              // Log credit transaction
-              const { error: txErr } = await supabase
-                .from("credit_transactions")
-                .insert({
-                  user_id: userId,
-                  amount: inc,
-                  transaction_type: "purchase",
-                  description: `Credits purchased: ${inc}`,
-                  reference_id: null, // No reference for Stripe payments
-                });
-              if (txErr) {
-                console.error("credit transaction logging failed", txErr);
-              }
-              console.log(
-                `Credits topped up: +${inc} for user ${userId} (new balance: ${newCredits})`,
-              );
-
-              // Dispatch global event to refresh profile in all components
-              // Note: This is a server-side event, clients need to poll or use real-time subscriptions
-            }
-          }
-        } else if (meta.plan && meta.userId) {
+        if (meta.plan && meta.userId) {
           // Embedded subscription checkout: activate on profile
           const plan = String(meta.plan);
           const billing = String(meta.billing || "monthly");

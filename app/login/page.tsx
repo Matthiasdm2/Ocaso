@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useEffect,useRef, useState } from "react";
 
 import { getBaseUrl } from "@/lib/getBaseUrl";
 import { createClient } from "@/lib/supabaseClient";
@@ -45,6 +46,7 @@ function IconFacebook(props: React.SVGProps<SVGSVGElement>) {
 export default function LoginPage() {
   const supabase = createClient();
   const siteUrl = getBaseUrl();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -57,6 +59,18 @@ export default function LoginPage() {
   const [rateFirst, setRateFirst] = useState<number | null>(null);
   const [debugRate, setDebugRate] = useState<string | null>(null);
   const cooldownRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Handle OAuth errors from callback
+  useEffect(() => {
+    const error = searchParams.get('error');
+    if (error) {
+      if (error === 'oauth') {
+        setErr('OAuth authenticatie mislukt. Probeer het opnieuw.');
+      } else if (error === 'missing_code') {
+        setErr('OAuth authenticatie onvolledig. Probeer het opnieuw.');
+      }
+    }
+  }, [searchParams]);
 
   function startCooldown(seconds: number) {
     if (cooldownRef.current) clearInterval(cooldownRef.current);
@@ -179,11 +193,11 @@ export default function LoginPage() {
           <div className="grid gap-2">
             <OAuthBtn onClick={() => signInOAuth("google")}>
               <IconGoogle />
-              <span>Inloggen met Google</span>
+              <span>Verder met Google</span>
             </OAuthBtn>
             <OAuthBtn onClick={() => signInOAuth("facebook")}>
               <IconFacebook />
-              <span>Inloggen met Facebook</span>
+              <span>Verder met Facebook</span>
             </OAuthBtn>
             {/* Apple login removed */}
             <div className="text-center text-sm text-gray-500">
@@ -201,6 +215,7 @@ export default function LoginPage() {
             onChange={(e) => setEmail(e.target.value)}
             className="w-full rounded-xl border border-gray-200 px-3 py-2"
             required
+            data-testid="login-email"
           />
           <div className="relative">
             <input
@@ -211,6 +226,7 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               className="w-full rounded-xl border border-gray-200 px-3 py-2 pr-10"
               required
+              data-testid="login-password"
             />
             <button
               type="button"
@@ -237,6 +253,7 @@ export default function LoginPage() {
           <button
             className="w-full rounded-xl bg-primary text-black px-4 py-2 font-medium disabled:opacity-60"
             disabled={loading || cooldown > 0}
+            data-testid="login-submit"
           >
             {loading ? 'Bezig…' : cooldown > 0 ? `Wachten (${cooldown}s)` : 'Inloggen'}
           </button>

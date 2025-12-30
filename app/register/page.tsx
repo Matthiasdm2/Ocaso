@@ -203,12 +203,29 @@ export default function RegisterPage() {
     }
     throw error;
   }
+
+  // Check if we're in local development (no email confirmation needed)
+  const isLocalDev = typeof window !== 'undefined' && (
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1' ||
+    window.location.hostname.includes('local')
+  );
+
+  if (isLocalDev) {
+    // In local development, user is automatically signed in
+    setOk("Account aangemaakt! Je bent nu ingelogd.");
+    // Redirect to profile after a short delay
+    setTimeout(() => {
+      window.location.href = '/profile';
+    }, 1000);
+    return;
+  }
+
   try { localStorage.setItem('ocaso:lastSignUpAt', String(Date.now())); } catch { /* ignore */ }
   // Toon melding i.p.v. directe redirect
   setOk("Verificatiemail verstuurd! Check je mailbox om je account te bevestigen.");
   // Optioneel: scroll naar boven voor zichtbaarheid
   try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch { /* noop */ }
-  return;
     } catch (e: unknown) {
       console.error("signup error", e);
       if (e instanceof Error) {
@@ -332,11 +349,11 @@ export default function RegisterPage() {
         <div className="mb-6 grid gap-3">
           <OAuthBtn onClick={() => signInOAuth("google")}>
             <IconGoogle />
-            <span>Registreren met Google</span>
+            <span>Verder met Google</span>
           </OAuthBtn>
           <OAuthBtn onClick={() => signInOAuth("facebook")}>
             <IconFacebook />
-            <span>Registreren met Facebook</span>
+            <span>Verder met Facebook</span>
           </OAuthBtn>
           {/* Apple registration removed */}
           <div className="text-center text-sm text-gray-500">
@@ -370,6 +387,7 @@ export default function RegisterPage() {
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 required
+                data-testid="register-first-name"
               />
             </div>
             <div>
@@ -379,6 +397,7 @@ export default function RegisterPage() {
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 required
+                data-testid="register-last-name"
               />
             </div>
             <div>
@@ -389,6 +408,7 @@ export default function RegisterPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                data-testid="register-email"
               />
             </div>
             <div>
@@ -402,6 +422,7 @@ export default function RegisterPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 minLength={8}
                 required
+                data-testid="register-password"
               />
             </div>
             <div>
@@ -413,6 +434,7 @@ export default function RegisterPage() {
                 onChange={(e) => setConfirm(e.target.value)}
                 minLength={8}
                 required
+                data-testid="register-confirm-password"
               />
             </div>
           </div>
@@ -572,6 +594,7 @@ export default function RegisterPage() {
               type="checkbox"
               checked={agreeTerms}
               onChange={(e) => setAgreeTerms(e.target.checked)}
+              data-testid="register-agree-terms"
             />
             <span>
               Ik ga akkoord met de{" "}
@@ -603,6 +626,7 @@ export default function RegisterPage() {
             type="submit"
             disabled={loading}
             className="rounded-xl bg-primary text-black px-4 py-2 font-medium hover:opacity-90"
+            data-testid="register-submit"
           >
             {loading ? "Bezig…" : "Account aanmaken"}
           </button>

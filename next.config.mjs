@@ -25,7 +25,7 @@ const nextConfig = {
       "font-src 'self' data: https:",
       // API/fetch and websockets to our origins, Supabase, Stripe, and general https/wss
       // Allow localhost:8000 for AI classification service in development
-      `connect-src 'self' https: wss: ${SUPABASE} wss://${SUPABASE} api.stripe.com m.stripe.com${isDev ? ' http://localhost:8000' : ''}`,
+      `connect-src 'self' https: wss: ${SUPABASE} wss://${SUPABASE} api.stripe.com m.stripe.com${isDev ? ' http://localhost:8000 http://127.0.0.1:8000 http://192.168.129.106:8000' : ''}`,
       // Stripe embeds/iframes
       "frame-src 'self' https: js.stripe.com checkout.stripe.com",
       "media-src 'self' blob: https:",
@@ -47,6 +47,10 @@ const nextConfig = {
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(self), interest-cohort=()' },
           { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
           { key: 'Content-Security-Policy', value: csp },
+          { key: 'Access-Control-Allow-Origin', value: process.env.NODE_ENV === 'production' ? 'https://ocaso.be' : '*' },
+          { key: 'Access-Control-Allow-Methods', value: 'GET, POST, PUT, DELETE, OPTIONS' },
+          { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Authorization, X-Requested-With' },
+          { key: 'Access-Control-Allow-Credentials', value: 'true' },
         ],
       },
     ];

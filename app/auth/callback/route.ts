@@ -15,6 +15,19 @@ export async function GET(req: Request) {
     if (error) {
       return NextResponse.redirect(new URL("/login?error=oauth", origin));
     }
+
+    // After successful auth, ensure profile is populated from auth metadata
+    try {
+      await fetch(`${origin}/api/profile/upsert-from-auth`, {
+        method: 'POST',
+        headers: {
+          'Cookie': req.headers.get('cookie') || '',
+        },
+      });
+    } catch (upsertError) {
+      // Log error but don't fail the auth flow
+      console.error('Failed to upsert profile from auth:', upsertError);
+    }
   } else {
     return NextResponse.redirect(new URL("/login?error=missing_code", origin));
   }

@@ -39,12 +39,6 @@ begin
   values (new.id, new.email, full_name_val, nullif(fn,''), nullif(ln,''))
   on conflict (id) do nothing;
 
-  if exists (
-    select 1 from information_schema.columns
-    where table_schema = 'public' and table_name = 'profiles' and column_name = 'ocaso_credits'
-  ) then
-    execute 'update public.profiles set ocaso_credits = 1 where id = $1' using new.id;
-  end if;
   return new;
 end;
 $$;

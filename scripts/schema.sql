@@ -46,7 +46,6 @@ create table if not exists public.profiles (
   rating numeric,
   review_count integer,
   avg_rating numeric,
-  ocaso_credits integer default 0,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
@@ -95,9 +94,6 @@ DO $$ BEGIN
   END IF;
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='profiles' AND column_name='avg_rating') THEN
     ALTER TABLE public.profiles ADD COLUMN avg_rating numeric;
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='profiles' AND column_name='ocaso_credits') THEN
-    ALTER TABLE public.profiles ADD COLUMN ocaso_credits integer DEFAULT 0;
   END IF;
 END $$;
 
@@ -472,52 +468,14 @@ DO $$ BEGIN
 END $$;
 
 -- =============================
--- TABLE: credit_transactions
--- =============================
-create table if not exists public.credit_transactions (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references public.profiles(id) on delete cascade,
-  amount integer not null, -- positive for aankoop, negative for gebruik
-  transaction_type text not null check (transaction_type in ('purchase', 'usage')),
-  description text,
-  reference_id uuid, -- kan linken naar QR code of payment
-  created_at timestamptz default now()
-);
-
--- Indexen voor credit_transactions
-create index if not exists credit_transactions_user_id_idx on public.credit_transactions (user_id);
-create index if not exists credit_transactions_created_at_idx on public.credit_transactions (created_at desc);
-
--- RLS voor credit_transactions
-alter table public.credit_transactions enable row level security;
-
-DO $$ BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='credit_transactions' AND policyname='credit_transactions_user_select'
-  ) THEN
-    CREATE POLICY "credit_transactions_user_select" ON public.credit_transactions FOR SELECT USING (auth.uid() = user_id);
-  END IF;
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='credit_transactions' AND policyname='credit_transactions_insert'
-  ) THEN
-    CREATE POLICY "credit_transactions_insert" ON public.credit_transactions FOR INSERT WITH CHECK (auth.uid() = user_id);
-  END IF;
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='credit_transactions' AND policyname='credit_transactions_service_insert'
-  ) THEN
-    CREATE POLICY "credit_transactions_service_insert" ON public.credit_transactions FOR INSERT WITH CHECK (auth.role() = 'service_role');
-  END IF;
-END $$;
-
--- =============================
--- TRIGGER: Auto-create profile with 1 credit on user signup
+-- TRIGGER: Auto-create profile on user signup
 -- =============================
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer set search_path = public
 as $$
 begin
-  insert into public.profiles (id, email, full_name, ocaso_credits)
-  values (new.id, new.email, new.raw_user_meta_data->>'full_name', 1);
+  insert into public.profiles (id, email, full_name)
+  values (new.id, new.email, new.raw_user_meta_data->>'full_name');
   return new;
 end;
 $$;

@@ -9,27 +9,12 @@ export type ProfileLite = {
   lastName: string;
   avatarUrl: string;
   business?: { isBusiness: boolean };
-  ocasoCredits?: number;
 };
 
 export function useProfile() {
   const supabase = createClient();
   const [profile, setProfile] = useState<ProfileLite | null>(null);
   const [loading, setLoading] = useState(true);
-
-  // Helper function to get credits from localStorage
-  const getCachedCredits = (userId: string): number => {
-    if (typeof window === "undefined") return 0;
-    const cached = localStorage.getItem(`ocaso_credits_${userId}`);
-    return cached ? parseInt(cached, 10) : 0;
-  };
-
-  // Helper function to set credits in localStorage
-  const setCachedCredits = (userId: string, credits: number) => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem(`ocaso_credits_${userId}`, credits.toString());
-    }
-  };
 
   useEffect(() => {
     (async () => {
@@ -48,7 +33,7 @@ export function useProfile() {
         }
 
         const { data, error } = await supabase.from("profiles").select(`
-          id, full_name, avatar_url, is_business, ocaso_credits
+          id, full_name, avatar_url, is_business
         `).eq("id", user.id).maybeSingle();
 
         if (error) {
@@ -61,8 +46,6 @@ export function useProfile() {
           console.error("Full error object:", error);
           // Don't set profile, stay with null
         } else if (data) {
-          const credits = data.ocaso_credits || 0;
-          setCachedCredits(user.id, credits); // Cache credits
           const parts = (data.full_name || "").trim().split(" ");
           setProfile({
             id: data.id,
@@ -70,20 +53,37 @@ export function useProfile() {
             lastName: parts.length > 1 ? parts.slice(1).join(" ") : "",
             avatarUrl: data.avatar_url || "",
             business: { isBusiness: !!data.is_business },
-            ocasoCredits: credits,
           });
         } else {
-          // No data from database, try to use cached credits as fallback
-          const cachedCredits = getCachedCredits(user.id);
-          if (cachedCredits > 0) {
-            setProfile({
-              id: user.id,
-              firstName: "",
-              lastName: "",
-              avatarUrl: "",
-              business: { isBusiness: false },
-              ocasoCredits: cachedCredits,
+          // No profile data, try to provision one
+          console.log('No profile found for user', user.id, 'attempting auto-provisioning');
+          try {
+            const provisionRes = await fetch('/api/profile/upsert', {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ id: user.id, email: user.email }),
             });
+            if (provisionRes.ok) {
+              console.log('Profile auto-provisioned for user', user.id);
+              // Now fetch again
+              const { data: newData, error: newErr } = await supabase.from("profiles").select(`
+                id, full_name, avatar_url, is_business
+              `).eq("id", user.id).maybeSingle();
+              if (!newErr && newData) {
+                const parts = (newData.full_name || "").trim().split(" ");
+                setProfile({
+                  id: newData.id,
+                  firstName: parts[0] || "",
+                  lastName: parts.length > 1 ? parts.slice(1).join(" ") : "",
+                  avatarUrl: newData.avatar_url || "",
+                  business: { isBusiness: !!newData.is_business },
+                });
+              }
+            } else {
+              console.error('Profile auto-provisioning failed:', await provisionRes.text());
+            }
+          } catch (provErr) {
+            console.error('Profile auto-provisioning error:', provErr);
           }
         }
       } catch (err) {
@@ -114,13 +114,11 @@ export function useProfile() {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) return;
             const { data, error } = await supabase.from("profiles").select(`
-              id, full_name, avatar_url, is_business, ocaso_credits
+              id, full_name, avatar_url, is_business
             `).eq("id", user.id).maybeSingle();
             if (error) {
               console.error("Profile refetch error:", error);
             } else if (data) {
-              const credits = data.ocaso_credits || 0;
-              setCachedCredits(user.id, credits);
               const parts = (data.full_name || "").trim().split(" ");
               setProfile({
                 id: data.id,
@@ -128,7 +126,6 @@ export function useProfile() {
                 lastName: parts.length > 1 ? parts.slice(1).join(" ") : "",
                 avatarUrl: data.avatar_url || "",
                 business: { isBusiness: !!data.is_business },
-                ocasoCredits: credits,
               });
             }
           } catch (err) {
@@ -159,83 +156,19 @@ export function useProfile() {
       });
     }
 
-    // Luister ook naar credits updates
-    function onCreditsUpdated() {
-      // Refetch the entire profile to get updated credits
-      (async () => {
-        try {
-          const { data: { user } } = await supabase.auth.getUser();
-          if (!user) return;
-          const { data, error } = await supabase.from("profiles").select(`
-            id, full_name, avatar_url, is_business, ocaso_credits
-          `).eq("id", user.id).maybeSingle();
-          if (error) {
-            console.error("Profile refetch error:", error);
-          } else if (data) {
-            const credits = data.ocaso_credits || 0;
-            setCachedCredits(user.id, credits);
-            const parts = (data.full_name || "").trim().split(" ");
-            setProfile({
-              id: data.id,
-              firstName: parts[0] || "",
-              lastName: parts.length > 1 ? parts.slice(1).join(" ") : "",
-              avatarUrl: data.avatar_url || "",
-              business: { isBusiness: !!data.is_business },
-              ocasoCredits: credits,
-            });
-          }
-        } catch (err) {
-          console.error("Profile refetch error:", err);
-        }
-      })();
-    }
-
     if (typeof window !== "undefined") {
       window.addEventListener(
         "ocaso:profile-updated",
         onUpdated as EventListener,
-      );
-      window.addEventListener(
-        "ocaso:credits-updated",
-        onCreditsUpdated as EventListener,
       );
       return () => {
         window.removeEventListener(
           "ocaso:profile-updated",
           onUpdated as EventListener,
         );
-        window.removeEventListener(
-          "ocaso:credits-updated",
-          onCreditsUpdated as EventListener,
-        );
       };
     }
   }, [supabase]);
-
-  // Periodically refresh credits every 30 seconds
-  useEffect(() => {
-    if (!profile?.id) return;
-
-    const interval = setInterval(async () => {
-      try {
-        const { data, error } = await supabase.from("profiles").select(
-          "ocaso_credits",
-        ).eq("id", profile.id).maybeSingle();
-        if (!error && data) {
-          const credits = data.ocaso_credits || 0;
-          const cachedCredits = getCachedCredits(profile.id);
-          if (credits !== cachedCredits) {
-            setCachedCredits(profile.id, credits);
-            setProfile((p) => p ? { ...p, ocasoCredits: credits } : p);
-          }
-        }
-      } catch (err) {
-        console.error("Credits polling error:", err);
-      }
-    }, 30000); // 30 seconds
-
-    return () => clearInterval(interval);
-  }, [profile?.id, supabase]);
 
   return { profile, loading, setProfile };
 }

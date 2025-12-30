@@ -6,6 +6,7 @@ export const revalidate = 0; // altijd fresh zodat rating direct zichtbaar is
 
 import Link from "next/link";
 
+import { AffiliateRecommendations } from "@/components/AffiliateRecommendations";
 import BackBar from "@/components/BackBar";
 import BidsModal from "@/components/BidsModal";
 import ClientActions from "@/components/ClientActions";
@@ -97,7 +98,7 @@ export default async function ListingPage({ params }: { params: { id: string } }
     }
   }
   // 3) Extra fallback: indien seller business is (of listing heeft business/organization id) en nog geen reviews: business_id aggregatie
-  if ((sellerReviewCount == null || sellerReviewCount === 0)) {
+  if ((sellerReviewCount == null || sellerReviewCount === 0) && listing) {
     const businessId = (listing as { organization_id?: string | null; business_id?: string | null }).organization_id
       || (listing as { business_id?: string | null }).business_id
       || (listing as { seller?: { is_business?: boolean | null; id?: string | null } }).seller?.is_business
@@ -393,6 +394,7 @@ export default async function ListingPage({ params }: { params: { id: string } }
           url={`/listings/${listing.id}`}
         />
       </div>
+      <AffiliateRecommendations query={listing.title} category={listing.categories?.[0]?.slug} />
     </div>
   );
 }

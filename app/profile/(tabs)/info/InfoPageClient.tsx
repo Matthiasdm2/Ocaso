@@ -67,21 +67,6 @@ export default function InfoPageClient() {
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
   const { push } = useToast();
 
-  // Handle credits success without useSearchParams (no Suspense needed)
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const sp = new URLSearchParams(window.location.search);
-    if (sp.get('credits_success') === 'true') {
-      push('Credits succesvol toegevoegd! Je saldo is bijgewerkt.');
-      window.dispatchEvent(new CustomEvent('ocaso:profile-updated', { detail: { refetch: true } }));
-      window.dispatchEvent(new CustomEvent('ocaso:credits-updated'));
-      const url = new URL(window.location.href);
-      url.searchParams.delete('credits_success');
-      url.searchParams.delete('session_id');
-      window.history.replaceState({}, '', url.toString());
-    }
-  }, [push]);
-
   // Load profile
   useEffect(() => {
     (async () => {
@@ -189,6 +174,16 @@ export default function InfoPageClient() {
   }, []);
 
   async function save() {
+    // Client-side validation
+    if (!profile.firstName.trim()) {
+      push('Voornaam is verplicht');
+      return;
+    }
+    if (!profile.lastName.trim()) {
+      push('Achternaam is verplicht');
+      return;
+    }
+
     setSaving(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -520,16 +515,19 @@ export default function InfoPageClient() {
               overline="Sectie"
               title="Persoonsgegevens"
               subtitle="Basisinfo die we gebruiken voor je account en communicatie."
+              defaultCollapsed={false}
             >
               <div className="grid gap-5 md:grid-cols-2">
                 <Field label="Voornaam">
                   <Input
+                    name="firstName"
                     value={profile.firstName}
                     onChange={(e) => setProfile({ ...profile, firstName: e.target.value })}
                   />
                 </Field>
                 <Field label="Achternaam">
                   <Input
+                    name="lastName"
                     value={profile.lastName}
                     onChange={(e) => setProfile({ ...profile, lastName: e.target.value })}
                   />
@@ -539,6 +537,7 @@ export default function InfoPageClient() {
                 </Field>
                 <Field label="Telefoon">
                   <Input
+                    name="phone"
                     placeholder="+32 4xx xx xx xx"
                     value={profile.phone}
                     onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
@@ -628,6 +627,7 @@ export default function InfoPageClient() {
               <div className="grid gap-5 md:grid-cols-2">
                 <Field label="Straat + nr.">
                   <Input
+                    name="street"
                     value={profile.address.street}
                     onChange={(e) =>
                       setProfile({
@@ -639,6 +639,7 @@ export default function InfoPageClient() {
                 </Field>
                 <Field label="Postcode">
                   <Input
+                    name="zip"
                     value={profile.address.zip}
                     onChange={(e) =>
                       setProfile({
@@ -650,6 +651,7 @@ export default function InfoPageClient() {
                 </Field>
                 <Field label="Gemeente / Stad">
                   <Input
+                    name="city"
                     value={profile.address.city}
                     onChange={(e) =>
                       setProfile({
@@ -672,6 +674,7 @@ export default function InfoPageClient() {
                 </Field>
                 <Field label="IBAN (voor QR-overschrijving)">
                   <Input
+                    name="iban"
                     placeholder="BE68 5390 0754 7034"
                     value={profile.bank?.iban || ''}
                     onChange={(e) => setProfile((p) => ({ ...p, bank: { ...(p.bank || { iban: '', bic: '' }), iban: e.target.value } }))}
@@ -679,6 +682,7 @@ export default function InfoPageClient() {
                 </Field>
                 <Field label="BIC (optioneel)">
                   <Input
+                    name="bic"
                     placeholder="KREDBEBB"
                     value={profile.bank?.bic || ''}
                     onChange={(e) => setProfile((p) => ({ ...p, bank: { ...(p.bank || { iban: '', bic: '' }), bic: e.target.value } }))}

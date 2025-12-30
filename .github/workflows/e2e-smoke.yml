@@ -1,0 +1,86 @@
+name: E2E Smoke Tests (Release Gate)
+
+on:
+  push:
+    branches: [main, staging]
+  pull_request:
+    branches: [main, staging]
+
+jobs:
+  smoke:
+    name: Run E2E Smoke Tests
+    runs-on: ubuntu-latest
+    
+    env:
+      # E2E test environment (must match tests/.env.e2e.local format)
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      NEXT_PUBLIC_AFFILIATE_ENABLED: ${{ secrets.NEXT_PUBLIC_AFFILIATE_ENABLED || 'true' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Create E2E environment file
+        run: |
+          cat > tests/.env.e2e.local << 'EOF'
+          NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_AFFILIATE_ENABLED=${{ secrets.NEXT_PUBLIC_AFFILIATE_ENABLED || 'true' }}
+          EOF
+          echo "✅ Created tests/.env.e2e.local"
+
+      - name: Run E2E Smoke Tests
+        run: npm run e2e:smoke:ci
+
+      - name: Verify Test Artifacts
+        if: always()
+        run: node scripts/verify-smoke-artifacts.mjs
+
+      - name: Upload Playwright Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test-results/
+          retention-days: 30
+
+      - name: Comment PR with Results
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const lastRunFile = 'test-results/.last-run.json';
+            
+            if (!fs.existsSync(lastRunFile)) {
+              core.setFailed('Test artifacts missing');
+              return;
+            }
+            
+            const lastRun = JSON.parse(fs.readFileSync(lastRunFile, 'utf-8'));
+            const status = lastRun.status === 'passed' ? '✅ PASSED' : '❌ FAILED';
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## E2E Smoke Tests: ${status}\n\nStatus: ${lastRun.status}\nFailed tests: ${lastRun.failedTests?.length || 0}\n\nSee artifacts for full report.`
+            });

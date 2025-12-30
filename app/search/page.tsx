@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { AffiliateRecommendations } from "@/components/AffiliateRecommendations";
 import BackBar from "@/components/BackBar";
 import CategorySidebar from "@/components/CategorySidebar";
 import SearchHeader from "@/components/SearchHeader";
@@ -228,6 +229,7 @@ type Category = {
           </div>
         </div>
       )}
+      <AffiliateRecommendations query={q} category={catSlug} />
     </div>
   </div>
     </div>

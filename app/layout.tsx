@@ -9,11 +9,10 @@ import Script from 'next/script';
 export const runtime = 'nodejs';
 
 import AuthSessionSync from "@/components/AuthSessionSync";
-import Footer from "@/components/Footer";
-import Header from "@/components/Header";
 import MobileFooter from "@/components/MobileFooter";
 import { ToastProvider } from "@/components/Toast";
 const ChatDockManager = dynamic(() => import('@/components/ChatDockManager'), { ssr: false });
+const AppLayout = dynamic(() => import('@/components/AppLayout'), { ssr: false });
 
 // Normalize site URL: accept values without protocol (e.g. 'www.ocaso.be') and fall back safely
 const rawSite = (process.env.NEXT_PUBLIC_SITE_URL || "https://www.ocaso.be").replace(/\/$/, "");
@@ -89,12 +88,12 @@ export default function RootLayout({
     <html lang="nl">
       <body className="min-h-screen flex flex-col">
         <ToastProvider>
-          <Header />
-          <AuthSessionSync />
-          <main className="flex-1 pb-20 md:pb-0">{children}</main>
-          <Footer />
-          <MobileFooter />
-          <ChatDockManager />
+          <AppLayout>
+            <AuthSessionSync />
+            {children}
+            <MobileFooter />
+            <ChatDockManager />
+          </AppLayout>
           {/* Client bootstrap for consent-based loaders */}
           <ConsentBootstrap />
         </ToastProvider>

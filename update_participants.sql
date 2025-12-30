@@ -1,1 +1,0 @@
-UPDATE conversations SET participants = ARRAY['757ae3af-7ad0-4f41-94f2-179f95086b3d', 'e8e07914-c4fd-46b2-a4a1-9c0dc3eb1173'] WHERE id = '45b19efc-9312-4fff-bf3e-667d405309ea';

@@ -23,30 +23,37 @@ type UpsertPayload = Partial<{
 }>;
 
 export async function PUT(req: Request) {
-  const anon = supabaseServer();
-  let { data: { user } } = await anon.auth.getUser();
+  // For E2E tests, skip server cookie auth and use Authorization header directly
+  const auth = req.headers.get("authorization");
+  const token = auth?.toLowerCase().startsWith("bearer ")
+    ? auth.slice(7)
+    : null;
+    
+  let user = null;
+  
+  if (token) {
+    // Use Authorization header directly (for E2E tests)
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+    const alt = createClient(url, anonKey, {
+      global: { headers: { Authorization: `Bearer ${token}` } },
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      },
+    });
+    const got = await alt.auth.getUser();
+    console.log("User from Authorization header:", got.data.user?.id);
+    user = got.data.user;
+  }
+  
   if (!user) {
-    // Fallback: Authorization: Bearer <token>
-    const auth = req.headers.get("authorization");
-    const token = auth?.toLowerCase().startsWith("bearer ")
-      ? auth.slice(7)
-      : null;
-    if (token) {
-      const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-      const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-      const alt = createClient(url, anonKey, {
-        global: { headers: { Authorization: `Bearer ${token}` } },
-        auth: {
-          persistSession: false,
-          autoRefreshToken: false,
-          detectSessionInUrl: false,
-        },
-      });
-      const got = await alt.auth.getUser();
-      if (got.data.user) {
-        user = got.data.user;
-      }
-    }
+    // Fallback to server cookie auth
+    const anon = supabaseServer();
+    const { data: { user: serverUser } } = await anon.auth.getUser();
+    console.log("User from supabaseServer:", serverUser?.id);
+    user = serverUser;
   }
   if (!user) {
     return NextResponse.json({ error: "Niet ingelogd" }, { status: 401 });
@@ -83,11 +90,13 @@ export async function PUT(req: Request) {
 
   try {
     if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      console.error("SUPABASE_SERVICE_ROLE_KEY missing from environment");
       return NextResponse.json({ error: "service_role_missing" }, {
         status: 503,
       });
     }
     const service = supabaseServiceRole();
+    console.log("Attempting profile upsert with service role client");
     const { data: upserted, error } = await service
       .from("profiles")
       .upsert(allowed)
@@ -96,15 +105,28 @@ export async function PUT(req: Request) {
       )
       .single();
     if (error) {
+      console.error("Service role upsert failed:", error);
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
+    console.log("Service role upsert successful");
     return NextResponse.json(
       { ok: true, profile: upserted },
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch (e) {
+    console.error("Service role client creation failed:", e);
     // Fallback zonder service role: probeer update met RLS, enkel eigen rij
-    const { data: updated, error: updErr } = await anon
+    console.log("Falling back to anon client with RLS");
+    const fallbackClient = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+      global: { headers: token ? { Authorization: `Bearer ${token}` } : {} },
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      },
+    });
+    
+    const { data: updated, error: updErr } = await fallbackClient
       .from("profiles")
       .update(allowed)
       .eq("id", user.id)
@@ -113,10 +135,14 @@ export async function PUT(req: Request) {
       )
       .single();
     if (updErr) {
+      console.error("RLS fallback update failed:", updErr);
       return NextResponse.json({
         error: updErr.message || "Kon profiel niet opslaan",
+        details: updErr.details,
+        hint: updErr.hint
       }, { status: 400 });
     }
+    console.log("RLS fallback update successful");
     return NextResponse.json(
       { ok: true, profile: updated },
       { headers: { "Cache-Control": "no-store" } },

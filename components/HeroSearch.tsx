@@ -104,6 +104,7 @@ export default function HeroSearch({ noContainer = false }: { noContainer?: bool
                 type="search"
                 name="q"
                 autoComplete="off"
+                data-testid="explore-search"
               />
             </label>
           </form>

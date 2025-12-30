@@ -359,25 +359,50 @@ export default function BusinessProfilePage() {
     setSaving(true);
     try {
       const body = {
-        companyName: profile.business.companyName || undefined,
-        vatNumber: profile.business.vatNumber || undefined,
-        registrationNr: profile.business.registrationNr || undefined,
+        company_name: profile.business.companyName || undefined,
+        vat: profile.business.vatNumber || undefined,
+        registration_nr: profile.business.registrationNr || undefined,
         website: profile.business.website || undefined,
-        invoiceEmail: profile.business.invoiceEmail || undefined,
-        shopName: profile.business.shopName || undefined,
-        shopSlug: profile.business.shopSlug || undefined,
-        description: profile.business.description || undefined,
-        socials: profile.business.socials,
-        public: profile.business.public,
-        logoUrl: profile.business.logoUrl || undefined,
-        bannerUrl: profile.business.bannerUrl || undefined,
-  categories: profile.business.categories && profile.business.categories.length ? profile.business.categories : undefined,
+        invoice_email: profile.business.invoiceEmail || undefined,
+        shop_name: profile.business.shopName || undefined,
+        shop_slug: profile.business.shopSlug || undefined,
+        business_bio: profile.business.description || undefined,
+        social_instagram: profile.business.socials.instagram || undefined,
+        social_facebook: profile.business.socials.facebook || undefined,
+        social_tiktok: profile.business.socials.tiktok || undefined,
+        public_show_email: profile.business.public.showEmail,
+        public_show_phone: profile.business.public.showPhone,
+        business_logo_url: profile.business.logoUrl || undefined,
+        business_banner_url: profile.business.bannerUrl || undefined,
+        invoice_address: profile.business.invoiceAddress,
+        bank: profile.business.bank,
       };
-      const r = await fetch('/api/profile/business', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+
+      // Get session token for authentication
+      const { data: { session } } = await supabase.auth.getSession();
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (session?.access_token) {
+        headers.Authorization = `Bearer ${session.access_token}`;
+      }
+
+      // Call subscription-enforced API endpoint
+      const r = await fetch('/api/profile/business/upsert', { 
+        method: 'PUT', 
+        headers, 
+        body: JSON.stringify(body) 
+      });
+
       if (!r.ok) {
         const j = await r.json().catch(() => ({}));
-        throw new Error(j.error || 'Server fout');
+        const errorMsg = j.error || `Server error (${r.status})`;
+        
+        if (r.status === 403) {
+          throw new Error(errorMsg || 'Abonnement niet actief. Activeer een abonnement om wijzigingen op te slaan.');
+        }
+        
+        throw new Error(errorMsg);
       }
+
       setFormOk('Opgeslagen');
       if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('ocaso:profile-updated'));
     } catch (e) {
@@ -600,7 +625,7 @@ export default function BusinessProfilePage() {
             )}
             {/* Abonnement keuze - verberg alleen als er een actief abonnement is en geen recente checkout */}
             {!(profile.business?.subscriptionActive && !checkoutSuccess) && (
-              <Section overline="Abonnement" title="Kies je abonnement" subtitle="Selecteer een pakket voor je zakelijke profiel." collapsible={true} defaultCollapsed={true}>
+              <Section data-section="subscription" overline="Abonnement" title="Kies je abonnement" subtitle="Selecteer een pakket voor je zakelijke profiel." collapsible={true} defaultCollapsed={true}>
                 <div className="flex items-center justify-between mb-4">
                   <div className="text-sm text-neutral-600">Betaling</div>
                   <div className="flex items-center gap-3">
@@ -710,8 +735,9 @@ export default function BusinessProfilePage() {
               </div>
             </Section>
             )}
-            {/* Branding */}
-            <Section overline="Branding" title="Logo & banner" subtitle="Upload je bedrijfslogo en header-afbeelding.">
+            {/* Branding - only show if subscription active */}
+            {profile.business?.subscriptionActive && (
+              <Section overline="Branding" title="Logo & banner" subtitle="Upload je bedrijfslogo en header-afbeelding.">
               <div className="grid gap-6 md:grid-cols-[1fr_1fr]">
                 <div className="space-y-3">
                   <div className="text-sm font-medium">Logo</div>
@@ -807,9 +833,11 @@ export default function BusinessProfilePage() {
                 </div>
               </div>
             </Section>
+            )}
 
-            {/* Categories */}
-            <Section overline="Categorieën" title="Kies categorieën" subtitle="Max 8 relevante categorieën voor vindbaarheid.">
+            {/* Categories - only show if subscription active */}
+            {profile.business?.subscriptionActive && (
+              <Section overline="Categorieën" title="Kies categorieën" subtitle="Max 8 relevante categorieën voor vindbaarheid.">
               <div className="space-y-3">
                 <div className="flex gap-2">
                   <select
@@ -853,9 +881,11 @@ export default function BusinessProfilePage() {
                 <p className="text-sm text-neutral-500">Selecteer categorieën uit de lijst voor betere vindbaarheid.</p>
               </div>
             </Section>
+            )}
 
-            {/* Winkelgegevens */}
-            <Section overline="Winkel" title="Winkelgegevens" subtitle="Kies je publieksnaam en URL-slug (uniek).">
+            {/* Winkelgegevens - only show if subscription active */}
+            {profile.business?.subscriptionActive && (
+              <Section overline="Winkel" title="Winkelgegevens" subtitle="Kies je publieksnaam en URL-slug (uniek).">
               <div className="grid gap-5 md:grid-cols-2">
                 <Field label="Shopnaam (publiek)">
                   <Input
@@ -892,15 +922,17 @@ export default function BusinessProfilePage() {
                 </Field>
               </div>
             </Section>
+            )}
 
-            {/* Eigen betaalterminal (Stripe onboarding) */}
-            <Section
-              id="betaalterminal"
-              overline="Betalingen"
-              title="Eigen betaalterminal"
-              subtitle="Registreer je als verkoper om betalingen veilig via je eigen betaalterminal te ontvangen."
-              defaultCollapsed={openSection !== 'betaalterminal'}
-            >
+            {/* Eigen betaalterminal (Stripe onboarding) - only show if subscription active */}
+            {profile.business?.subscriptionActive && (
+              <Section
+                id="betaalterminal"
+                overline="Betalingen"
+                title="Eigen betaalterminal"
+                subtitle="Registreer je als verkoper om betalingen veilig via je eigen betaalterminal te ontvangen."
+                defaultCollapsed={openSection !== 'betaalterminal'}
+              >
               <div className="rounded-lg border bg-white p-4">
                 <p className="text-sm text-neutral-700 mb-3">Wil je dat kopers via je eigen betaalterminal kunnen betalen? Registreer je verkopersaccount bij onze betalingsprovider.</p>
                 <div className="flex items-center gap-3">
@@ -931,11 +963,11 @@ export default function BusinessProfilePage() {
                 </div>
               </div>
             </Section>
+            )}
 
-            {/* Zichtbaarheid & contact */}
-
-            {/* Zichtbaarheid & contact */}
-            <Section overline="Zichtbaarheid" title="Contact & zichtbaarheid" subtitle="Kies wat kopers mogen zien op je winkelpagina.">
+            {/* Zichtbaarheid & contact - only show if subscription active */}
+            {profile.business?.subscriptionActive && (
+              <Section overline="Zichtbaarheid" title="Contact & zichtbaarheid" subtitle="Kies wat kopers mogen zien op je winkelpagina.">
               <div className="grid gap-5 md:grid-cols-2">
                 <Field label="Publiek e-mailadres">
                   <Input
@@ -974,9 +1006,11 @@ export default function BusinessProfilePage() {
                 </div>
               </div>
             </Section>
+            )}
 
-            {/* Socials */}
-            <Section overline="Socials" title="Social media" subtitle="Voeg links toe zodat kopers je kunnen volgen.">
+            {/* Socials - only show if subscription active */}
+            {profile.business?.subscriptionActive && (
+              <Section overline="Socials" title="Social media" subtitle="Voeg links toe zodat kopers je kunnen volgen.">
               <div className="grid gap-5 md:grid-cols-3">
                 <Field label="Instagram">
                   <Input
@@ -1001,9 +1035,11 @@ export default function BusinessProfilePage() {
                 </Field>
               </div>
             </Section>
+            )}
 
-            {/* Wettelijke info */}
-            <Section overline="Wettelijk" title="Bedrijfsgegevens" subtitle="Helpt bij vertrouwen & verificatie van je winkel.">
+            {/* Wettelijke info - only show if subscription active */}
+            {profile.business?.subscriptionActive && (
+              <Section overline="Wettelijk" title="Bedrijfsgegevens" subtitle="Helpt bij vertrouwen & verificatie van je winkel.">
               <div className="grid gap-5 md:grid-cols-2">
                 <Field label="Bedrijfsnaam">
                   <Input
@@ -1045,9 +1081,11 @@ export default function BusinessProfilePage() {
                 </div>
               </div>
             </Section>
+            )}
 
-            {/* Facturatie */}
-            <Section overline="Facturatie" title="Facturatiegegevens" subtitle="Deze informatie wordt gebruikt voor facturen en automatische invulling bij checkout.">
+            {/* Facturatie - only show if subscription active */}
+            {profile.business?.subscriptionActive && (
+              <Section overline="Facturatie" title="Facturatiegegevens" subtitle="Deze informatie wordt gebruikt voor facturen en automatische invulling bij checkout.">
               <div className="grid gap-5 md:grid-cols-2">
                 <Field label="Factuur e-mail">
                   <Input
@@ -1106,9 +1144,11 @@ export default function BusinessProfilePage() {
                 </div>
               </div>
             </Section>
+            )}
 
-            {/* Dedicated Bulk upload section */}
-            <Section overline="Bulk upload" title="Bulk upload zoekertjes" subtitle="Upload meerdere zoekertjes via Excel (XLSX) of CSV. Gebruik het template om kolommen te volgen.">
+            {/* Dedicated Bulk upload section - only show if subscription active */}
+            {profile.business?.subscriptionActive && (
+              <Section overline="Bulk upload" title="Bulk upload zoekertjes" subtitle="Upload meerdere zoekertjes via Excel (XLSX) of CSV. Gebruik het template om kolommen te volgen.">
               <div className="space-y-3">
                 <p className="text-sm text-neutral-600">Download het template en vul per rij een zoekertje in. Ondersteunde kolommen: title, price, description, location, category, images (komma-gescheiden URLs).</p>
                 <div className="flex items-center gap-3">
@@ -1150,6 +1190,33 @@ export default function BusinessProfilePage() {
                 {formOk && <div className="text-sm text-emerald-700">{formOk}</div>}
               </div>
             </Section>
+            )}
+
+            {/* CTA section when no subscription */}
+            {!profile.business?.subscriptionActive && (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-8 text-center">
+                <div className="mx-auto max-w-md">
+                  <div className="mb-4 flex justify-center">
+                    <svg className="h-12 w-12 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-amber-900 mb-2">Activeer je abonnement</h3>
+                  <p className="text-sm text-amber-700 mb-6">
+                    Kies een abonnement hierboven om toegang te krijgen tot alle shop functies, branding opties en verkoop tools.
+                  </p>
+                  <button
+                    onClick={() => {
+                      const element = document.querySelector('[data-section="subscription"]');
+                      element?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className="rounded-xl bg-amber-600 px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-amber-700"
+                  >
+                    Naar abonnementen
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Opslaan + Preview button onderaan */}
             <div className="flex items-center justify-end gap-2">

@@ -167,3 +167,82 @@ export async function GET(request: Request) {
     },
   });
 }
+
+export async function POST(request: Request) {
+  const supabase = supabaseServer();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "Niet ingelogd" }, { status: 401 });
+  }
+
+  let body: Record<string, unknown> = {};
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  // Server-side validation
+  const errors: string[] = [];
+  if (!body.title || typeof body.title !== 'string' || !body.title.trim()) {
+    errors.push("title is required");
+  }
+  if (!body.price || typeof body.price !== 'number' || body.price <= 0) {
+    errors.push("price must be a positive number");
+  }
+  if (!body.category_id || typeof body.category_id !== 'number') {
+    errors.push("category_id is required");
+  }
+  if (!Array.isArray(body.images) || body.images.length < 1) {
+    errors.push("at least one image is required");
+  }
+  if (!body.stock || typeof body.stock !== 'number' || body.stock < 1) {
+    errors.push("stock must be at least 1");
+  }
+  if (errors.length > 0) {
+    return NextResponse.json({ error: errors.join(", ") }, { status: 400 });
+  }
+
+  // Prepare payload
+  const payload = {
+    seller_id: user.id,
+    created_by: user.id,
+    title: (body.title as string).trim(),
+    description: body.description as string | null || null,
+    price: body.price as number,
+    images: body.images as string[],
+    main_photo: (body.main_photo as string) || (body.images as string[])[0],
+    category_id: body.category_id as number,
+    subcategory_id: body.subcategory_id as number | null || null,
+    stock: body.stock as number,
+    status: "actief",
+    allow_offers: body.allow_offers as boolean || false,
+    state: body.state as string || "nieuw",
+    location: body.location as string | null || null,
+    allow_shipping: body.allow_shipping as boolean || false,
+    shipping_length: body.shipping_length as number | null || null,
+    shipping_width: body.shipping_width as number | null || null,
+    shipping_height: body.shipping_height as number | null || null,
+    shipping_weight: body.shipping_weight as number | null || null,
+    min_bid: body.min_bid as number | null || null,
+    secure_pay: body.secure_pay as boolean || false,
+    promo_featured: false,
+    promo_top: false,
+  };
+
+  console.log('Creating listing for user', user.id, 'with payload:', { ...payload, images: payload.images?.length });
+
+  const { data, error } = await supabase
+    .from("listings")
+    .insert([payload])
+    .select("id")
+    .single();
+
+  if (error) {
+    console.error('Listing create error:', error);
+    return NextResponse.json({ error: error.message }, { status: 400 });
+  }
+
+  console.log('Listing created successfully, id:', data.id);
+  return NextResponse.json({ ok: true, id: data.id }, { status: 201 });
+}

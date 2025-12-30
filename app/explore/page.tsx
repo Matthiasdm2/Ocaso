@@ -40,7 +40,7 @@ export default function ExplorePage() {
   return (
     <div className="container py-4 md:py-8 space-y-6 md:space-y-8">
       <HeroSearch />
-      <h1 className="text-lg md:text-xl font-semibold px-2">Ontdekken</h1>
+      <h1 className="text-lg md:text-xl font-semibold px-2" data-testid="explore-title">Ontdekken</h1>
 
       <section className="space-y-3">
         <h2 className="font-semibold px-2">Aanbevolen voor jou</h2>

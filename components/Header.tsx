@@ -1,12 +1,11 @@
 "use client";
 
-import { CreditCard, LogIn, LogOut, Menu, Plus, UserPlus, X } from "lucide-react";
+import { LogIn, LogOut, Menu, Plus, UserPlus, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { createClient } from "@/lib/supabaseClient";
-import { useProfile } from "@/lib/useProfile";
 import { useUnreadBids } from "@/lib/useUnreadBids";
 import { useUnreadChats } from "@/lib/useUnreadChats";
 import { useUnreadReviews } from "@/lib/useUnreadReviews";
@@ -17,36 +16,13 @@ import Logo from "./Logo";
 export default function Header() {
   const [loggedIn, setLoggedIn] = useState<boolean | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [creditsModalOpen, setCreditsModalOpen] = useState(false);
 
   const router = useRouter();
   const supabase = createClient();
-  const { profile } = useProfile();
   const { total: unreadBidsTotal } = useUnreadBids();
   const { total: unreadChatsTotal } = useUnreadChats();
   const { total: unreadReviewsTotal } = useUnreadReviews();
   const notifTotal = (unreadBidsTotal || 0) + (unreadChatsTotal || 0) + (unreadReviewsTotal || 0);
-
-  // Prevent background scroll when the credits modal is open
-  useEffect(() => {
-    if (typeof document === "undefined") return;
-    if (!creditsModalOpen) {
-      // restore if previously locked
-      document.body.style.overflow = "";
-      document.body.style.paddingRight = "";
-      return;
-    }
-    // lock scroll and compensate for scrollbar to avoid layout shift
-    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
-    document.body.style.overflow = "hidden";
-    if (scrollbarWidth > 0) {
-      document.body.style.paddingRight = `${scrollbarWidth}px`;
-    }
-    return () => {
-      document.body.style.overflow = "";
-      document.body.style.paddingRight = "";
-    };
-  }, [creditsModalOpen]);
 
   // Auth status ophalen + luisteren naar wijzigingen
   useEffect(() => {
@@ -66,12 +42,6 @@ export default function Header() {
   }, [supabase]);
 
   // Chats badge/polling is verwijderd op vraag: chats staat onder Mijn profiel
-
-  async function buyCredits(amount: number) {
-    // Redirect to embedded checkout for credits
-    const url = `/checkout/embedded?mode=credits&credits=${amount}`;
-    window.location.href = url;
-  }
 
   async function handleLogout() {
     // 1) Direct UI terug naar uitgelogd
@@ -114,15 +84,8 @@ export default function Header() {
           </div>
           <div className="flex items-center gap-3">
             {loggedIn ? (
-              // Ingelogd → toon Credits en Uitloggen
+              // Ingelogd → toon Uitloggen
               <>
-                <button
-                  type="button"
-                  onClick={() => setCreditsModalOpen(true)}
-                  className="hidden sm:flex items-center gap-1 hover:text-gray-900"
-                >
-                  <CreditCard className="h-4 w-4" /> {profile?.ocasoCredits || 0} Credits
-                </button>
                 <button
                   type="button"
                   onClick={handleLogout}
@@ -262,16 +225,6 @@ export default function Header() {
                   <button
                     type="button"
                     onClick={() => {
-                      setCreditsModalOpen(true);
-                      setMobileMenuOpen(false);
-                    }}
-                    className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-50"
-                  >
-                    <CreditCard className="h-4 w-4" /> {profile?.ocasoCredits || 0} Credits
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
                       handleLogout();
                       setMobileMenuOpen(false);
                     }}
@@ -299,118 +252,6 @@ export default function Header() {
                 </>
               )}
             </div>
-          </div>
-        </div>
-      )}
-      
-      {/* Credits Modal */}
-      {creditsModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 p-4 pt-16">
-          <div className="bg-white rounded-xl shadow-2xl p-3 aspect-square w-[90vw] max-w-[600px] md:w-[600px] overflow-hidden">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-xl font-bold text-gray-900">Ocaso Credits</h3>
-              <button
-                onClick={() => setCreditsModalOpen(false)}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            
-            <div className="mb-3">
-              <div className="text-center">
-                <div className="text-4xl font-extrabold text-primary mb-1">
-                  {profile?.ocasoCredits || 0}
-                </div>
-                <div className="text-gray-600 text-base font-medium">beschikbare credits</div>
-              </div>
-            </div>
-
-            <div className="space-y-3 mb-3">
-              <div className="text-center">
-                <div className="text-gray-600 mb-6">
-                  <div className="font-medium mb-2">Waarom credits kopen?</div>
-                  <div className="text-sm">Genereer QR-codes voor betalingen zonder betaalterminal</div>
-                </div>
-              </div>
-              
-              {/* Savings Banner */}
-              <div className="bg-green-50 border border-green-200 rounded-lg p-2 text-center">
-                <div className="flex items-center justify-center gap-2 text-green-700 font-semibold text-sm">
-                  <span className="text-base">💰</span>
-                  <span>Bespaar 20% met het grote pakket!</span>
-                </div>
-              </div>
-              
-              <div className="grid gap-4">
-                {/* Small Package */}
-                                {/* Small Package */}
-                <div className="border-2 border-gray-200 rounded-xl p-3 hover:border-gray-300 transition-all duration-200 hover:shadow-md">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className="font-bold text-2xl">10</div>
-                        <div className="text-gray-600">Credits</div>
-                      </div>
-                      <div className="text-3xl font-bold text-primary">€1,00</div>
-                      <div className="text-sm text-gray-500">€0,10 per credit</div>
-                    </div>
-                    <button 
-                      onClick={() => buyCredits(10)}
-                      className="bg-gray-100 text-gray-800 px-6 py-3 rounded-lg font-semibold hover:bg-gray-200 transition-colors border border-gray-300"
-                    >
-                      koop nu
-                    </button>
-                  </div>
-                </div>
-
-                {/* Large Package - Featured */}
-                <div className="relative border-2 border-primary rounded-xl p-3 bg-gradient-to-r from-primary/5 to-primary/10 hover:from-primary/10 hover:to-primary/15 transition-all duration-200 hover:shadow-lg transform hover:-translate-y-1">
-                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                    <div className="bg-primary text-black px-4 py-1 rounded-full text-sm font-bold shadow-md">
-                      🔥 MEEST GEKOZEN
-                    </div>
-                  </div>
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className="font-bold text-2xl">25</div>
-                        <div className="text-gray-600">Credits</div>
-                        <div className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-medium">
-                          20% korting
-                        </div>
-                      </div>
-                      <div className="text-3xl font-bold text-primary">€5,00</div>
-                      <div className="text-sm text-gray-500">€0,20 per credit</div>
-                    </div>
-                    <button 
-                      onClick={() => buyCredits(25)}
-                      className="bg-primary text-black px-8 py-3 rounded-lg font-bold hover:bg-primary/90 transition-colors shadow-md hover:shadow-lg transform hover:scale-105"
-                    >
-                      koop nu
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Usage Info */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-2">
-              <div className="flex items-start gap-2">
-                <div className="text-blue-600 mt-0.5 text-base">ℹ️</div>
-                <div className="text-sm text-blue-800">
-                  <div className="font-semibold mb-0.5">Hoe werken credits?</div>
-                  <div>1 credit = 1 QR-code voor betalingen. Verkrijgbaar bij Ocaso Shops.</div>
-                </div>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setCreditsModalOpen(false)}
-              className="w-full py-3 text-gray-600 hover:text-gray-800 font-medium transition-colors"
-            >
-              Sluiten
-            </button>
           </div>
         </div>
       )}

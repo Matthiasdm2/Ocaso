@@ -12,6 +12,8 @@ export async function GET(request: Request) {
   const cursor = Math.max(0, Number(searchParams.get("cursor") || "0"));
   const pageSize = 24;
 
+  console.log(`[HOME API] Fetching home data, cursor=${cursor}`);
+
   // Sponsored (optioneel, fallback: leeg)
   type Listing = {
     id: number;
@@ -28,11 +30,13 @@ export async function GET(request: Request) {
   let sponsored: Listing[] = [];
   const { data: sponsoredData } = await supabase
     .from("listings")
-    .select("id,title,price,location,state,images,main_photo,created_at,status")
+    .select("id,title,price,location,state,images,created_at,status")
     .eq("status", "actief")
     .eq("is_sponsored", true) // <-- maak deze kolom aan als je hem nog niet hebt
     .order("created_at", { ascending: false })
     .limit(12);
+
+  console.log(`[HOME API] Sponsored query result: ${sponsoredData?.length || 0} items`);
 
   type ImageField = string[] | null | undefined;
   interface RawListing {
@@ -53,8 +57,7 @@ export async function GET(request: Request) {
     price: l.price,
     location: l.location ?? undefined,
     state: l.state ?? undefined,
-    main_photo: l.main_photo ??
-      (Array.isArray(l.images) && l.images.length ? l.images[0] : null),
+    main_photo: (Array.isArray(l.images) && l.images.length ? l.images[0] : null),
     images: Array.isArray(l.images) ? l.images : [],
     created_at: l.created_at,
     sponsored: true,
@@ -66,18 +69,21 @@ export async function GET(request: Request) {
 
   const { data, error } = await supabase
     .from("listings")
-    .select("id,title,price,location,state,images,main_photo,created_at,status")
+    .select("id,title,price,location,state,images,created_at,status")
     .eq("status", "actief")
     .order("created_at", { ascending: false })
     .range(from, to);
 
   if (error) {
+    console.error(`[HOME API] Error fetching recommended: ${error.message}`);
     return NextResponse.json({
       sponsored: [],
       recommended: [],
       error: error.message,
     }, { status: 400 });
   }
+
+  console.log(`[HOME API] Recommended query result: ${data?.length || 0} items`);
 
   const recommended = (data as RawListing[] | null | undefined ?? []).map((
     l: RawListing,
@@ -87,12 +93,13 @@ export async function GET(request: Request) {
     price: l.price,
     location: l.location ?? undefined,
     state: l.state ?? undefined,
-    main_photo: l.main_photo ??
-      (Array.isArray(l.images) && l.images.length ? l.images[0] : null),
+    main_photo: (Array.isArray(l.images) && l.images.length ? l.images[0] : null),
     images: Array.isArray(l.images) ? l.images : [],
     created_at: l.created_at,
     sponsored: false,
   }));
+
+  console.log(`[HOME API] Returning ${sponsored.length} sponsored, ${recommended.length} recommended`);
 
   return NextResponse.json({ sponsored, recommended }, {
     headers: { "Cache-Control": "no-store" },

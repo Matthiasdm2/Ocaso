@@ -654,15 +654,34 @@ export default function SellPage() {
         subcategory_id: basePayload.subcategory_id,
         stock: basePayload.stock,
         status: basePayload.status,
+        allow_offers: basePayload.allowoffers,
+        state: basePayload.state,
+        location: basePayload.location,
+        allow_shipping: basePayload.allow_shipping,
+        shipping_length: basePayload.shipping_length,
+        shipping_width: basePayload.shipping_width,
+        shipping_height: basePayload.shipping_height,
+        shipping_weight: basePayload.shipping_weight,
+        min_bid: basePayload.min_bid,
+        secure_pay: basePayload.secure_pay,
       };
-      const ins = await supabase.from("listings").insert([safePayload]).select("id").maybeSingle();
 
+      // Use API route for server-side validation and logging
+      const response = await fetch('/api/listings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(safePayload),
+      });
 
-      if (ins.error) {
-        console.error("[sell] insert error:", ins);
-        push("Er ging iets mis bij het plaatsen van je zoekertje. Probeer het opnieuw.");
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('[sell] API error:', errorData);
+        push(`Er ging iets mis: ${errorData.error || 'Onbekende fout'}`);
         return;
       }
+
+      const result = await response.json();
+      const listingId = result.id;
 
       await revalidateCategory(category, subcategory);
       if (isBusiness && orgSlug) await revalidateCompany(String(orgSlug));
@@ -670,20 +689,68 @@ export default function SellPage() {
       push("Zoekertje geplaatst!");
 
       // Redirect naar het nieuwe zoekertje zelf
-      if (ins.data?.id) {
-        // Redirect naar categoriepagina met zoekertje-id als anchor
-        if (subcategory) {
-          router.replace(`/categorien/${encodeURIComponent(category)}/${encodeURIComponent(subcategory)}#listing-${ins.data.id}`);
-        } else {
-          router.replace(`/categorien/${encodeURIComponent(category)}#listing-${ins.data.id}`);
+      if (listingId) {
+        // Fetch category and subcategory data for correct redirect URL
+        let categorySlug = category;
+        let subcategoryName = subcategory;
+
+        try {
+          // Get category slug
+          if (categoryId) {
+            const { data: catData } = await supabase
+              .from("categories")
+              .select("slug")
+              .eq("id", categoryId)
+              .maybeSingle();
+            if (catData?.slug) {
+              categorySlug = catData.slug;
+            }
+          }
+
+          // Get subcategory name
+          if (subcategoryId) {
+            const { data: subData } = await supabase
+              .from("subcategories")
+              .select("name")
+              .eq("id", subcategoryId)
+              .maybeSingle();
+            if (subData?.name) {
+              subcategoryName = subData.name;
+            }
+          }
+        } catch (error) {
+          console.warn("Failed to fetch category/subcategory data for redirect:", error);
         }
+
+        // Redirect naar categoriepagina met zoekertje-id als anchor
+        const baseUrl = `/categories?cat=${encodeURIComponent(categorySlug)}`;
+        const url = subcategoryName
+          ? `${baseUrl}&sub=${encodeURIComponent(subcategoryName)}#listing-${listingId}`
+          : `${baseUrl}#listing-${listingId}`;
+        router.replace(url);
       } else {
         // fallback: categoriepagina
-        if (subcategory) {
-          router.replace(`/categorien/${encodeURIComponent(category)}/${encodeURIComponent(subcategory)}`);
-        } else {
-          router.replace(`/categorien/${encodeURIComponent(category)}`);
+        let categorySlug = category;
+        try {
+          if (categoryId) {
+            const { data: catData } = await supabase
+              .from("categories")
+              .select("slug")
+              .eq("id", categoryId)
+              .maybeSingle();
+            if (catData?.slug) {
+              categorySlug = catData.slug;
+            }
+          }
+        } catch (error) {
+          console.warn("Failed to fetch category data for fallback redirect:", error);
         }
+
+        const baseUrl = `/categories?cat=${encodeURIComponent(categorySlug)}`;
+        const url = subcategory
+          ? `${baseUrl}&sub=${encodeURIComponent(subcategory)}`
+          : baseUrl;
+        router.replace(url);
       }
     } finally {
       setSaving(false);
@@ -929,23 +996,24 @@ export default function SellPage() {
                 </div>
               </div>
 
-              <div className="mt-5 flex gap-2">
-                <button
-                  type="button"
-                  onClick={handlePreview}
-                  className="flex-1 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm shadow-sm hover:bg-gray-50"
-                >
-                  Preview
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  disabled={saving || uploading}
-                  className="flex-1 rounded-xl bg-emerald-600 text-white px-4 py-2.5 text-sm font-medium shadow-sm hover:bg-emerald-700 disabled:opacity-60"
-                >
-                  {saving ? "Bezig…" : uploading ? "Upload…" : "Plaatsen"}
-                </button>
-              </div>
+              <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
+                <div className="mt-5 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={handlePreview}
+                    className="flex-1 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm shadow-sm hover:bg-gray-50"
+                  >
+                    Preview
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={saving || uploading}
+                    className="flex-1 rounded-xl bg-emerald-600 text-white px-4 py-2.5 text-sm font-medium shadow-sm hover:bg-emerald-700 disabled:opacity-60"
+                  >
+                    {saving ? "Bezig…" : uploading ? "Upload…" : "Plaatsen"}
+                  </button>
+                </div>
+              </form>
 
               {!userEmail && (
                 <p className="mt-3 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">

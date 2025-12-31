@@ -2,29 +2,6 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
-
-// EMERGENCY HOTFIX: Mock data fallback when table doesn't exist
-const MOCK_VEHICLE_FILTERS = {
-  'auto-motor': [
-    { id: 1, filter_key: 'bouwjaar', filter_label: 'Bouwjaar', filter_options: [], placeholder: 'Kies bouwjaar', input_type: 'select', is_range: true, sort_order: 10 },
-    { id: 2, filter_key: 'kilometerstand', filter_label: 'Kilometerstand', filter_options: [], placeholder: 'Kies kilometerstand', input_type: 'select', is_range: true, sort_order: 20 },
-    { id: 3, filter_key: 'brandstof', filter_label: 'Brandstof', filter_options: ["Benzine", "Diesel", "Elektrisch", "Hybride", "LPG", "CNG"], placeholder: 'Kies brandstof', input_type: 'select', is_range: false, sort_order: 30 },
-    { id: 4, filter_key: 'carrosserie', filter_label: 'Carrosserie type', filter_options: ["Sedan", "Hatchback", "SUV", "Stationwagon", "Coupé", "Cabriolet"], placeholder: 'Kies carrosserie', input_type: 'select', is_range: false, sort_order: 40 }
-  ],
-  'bedrijfswagens': [
-    { id: 5, filter_key: 'bouwjaar', filter_label: 'Bouwjaar', filter_options: [], placeholder: 'Kies bouwjaar', input_type: 'select', is_range: true, sort_order: 10 },
-    { id: 6, filter_key: 'kilometerstand', filter_label: 'Kilometerstand', filter_options: [], placeholder: 'Kies kilometerstand', input_type: 'select', is_range: true, sort_order: 20 },
-    { id: 7, filter_key: 'brandstof', filter_label: 'Brandstof', filter_options: ["Benzine", "Diesel", "Elektrisch", "Hybride", "LPG", "CNG"], placeholder: 'Kies brandstof', input_type: 'select', is_range: false, sort_order: 30 },
-    { id: 8, filter_key: 'carrosserie', filter_label: 'Type bedrijfswagen', filter_options: ["Bestelwagen", "Vrachtwagen", "Chassis cabine", "Kipper", "Bakwagen"], placeholder: 'Kies type', input_type: 'select', is_range: false, sort_order: 40 }
-  ],
-  'camper-mobilhomes': [
-    { id: 9, filter_key: 'bouwjaar', filter_label: 'Bouwjaar', filter_options: [], placeholder: 'Kies bouwjaar', input_type: 'select', is_range: true, sort_order: 10 },
-    { id: 10, filter_key: 'kilometerstand', filter_label: 'Kilometerstand', filter_options: [], placeholder: 'Kies kilometerstand', input_type: 'select', is_range: true, sort_order: 20 },
-    { id: 11, filter_key: 'brandstof', filter_label: 'Brandstof', filter_options: ["Benzine", "Diesel", "Elektrisch", "Hybride", "LPG", "CNG"], placeholder: 'Kies brandstof', input_type: 'select', is_range: false, sort_order: 30 },
-    { id: 12, filter_key: 'campertype', filter_label: 'Type camper', filter_options: ["Integraal", "Halfintegraal", "Alcoof", "Bus camper", "Vouwwagen", "Caravan"], placeholder: 'Kies camper type', input_type: 'select', is_range: false, sort_order: 40 }
-  ]
-};
-
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -39,81 +16,41 @@ export async function GET(request: Request) {
 
     const supabase = createRouteHandlerClient({ cookies });
 
-    // Get category filters for this category
+    // Get category filters for this category from database
     const { data: filters, error } = await supabase
       .from('category_filters')
       .select('*')
       .eq('category_slug', categorySlug)
-      .eq('is_active', true)
-      .order('sort_order', { ascending: true });
+      .order('display_order', { ascending: true });
 
     if (error) {
-      console.error('Error fetching category filters (using fallback):', error);
-      
-      // EMERGENCY FALLBACK: Use mock data if table doesn't exist
-      const mockFilters = MOCK_VEHICLE_FILTERS[categorySlug as keyof typeof MOCK_VEHICLE_FILTERS];
-      if (mockFilters) {
-        console.log('🚨 Using mock vehicle filters for:', categorySlug);
-        return NextResponse.json({
-          category: categorySlug,
-          filters: mockFilters
-        });
-      }
-      
+      console.error('Error fetching category filters:', error);
       return NextResponse.json(
         { error: 'Failed to fetch category filters' },
         { status: 500 }
       );
     }
 
-    // EMERGENCY FALLBACK: Also use mock data if no filters found but category is a vehicle category
     if (!filters || filters.length === 0) {
-      const mockFilters = MOCK_VEHICLE_FILTERS[categorySlug as keyof typeof MOCK_VEHICLE_FILTERS];
-      if (mockFilters) {
-        console.log('🚨 No DB filters found, using mock vehicle filters for:', categorySlug);
-        return NextResponse.json({
-          category: categorySlug,
-          filters: mockFilters
-        });
-      }
+      return NextResponse.json(
+        { error: 'No filters found for this category' },
+        { status: 404 }
+      );
     }
 
-    // For now, return the basic filters without dynamic range calculation
-    // The dynamic ranges can be implemented later when the listings have the proper columns
-    const enhancedFilters = filters.map((filter) => {
-      // Pre-populate year ranges for demonstration
-      if (filter.filter_key === 'bouwjaar' && filter.is_range) {
-        const currentYear = new Date().getFullYear();
-        const yearOptions = [];
-        for (let year = 1990; year <= currentYear; year++) {
-          yearOptions.push(year.toString());
-        }
-        return {
-          ...filter,
-          filter_options: yearOptions,
-          min_value: 1990,
-          max_value: currentYear
-        };
-      }
+    // Transform database format to expected frontend format
+    const transformedFilters = filters.map((filter) => ({
+      id: filter.filter_key,
+      type: filter.filter_type,
+      label: filter.label,
+      placeholder: filter.placeholder,
+      options: filter.options || [],
+      min: filter.validation?.min,
+      max: filter.validation?.max,
+      step: filter.validation?.step
+    }));
 
-      // Pre-populate mileage ranges
-      if (filter.filter_key === 'kilometerstand' && filter.is_range) {
-        return {
-          ...filter,
-          filter_options: [
-            '0-25000', '25000-50000', '50000-75000', '75000-100000', 
-            '100000-150000', '150000-200000', '200000+'
-          ]
-        };
-      }
-
-      return filter;
-    });
-
-    return NextResponse.json({
-      category: categorySlug,
-      filters: enhancedFilters
-    });
+    return NextResponse.json(transformedFilters);
 
   } catch (error) {
     console.error('Unexpected error:', error);

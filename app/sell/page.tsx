@@ -15,6 +15,8 @@ import Toggle from "@/components/Toggle";
 import { detectCategorySmart } from "@/lib/categoryDetection";
 import { createClient } from "@/lib/supabaseClient";
 
+import { VehicleDetailsSection } from "./components/VehicleDetailsSection";
+
 const supabase = createClient();
 const MIN_PHOTOS = 1;
 const MAX_PHOTOS = 12;
@@ -28,11 +30,18 @@ function randomId() {
   if (g?.crypto?.randomUUID) return g.crypto.randomUUID();
   return "id-" + Math.random().toString(36).slice(2) + Date.now().toString(36);
 }
+
+function generateCorrelationId(): string {
+  const g = globalThis as { crypto?: { randomUUID?: () => string } };
+  if (g?.crypto?.randomUUID) return g.crypto.randomUUID();
+  return "req-" + Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
 function parsePrice(input: string): number {
   if (input == null) return NaN;
   const normalized = String(input).replace(",", ".").trim();
   return Number(normalized);
 }
+
 async function revalidateCategory(category: string, subcategory?: string) {
   try {
     await fetch("/api/revalidate-category", {
@@ -81,13 +90,24 @@ export default function SellPage() {
   const [subcategory, setSubcategory] = useState<string>("");
   const [categoryName, setCategoryName] = useState<string>("");
   const [subcategoryName, setSubcategoryName] = useState<string>("");
+  const [categorySlug, setCategorySlug] = useState<string>("");
+
+  // Vehicle details for vehicle categories (auto-motor, bedrijfswagens, camper-mobilhomes)
+  const [vehicleDetails, setVehicleDetails] = useState<Record<string, string>>({});
 
   // Haal categorie namen op wanneer categorie/subcategorie verandert
   useEffect(() => {
     const fetchCategoryNames = async () => {
+      // DEBUG: Log category changes for vehicle details development
+      console.log('[SELL_VEHICLE_DEBUG] Category changed:', { 
+        categoryId: category, 
+        subcategoryId: subcategory 
+      });
+
       if (!category) {
         setCategoryName("");
         setSubcategoryName("");
+        setCategorySlug("");
         return;
       }
 
@@ -97,16 +117,20 @@ export default function SellPage() {
         if (isNaN(categoryId)) {
           setCategoryName("");
           setSubcategoryName("");
+          setCategorySlug("");
           return;
         }
 
         const { data: catData } = await supabase
           .from("categories")
-          .select("name")
+          .select("name, slug")
           .eq("id", categoryId)
           .maybeSingle();
 
+        console.log('[SELL_VEHICLE_DEBUG] Category data:', catData);
+
         setCategoryName(catData?.name || category);
+        setCategorySlug(catData?.slug || "");
 
         // Haal subcategorie naam op als er een subcategorie is
         if (subcategory) {
@@ -151,6 +175,9 @@ export default function SellPage() {
   const [isBusiness, setIsBusiness] = useState<boolean>(false);
   const [kycApproved, setKycApproved] = useState<boolean>(false);
   const [showKycModal, setShowKycModal] = useState<boolean>(false);
+  
+  // Correlation ID for error tracking
+  const [requestId] = useState(() => generateCorrelationId());
 
   // Auth badge
   useEffect(() => {
@@ -501,21 +528,50 @@ export default function SellPage() {
   };
 
   async function handleSubmit() {
+    const startTime = Date.now();
+    console.log(`[sell] REQUEST_START - request_id: ${requestId}, timestamp: ${new Date().toISOString()}`);
+    
     try {
       setSaving(true);
 
       // Validatie
-      if (!title.trim()) { push("Vul een titel in."); return; }
+      console.log(`[sell] STEP_1_VALIDATE - request_id: ${requestId}, user_id: ${userEmail}`);
+      if (!title.trim()) { 
+        console.log(`[sell] VALIDATION_ERROR - request_id: ${requestId}, error: missing_title`);
+        push("Vul een titel in."); 
+        return; 
+      }
       const priceNum = parsePrice(price);
-      if (!isFinite(priceNum) || priceNum <= 0) { push("Vul een geldige prijs in."); return; }
-      if (stock < 1) { push("Voorraad moet minimaal 1 zijn."); return; }
-      if (!category) { push("Kies een categorie."); return; }
+      if (!isFinite(priceNum) || priceNum <= 0) { 
+        console.log(`[sell] VALIDATION_ERROR - request_id: ${requestId}, error: invalid_price, value: ${price}`);
+        push("Vul een geldige prijs in."); 
+        return; 
+      }
+      if (stock < 1) { 
+        console.log(`[sell] VALIDATION_ERROR - request_id: ${requestId}, error: invalid_stock, value: ${stock}`);
+        push("Voorraad moet minimaal 1 zijn."); 
+        return; 
+      }
+      if (!category) { 
+        console.log(`[sell] VALIDATION_ERROR - request_id: ${requestId}, error: missing_category`);
+        push("Kies een categorie."); 
+        return; 
+      }
 
       // Auth
+      console.log(`[sell] STEP_2_AUTH - request_id: ${requestId}`);
       const { data: { user }, error: userErr } = await supabase.auth.getUser();
-      if (userErr || !user) { push("Je moet ingelogd zijn om te plaatsen."); return; }
+      if (userErr || !user) { 
+        console.log(`[sell] AUTH_ERROR - request_id: ${requestId}, error: ${userErr?.message || 'no_user'}`);
+        push("Je moet ingelogd zijn om te plaatsen."); 
+        return; 
+      }
 
-      if (imageUrls.length < MIN_PHOTOS) { push(`Upload minstens ${MIN_PHOTOS} foto.`); return; }
+      if (imageUrls.length < MIN_PHOTOS) { 
+        console.log(`[sell] VALIDATION_ERROR - request_id: ${requestId}, error: insufficient_images, count: ${imageUrls.length}`);
+        push(`Upload minstens ${MIN_PHOTOS} foto.`); 
+        return; 
+      }
 
       const { data: profile } = await supabase
         .from("profiles")
@@ -664,25 +720,38 @@ export default function SellPage() {
         shipping_weight: basePayload.shipping_weight,
         min_bid: basePayload.min_bid,
         secure_pay: basePayload.secure_pay,
+        // Add vehicle details if category is vehicle and data is provided
+        ...(categorySlug && ['auto-motor', 'bedrijfswagens', 'camper-mobilhomes'].includes(categorySlug) && 
+            Object.keys(vehicleDetails).length > 0 && 
+            { vehicle_details: vehicleDetails })
       };
 
       // Use API route for server-side validation and logging
+      console.log(`[sell] STEP_4_API_CALL - request_id: ${requestId}, payload_size: ${JSON.stringify(safePayload).length}`);
       const response = await fetch('/api/listings', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(safePayload),
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-ocaso-request-id': requestId
+        },
+        body: JSON.stringify({ ...safePayload, request_id: requestId }),
       });
 
+      console.log(`[sell] API_RESPONSE - request_id: ${requestId}, status: ${response.status}, ok: ${response.ok}`);
+      
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        console.error('[sell] API error:', errorData);
-        push(`Er ging iets mis: ${errorData.error || 'Onbekende fout'}`);
+        console.error(`[sell] API_ERROR - request_id: ${requestId}, error:`, errorData);
+        push(`Er ging iets mis (${requestId}): ${errorData.error || 'Onbekende fout'}`);
         return;
       }
 
       const result = await response.json();
       const listingId = result.id;
+      
+      console.log(`[sell] LISTING_CREATED - request_id: ${requestId}, listing_id: ${listingId}, duration: ${Date.now() - startTime}ms`);
 
+      console.log(`[sell] STEP_5_REVALIDATION - request_id: ${requestId}`);
       await revalidateCategory(category, subcategory);
       if (isBusiness && orgSlug) await revalidateCompany(String(orgSlug));
 
@@ -848,6 +917,13 @@ export default function SellPage() {
               />
             </div>
           </section>
+
+          {/* Vehicle Details Section - Only for vehicle categories */}
+          <VehicleDetailsSection
+            categorySlug={categorySlug}
+            vehicleDetails={vehicleDetails}
+            onDetailsChange={setVehicleDetails}
+          />
 
           {/* Omschrijving */}
           <section className="rounded-2xl border border-gray-200 bg-white/60 backdrop-blur-sm shadow-sm p-6 space-y-3">

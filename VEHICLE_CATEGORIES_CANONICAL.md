@@ -3,7 +3,7 @@
 **Date:** 31 December 2024  
 **Status:** FROZEN CONTRACT - SINGLE SOURCE OF TRUTH  
 **Authority:** Lead Software Developer + Database Engineer  
-**Purpose:** Definitively establish vehicle categorization for OCASO Marketplace  
+**Purpose:** Definitively establish vehicle categorization for OCASO Marketplace
 
 ---
 
@@ -12,6 +12,7 @@
 This document establishes the **CANONICAL AND IMMUTABLE** vehicle categorization for OCASO Marketplace. These categories and brands are the **SINGLE SOURCE OF TRUTH** and are **AUDIT-PROOF** for investor and external developer review.
 
 **MODIFICATION POLICY:** Any changes to this contract require:
+
 1. Written approval from CTO
 2. Full impact assessment
 3. Migration strategy with rollback plan
@@ -22,14 +23,16 @@ This document establishes the **CANONICAL AND IMMUTABLE** vehicle categorization
 ## 🚗 CANONICAL VEHICLE CATEGORIES
 
 ### 1. AUTO & MOTOR (EXACT 45 BRANDS)
+
 **Slug:** `auto-motor`  
 **Type:** Personenwagens (consumer vehicles)  
 **Icon:** car.svg  
-**Sort Order:** 3  
+**Sort Order:** 3
 
 **Brands (45):**
+
 1. Abarth
-2. Alfa Romeo  
+2. Alfa Romeo
 3. Audi
 4. BMW
 5. BYD
@@ -75,12 +78,14 @@ This document establishes the **CANONICAL AND IMMUTABLE** vehicle categorization
 45. XPeng
 
 ### 2. BEDRIJFSWAGENS (EXACT 25 BRANDS)
+
 **Slug:** `bedrijfswagens`  
 **Type:** Commercial vehicles  
 **Icon:** truck.svg  
-**Sort Order:** 9  
+**Sort Order:** 9
 
 **Brands (25):**
+
 1. BYD Commercial
 2. Citroën Professional
 3. DAF
@@ -108,12 +113,14 @@ This document establishes the **CANONICAL AND IMMUTABLE** vehicle categorization
 25. Vauxhall
 
 ### 3. MOTOREN (EXACT 25 BRANDS)
+
 **Slug:** `motoren`  
 **Type:** Motorcycles  
 **Icon:** motorbike.svg  
-**Sort Order:** 11  
+**Sort Order:** 11
 
 **Brands (25):**
+
 1. Aprilia
 2. Benelli
 3. BMW Motorrad
@@ -141,12 +148,14 @@ This document establishes the **CANONICAL AND IMMUTABLE** vehicle categorization
 25. Zontes
 
 ### 4. CAMPER & MOBILHOMES (EXACT 25 BRANDS)
+
 **Slug:** `camper-mobilhomes`  
 **Type:** Recreational vehicles  
 **Icon:** caravan.svg  
-**Sort Order:** 10  
+**Sort Order:** 10
 
 **Brands (25):**
+
 1. Adria
 2. Bailey
 3. Bürstner
@@ -187,17 +196,20 @@ This document establishes the **CANONICAL AND IMMUTABLE** vehicle categorization
 ## 🏗️ ARCHITECTURAL DECISIONS
 
 ### TECHNICAL IMPLEMENTATION:
+
 - **Categories:** Standard `categories` table with vehicle-specific entries
 - **Brands:** Implemented as `subcategories` with category_id mapping
 - **Filtering:** Brands function as filter layer within vehicle categories
 - **Slugs:** Lowercase, kebab-case, stable identifiers
 
 ### FUNCTIONAL SCOPE:
+
 - **IN SCOPE:** Vehicle brands as marketplace filters
 - **OUT OF SCOPE:** Functional subcategories (SUV, electric, diesel, etc.)
 - **RATIONALE:** Brands provide sufficient granularity for marketplace filtering
 
 ### DATA INTEGRITY:
+
 - **Uniqueness:** No brand appears in multiple vehicle categories
 - **Completeness:** Exact brand counts enforced
 - **Stability:** Slugs are immutable once established
@@ -207,6 +219,7 @@ This document establishes the **CANONICAL AND IMMUTABLE** vehicle categorization
 ## 🔍 VERIFICATION CONTRACT
 
 ### MANDATORY CHECKS:
+
 1. **Existence:** All 4 categories exist and are active
 2. **Brand Counts:** Exact counts (45, 25, 25, 25) enforced
 3. **Uniqueness:** No duplicate brand slugs within categories
@@ -215,9 +228,11 @@ This document establishes the **CANONICAL AND IMMUTABLE** vehicle categorization
 6. **Total:** Exactly 120 vehicle brands across all categories
 
 ### VERIFICATION SCRIPT:
+
 ```bash
 node scripts/verify-vehicle-categories.mjs
 ```
+
 **Exit Code 0:** Contract compliance ✅  
 **Exit Code 1:** Contract violation ❌
 
@@ -226,12 +241,15 @@ node scripts/verify-vehicle-categories.mjs
 ## 📁 IMPLEMENTATION FILES
 
 ### MIGRATION:
+
 - `supabase/migrations/20241231150000_canonical_vehicle_categories.sql`
 
 ### SETUP SCRIPTS:
+
 - `scripts/setup-canonical-vehicles.mjs`
 
 ### VERIFICATION:
+
 - `scripts/verify-vehicle-categories.mjs`
 
 ---
@@ -239,20 +257,25 @@ node scripts/verify-vehicle-categories.mjs
 ## 🎯 BUSINESS RATIONALE
 
 ### INVESTOR PRESENTATION:
+
 "This marketplace has professionally categorized its vehicle inventory with:
+
 - 4 distinct vehicle categories covering all market segments
 - 120 carefully curated brands across automotive spectrum
 - Audit-proof data structure with automated compliance verification
 - Single source of truth eliminating data inconsistencies"
 
 ### DEVELOPER ONBOARDING:
+
 External developers see immediately:
+
 - Clear, documented categorization contract
 - Automated verification ensuring data integrity
 - Stable API contracts for marketplace integration
 - Professional-grade data architecture
 
 ### SCALABILITY:
+
 - Each category supports marketplace filtering
 - Brand-based filtering provides granular search capability
 - Structure supports future expansion within established patterns
@@ -264,6 +287,7 @@ External developers see immediately:
 
 **Lead Software Developer Certification:**
 I certify that the vehicle categorization described in this document:
+
 - ✅ Has been implemented in production database
 - ✅ Passes all automated verification tests
 - ✅ Maintains data integrity and uniqueness constraints
@@ -279,6 +303,7 @@ I certify that the vehicle categorization described in this document:
 ## 🚨 MODIFICATION WARNING
 
 **⚠️ CRITICAL:** This is a FROZEN CONTRACT. Any modifications to vehicle categories or brands must follow the established modification policy. Unauthorized changes may:
+
 - Break marketplace filtering functionality
 - Cause data integrity violations
 - Fail automated verification checks

@@ -3,7 +3,7 @@
 **Date:** 31 December 2024  
 **Branch:** feat/vehicle-filters-20241231  
 **Purpose:** Add vehicle-specific filters to marketplace for Auto & Motor, Bedrijfswagens, Camper & Mobilhomes  
-**Lead:** CTO - OCASO  
+**Lead:** CTO - OCASO
 
 ---
 
@@ -12,24 +12,27 @@
 ### A1) MARKETPLACE FILTER UI LOCATION
 
 **Filter Component:** `/components/MarketplaceFilters.tsx`
+
 - **Type**: Client component using `useSearchParams()` for URL state management
 - **Integration**: Used in `/app/marketplace/page.tsx` within `CollapsibleContainer`
 - **Current filters**: price (min/max), state, location, sort, business toggle
 - **Pattern**: Each filter updates URL query params via `setParam()` function
 
-### A2) CATEGORY SELECTION MECHANISM  
+### A2) CATEGORY SELECTION MECHANISM
 
 **Category Selection:**
+
 - **Query Param**: `?category=<slug>` in URL (main mechanism)
 - **Legacy Support**: Also supports `?cat=` parameter
 - **Lookup**: Server-side in `/app/marketplace/page.tsx` lines 61-120
-- **Method**: 
+- **Method**:
   1. First try slug lookup: `categories.eq("slug", categoryRaw)`
   2. Fallback to name lookup for backward compatibility
 - **Current Active**: Available via `searchParams?.category` in components
 
 **API Source:**
-- **Categories**: `/api/categories` endpoint 
+
+- **Categories**: `/api/categories` endpoint
 - **Direct Supabase**: Server-side queries in marketplace page
 - **Brands**: Via subcategories table (`subcategories.eq("category_id", categoryId)`)
 
@@ -49,30 +52,34 @@
 
 **Issue:** "Voertuigfilters niet beschikbaar" melding verscheen in UI  
 **Root Cause:** `category_filters` table niet aanwezig in Supabase database  
-**Solution:** Emergency mock data fallback in API endpoint  
+**Solution:** Emergency mock data fallback in API endpoint
 
 ### HOTFIX STEPS EXECUTED:
 
 #### FASE A - ROOT CAUSE DIAGNOSE ✅
-- **A1**: Added debug logging to MarketplaceFilters.tsx 
+
+- **A1**: Added debug logging to MarketplaceFilters.tsx
 - **A2**: Attempted to test API endpoints (server issues)
 - **A3**: Direct Supabase query via Node.js script
 - **A4**: **FOUND:** Table `category_filters` does not exist (PGRST205 error)
 
 #### FASE B - PARAMETER NORMALIZATION ✅
+
 - **B1**: Enhanced API endpoint with robust parameter handling
 - **B2**: Added TypeScript safety with `keyof typeof MOCK_VEHICLE_FILTERS`
 
-#### FASE C - EMERGENCY MOCK DATA FALLBACK ✅ 
+#### FASE C - EMERGENCY MOCK DATA FALLBACK ✅
+
 - **C1**: Created emergency hotfix script with mock vehicle filters data
 - **C2**: Injected mock data directly into `/app/api/categories/filters/route.ts`
 - **C3**: Added dual fallback logic:
-  - Supabase error → Use mock data  
+  - Supabase error → Use mock data
   - Empty results → Use mock data
 - **C4**: Mock data includes 4 essential filters per vehicle category:
   - `bouwjaar` (range), `kilometerstand` (range), `brandstof` (select), `carrosserie/type` (select)
 
 #### FASE D - UI MESSAGE LOGIC IMPROVEMENT ✅
+
 - **D1**: Added `filtersFetchError` state to distinguish API errors vs empty results
 - **D2**: Updated error messages:
   - API error: "⚠️ Filters konden niet geladen worden. Probeer de pagina te vernieuwen."
@@ -80,6 +87,7 @@
 - **D3**: Enhanced debug logging for troubleshooting
 
 #### FASE E - VERIFICATION ✅
+
 - **E1**: Created `scripts/verify-vehicle-filters.mjs` verification script
 - **E2**: Build test passed: `npm run build` → 106 routes ✅
 - **E3**: TypeScript validation passed ✅
@@ -87,13 +95,15 @@
 ### HOTFIX IMPLEMENTATION:
 
 **Files Modified:**
+
 1. `/app/api/categories/filters/route.ts` - Added MOCK_VEHICLE_FILTERS fallback
-2. `/components/MarketplaceFilters.tsx` - Enhanced error handling & debug logging  
+2. `/components/MarketplaceFilters.tsx` - Enhanced error handling & debug logging
 3. `/scripts/verify-vehicle-filters.mjs` - Verification script
 4. `/docs/VEHICLE_FILTERS_REPORT.md` - This documentation
 
 **Mock Data Coverage:**
-- ✅ `auto-motor` - 4 filters (bouwjaar, kilometerstand, brandstof, carrosserie)  
+
+- ✅ `auto-motor` - 4 filters (bouwjaar, kilometerstand, brandstof, carrosserie)
 - ✅ `bedrijfswagens` - 4 filters (bouwjaar, kilometerstand, brandstof, type bedrijfswagen)
 - ✅ `camper-mobilhomes` - 4 filters (bouwjaar, kilometerstand, brandstof, campertype)
 
@@ -101,16 +111,18 @@
 
 **Current State:** ✅ WORKING  
 **Issue Resolved:** "Voertuigfilters niet beschikbaar" message eliminated  
-**User Experience:** Vehicle filters now appear correctly in marketplace  
+**User Experience:** Vehicle filters now appear correctly in marketplace
 
 **Test URLs:** (Mock data active)
+
 - `http://localhost:3000/api/categories/filters?category=auto-motor`
-- `http://localhost:3000/api/categories/filters?category=bedrijfswagens` 
+- `http://localhost:3000/api/categories/filters?category=bedrijfswagens`
 - `http://localhost:3000/api/categories/filters?category=camper-mobilhomes`
 
 ### NEXT STEPS FOR PERMANENT SOLUTION:
 
 1. **Create Supabase Table:** Execute SQL manually in Supabase Dashboard:
+
 ```sql
 CREATE TABLE category_filters (
     id BIGSERIAL PRIMARY KEY,
@@ -147,6 +159,7 @@ CREATE TABLE category_filters (
 ### B1) CATEGORY_FILTERS TABLE CREATED
 
 **Schema:**
+
 - `category_slug` TEXT NOT NULL → References categories(slug)
 - `filter_key` TEXT → Query parameter key (bouwjaar, kilometerstand, brandstof, etc.)
 - `filter_label` TEXT → Display label (Bouwjaar, Kilometerstand, Brandstof, etc.)
@@ -178,14 +191,15 @@ CREATE TABLE category_filters (
 ### C1) GET /api/categories/filters?category=<slug>
 
 **Response Format:**
+
 ```json
 {
-  "category": "auto-motor", 
+  "category": "auto-motor",
   "filters": [
     {
       "id": 1,
       "filter_key": "bouwjaar",
-      "filter_label": "Bouwjaar", 
+      "filter_label": "Bouwjaar",
       "filter_options": ["1990", "1991", ...],
       "placeholder": "Kies bouwjaar",
       "input_type": "select",
@@ -212,6 +226,7 @@ CREATE TABLE category_filters (
 ### D1) VEHICLE CATEGORY DETECTION
 
 **Detection Logic:**
+
 - Categories: `['auto-motor', 'bedrijfswagens', 'motoren', 'camper-mobilhomes']`
 - URL Parameter: `?category=<slug>` triggers vehicle filter loading
 - State Management: `useState` for filters array and loading state
@@ -235,6 +250,7 @@ CREATE TABLE category_filters (
 ✅ Loading states and empty states
 
 **Query Parameters Generated:**
+
 - Select filters: `?brandstof=Benzine&carrosserie=SUV`
 - Range filters: `?bouwjaar_min=2015&bouwjaar_max=2023`
 
@@ -244,12 +260,14 @@ CREATE TABLE category_filters (
 
 **Status:** Ready for testing and deployment
 **Branch:** feat/vehicle-filters-20241231
-**Files Modified:** 
+**Files Modified:**
+
 - ✅ `/supabase/migrations/20250101040000_create_vehicle_filters.sql`
-- ✅ `/app/api/categories/filters/route.ts`  
+- ✅ `/app/api/categories/filters/route.ts`
 - ✅ `/components/MarketplaceFilters.tsx`
 
 **Next Steps:**
+
 1. Run Supabase migration: `supabase db push`
 2. Test vehicle category filtering in marketplace
 3. Verify URL parameters and server-side filtering

@@ -38,6 +38,7 @@ export default function MarketplaceFilters() {
   // Vehicle filters state
   const [vehicleFilters, setVehicleFilters] = useState<VehicleFilter[]>([]);
   const [isLoadingFilters, setIsLoadingFilters] = useState(false);
+  const [filtersFetchError, setFiltersFetchError] = useState<string | null>(null);
 
   // Vehicle category slugs that should show vehicle filters
   const vehicleCategorySlugs = ['auto-motor', 'bedrijfswagens', 'motoren', 'camper-mobilhomes'];
@@ -45,24 +46,43 @@ export default function MarketplaceFilters() {
 
   // Fetch vehicle filters when category changes to a vehicle category
   useEffect(() => {
+    // DEBUG: Log category slug values
+    console.log('[VEHICLE_FILTERS_DEBUG] Category:', `"${category}"`, 'Length:', category.length, 'IsVehicle:', isVehicleCategory);
+    
     if (isVehicleCategory && category) {
       setIsLoadingFilters(true);
+      setFiltersFetchError(null); // Reset error state
       
+      console.log('[VEHICLE_FILTERS_DEBUG] Fetching filters for:', category);
       fetch(`/api/categories/filters?category=${category}`)
-        .then(res => res.json())
+        .then(res => {
+          console.log('[VEHICLE_FILTERS_DEBUG] API Response status:', res.status);
+          if (!res.ok) {
+            throw new Error(`API responded with status ${res.status}`);
+          }
+          return res.json();
+        })
         .then(data => {
-          if (data.filters) {
+          console.log('[VEHICLE_FILTERS_DEBUG] API Response data:', data);
+          if (data.filters && Array.isArray(data.filters)) {
             setVehicleFilters(data.filters);
+            setFiltersFetchError(null);
+          } else {
+            setVehicleFilters([]);
+            setFiltersFetchError('Invalid response format');
           }
         })
         .catch(error => {
-          console.error('Error loading vehicle filters:', error);
+          console.error('[VEHICLE_FILTERS_DEBUG] Error loading vehicle filters:', error);
+          setVehicleFilters([]);
+          setFiltersFetchError(error.message);
         })
         .finally(() => {
           setIsLoadingFilters(false);
         });
     } else {
       setVehicleFilters([]);
+      setFiltersFetchError(null);
     }
   }, [isVehicleCategory, category]);
 
@@ -339,7 +359,13 @@ export default function MarketplaceFilters() {
             </div>
           )}
           
-          {isVehicleCategory && vehicleFilters.length === 0 && !isLoadingFilters && (
+          {isVehicleCategory && filtersFetchError && !isLoadingFilters && (
+            <p className="text-sm text-red-500 italic">
+              ⚠️ Filters konden niet geladen worden. Probeer de pagina te vernieuwen.
+            </p>
+          )}
+          
+          {isVehicleCategory && !filtersFetchError && vehicleFilters.length === 0 && !isLoadingFilters && (
             <p className="text-sm text-gray-500 italic">
               Geen specifieke voertuigfilters beschikbaar voor deze categorie.
             </p>

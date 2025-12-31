@@ -1,8 +1,28 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
-import { NextResponse } from 'next/server';
+#!/usr/bin/env node
 
+/**
+ * FASE C - EMERGENCY HOTFIX VIA MOCK DATA
+ * Create mock vehicle filters in API response until table is ready
+ */
 
+import { readFile, writeFile } from 'fs/promises';
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+console.log('🚨 EMERGENCY HOTFIX - MOCK VEHICLE FILTERS');
+console.log('==========================================');
+
+// Step 1: Update API endpoint to return mock data
+console.log('Step 1: Patching API endpoint with fallback mock data...');
+
+const apiPath = resolve(__dirname, '../app/api/categories/filters/route.ts');
+const apiContent = await readFile(apiPath, 'utf-8');
+
+// Add fallback mock data
+const mockDataSection = `
 // EMERGENCY HOTFIX: Mock data fallback when table doesn't exist
 const MOCK_VEHICLE_FILTERS = {
   'auto-motor': [
@@ -24,34 +44,32 @@ const MOCK_VEHICLE_FILTERS = {
     { id: 12, filter_key: 'campertype', filter_label: 'Type camper', filter_options: ["Integraal", "Halfintegraal", "Alcoof", "Bus camper", "Vouwwagen", "Caravan"], placeholder: 'Kies camper type', input_type: 'select', is_range: false, sort_order: 40 }
   ]
 };
+`;
 
-export async function GET(request: Request) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const categorySlug = searchParams.get('category');
-    
-    if (!categorySlug) {
+// Check if API needs patching
+if (!apiContent.includes('MOCK_VEHICLE_FILTERS')) {
+  console.log('📝 Applying emergency patch to API endpoint...');
+  
+  // Insert mock data before the existing function
+  const newApiContent = apiContent.replace(
+    'export async function GET(request: Request) {',
+    mockDataSection + '\nexport async function GET(request: Request) {'
+  );
+  
+  // Update the error handling to use mock data
+  const patchedContent = newApiContent.replace(
+    `if (error) {
+      console.error('Error fetching category filters:', error);
       return NextResponse.json(
-        { error: 'Category slug is required' },
-        { status: 400 }
+        { error: 'Failed to fetch category filters' },
+        { status: 500 }
       );
-    }
-
-    const supabase = createRouteHandlerClient({ cookies });
-
-    // Get category filters for this category
-    const { data: filters, error } = await supabase
-      .from('category_filters')
-      .select('*')
-      .eq('category_slug', categorySlug)
-      .eq('is_active', true)
-      .order('sort_order', { ascending: true });
-
-    if (error) {
+    }`,
+    `if (error) {
       console.error('Error fetching category filters (using fallback):', error);
       
       // EMERGENCY FALLBACK: Use mock data if table doesn't exist
-      const mockFilters = MOCK_VEHICLE_FILTERS[categorySlug as keyof typeof MOCK_VEHICLE_FILTERS];
+      const mockFilters = MOCK_VEHICLE_FILTERS[categorySlug];
       if (mockFilters) {
         console.log('🚨 Using mock vehicle filters for:', categorySlug);
         return NextResponse.json({
@@ -64,62 +82,25 @@ export async function GET(request: Request) {
         { error: 'Failed to fetch category filters' },
         { status: 500 }
       );
-    }
-
-    // EMERGENCY FALLBACK: Also use mock data if no filters found but category is a vehicle category
-    if (!filters || filters.length === 0) {
-      const mockFilters = MOCK_VEHICLE_FILTERS[categorySlug as keyof typeof MOCK_VEHICLE_FILTERS];
-      if (mockFilters) {
-        console.log('🚨 No DB filters found, using mock vehicle filters for:', categorySlug);
-        return NextResponse.json({
-          category: categorySlug,
-          filters: mockFilters
-        });
-      }
-    }
-
-    // For now, return the basic filters without dynamic range calculation
-    // The dynamic ranges can be implemented later when the listings have the proper columns
-    const enhancedFilters = filters.map((filter) => {
-      // Pre-populate year ranges for demonstration
-      if (filter.filter_key === 'bouwjaar' && filter.is_range) {
-        const currentYear = new Date().getFullYear();
-        const yearOptions = [];
-        for (let year = 1990; year <= currentYear; year++) {
-          yearOptions.push(year.toString());
-        }
-        return {
-          ...filter,
-          filter_options: yearOptions,
-          min_value: 1990,
-          max_value: currentYear
-        };
-      }
-
-      // Pre-populate mileage ranges
-      if (filter.filter_key === 'kilometerstand' && filter.is_range) {
-        return {
-          ...filter,
-          filter_options: [
-            '0-25000', '25000-50000', '50000-75000', '75000-100000', 
-            '100000-150000', '150000-200000', '200000+'
-          ]
-        };
-      }
-
-      return filter;
-    });
-
-    return NextResponse.json({
-      category: categorySlug,
-      filters: enhancedFilters
-    });
-
-  } catch (error) {
-    console.error('Unexpected error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
+    }`
+  );
+  
+  await writeFile(apiPath, patchedContent, 'utf-8');
+  console.log('✅ Emergency patch applied to API endpoint');
+  
+} else {
+  console.log('ℹ️ API endpoint already patched');
 }
+
+console.log('==========================================');
+console.log('🎯 HOTFIX APPLIED!');
+console.log('API will now return mock data for vehicle categories');
+console.log('Test URLs:');
+console.log('  http://localhost:3000/api/categories/filters?category=auto-motor');
+console.log('  http://localhost:3000/api/categories/filters?category=bedrijfswagens'); 
+console.log('  http://localhost:3000/api/categories/filters?category=camper-mobilhomes');
+console.log('');
+console.log('Note: This is a temporary fix. Please create the category_filters');
+console.log('table in Supabase when possible to replace mock data.');
+
+process.exit(0);

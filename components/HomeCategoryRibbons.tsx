@@ -1,20 +1,29 @@
 "use client";
 
 // External
+import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
-// Internal
-import { CATEGORIES } from "@/lib/categories";
+type Category = {
+  id: number;
+  name: string;
+  slug: string;
+  icon_url: string | null;
+  subcategories: Array<{id: number; name: string; slug: string}>;
+};
 
-// (hash utility verwijderd – niet meer nodig na emoji + primary kleur avatar)
-
-// Emoji icon per hoofdcategorie (slug -> emoji)
+// Emoji fallback per hoofdcategorie (slug -> emoji) voor als icon_url null is
 const CATEGORY_EMOJI: Record<string, string> = {
-  autos: "🚗",
-  "fietsen-brommers": "🚲",
-  "huis-inrichting": "🛋️",
-  "tuin-terras": "🌿",
   elektronica: "📺",
+  "huis-tuin": "🏠",
+  "auto-motor": "🚗",
+  "mode-schoenen": "👗",
+  "fietsen-brommers": "🚲",
+  "sport-hobby": "🏋️",
+  "boeken-media": "🎵",
+  "baby-kind": "🍼",
+  zakelijk: "🛠️",
   computers: "💻",
   "phones-tablets": "📱",
   kleding: "👗",
@@ -32,8 +41,28 @@ const CATEGORY_EMOJI: Record<string, string> = {
   gratis: "🎁",
 };
 
-function CategoryAvatar({ name, slug }: { name: string; slug: string }) {
-  const emoji = CATEGORY_EMOJI[slug] || "•";
+function CategoryAvatar({ name, slug, icon_url }: { name: string; slug: string; icon_url: string | null }) {
+  // Gebruik icon_url als deze bestaat, anders fallback naar emoji
+  if (icon_url) {
+    return (
+      <div
+        className="w-12 h-12 shrink-0 rounded-2xl flex items-center justify-center bg-primary/10 border border-primary/30 overflow-hidden"
+        aria-hidden
+        title={name}
+      >
+        <Image
+          src={icon_url}
+          alt={name}
+          width={24}
+          height={24}
+          className="w-6 h-6"
+          style={{ filter: "hue-rotate(10deg)" }}
+        />
+      </div>
+    );
+  }
+  
+  const emoji = CATEGORY_EMOJI[slug] || "📦";
   return (
     <div
       className="w-12 h-12 shrink-0 rounded-2xl flex items-center justify-center bg-primary/10 text-primary shadow-inner border border-primary/30"
@@ -46,6 +75,27 @@ function CategoryAvatar({ name, slug }: { name: string; slug: string }) {
 }
 
 export default function HomeCategoryRibbons() {
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  useEffect(() => {
+    async function fetchCategories() {
+      try {
+        const res = await fetch("/api/categories");
+        if (res.ok) {
+          const data = await res.json() as Category[];
+          setCategories(data);
+        }
+      } catch (error) {
+        console.warn("Failed to fetch categories:", error);
+      }
+    }
+    fetchCategories();
+  }, []);
+
+  if (categories.length === 0) {
+    return null; // Toon niets als nog aan het laden of geen categorieën
+  }
+
   // Eén horizontale scrollcontainer met 2 visuele rijen (grid) zodat alles synchroon scrollt.
   const scroll = (dir: "left" | "right") => {
     const el = document.getElementById("home-cat-ribbons");
@@ -107,11 +157,11 @@ export default function HomeCategoryRibbons() {
         {/* Grid met twee rijen: we interleaven zodat bovenste rij eerste helft is en onderste rij tweede helft */}
         <ul className="grid grid-rows-2 grid-flow-col auto-cols-max gap-x-3 gap-y-2 py-2">
           {(() => {
-            const half = Math.ceil(CATEGORIES.length / 2);
-            const top = CATEGORIES.slice(0, half);
-            const bottom = CATEGORIES.slice(half);
+            const half = Math.ceil(categories.length / 2);
+            const top = categories.slice(0, half);
+            const bottom = categories.slice(half);
             // We bouwen kolommen: elke kolom heeft (optioneel) een top en bottom item
-            const cols: Array<{ top?: typeof CATEGORIES[number]; bottom?: typeof CATEGORIES[number] }> = [];
+            const cols: Array<{ top?: Category; bottom?: Category }> = [];
             for (let i = 0; i < half; i++) {
               cols.push({ top: top[i], bottom: bottom[i] });
             }
@@ -133,7 +183,7 @@ export default function HomeCategoryRibbons() {
                     href={`/marketplace?category=${encodeURIComponent(c.name)}`}
                     className="group flex items-center gap-3 rounded-2xl border bg-white/70 backdrop-blur-sm px-3 py-2.5 hover:bg-white transition shadow-sm hover:shadow focus:outline-none focus:ring-2 focus:ring-primary/50"
                   >
-                    <CategoryAvatar name={c.name} slug={c.slug} />
+                    <CategoryAvatar name={c.name} slug={c.slug} icon_url={c.icon_url} />
                     <span className="text-sm font-medium leading-tight line-clamp-2 group-hover:underline">
                       {c.name}
                     </span>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import HeroSearch from "@/components/HeroSearch";
+import HomeCategoryRibbons from "@/components/HomeCategoryRibbons";
 import { getBaseUrl } from "@/lib/getBaseUrl";
 import type { Listing } from "@/lib/types";
 
@@ -40,6 +41,7 @@ export default function ExplorePage() {
   return (
     <div className="container py-4 md:py-8 space-y-6 md:space-y-8">
       <HeroSearch />
+      <HomeCategoryRibbons />
       <h1 className="text-lg md:text-xl font-semibold px-2" data-testid="explore-title">Ontdekken</h1>
 
       <section className="space-y-3">

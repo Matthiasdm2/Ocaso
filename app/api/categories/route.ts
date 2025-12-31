@@ -22,7 +22,8 @@ export async function GET() {
 
     const { data, error } = await sb
       .from("categories")
-      .select("id,name,slug,sort_order")
+      .select("id,name,slug,sort_order,icon_url")
+      .eq("is_active", true)
       .order("sort_order", { ascending: true });
 
     if (error) {
@@ -54,6 +55,7 @@ export async function GET() {
           id: cat.id,
           name: cat.name,
           slug: cat.slug,
+          icon_url: cat.icon_url,
           subcategories: (subs || []).map((sub) => ({
             id: sub.id,
             name: sub.name,

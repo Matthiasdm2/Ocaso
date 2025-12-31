@@ -1,7 +1,21 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
+
+// Vehicle category filter interface
+interface VehicleFilter {
+  id: number;
+  filter_key: string;
+  filter_label: string;
+  filter_options: string[];
+  placeholder: string;
+  input_type: string;
+  is_range: boolean;
+  min_value?: number;
+  max_value?: number;
+  sort_order: number;
+}
 
 // Simple filter UI (locatie, staat, prijs min/max, sorteren)
 // Manipuleert query parameters zodat de server component opnieuw rendert met gefilterde resultaten.
@@ -15,10 +29,42 @@ export default function MarketplaceFilters() {
   const state = searchParams.get("state") || "";
   const location = searchParams.get("location") || "";
   const sort = searchParams.get("sort") || "";
+  const category = searchParams.get("category") || "";
   // Nieuwe betekenis: toggle AAN = zakelijke verkopers zichtbaar. Param business=1 betekent tonen.
   const business = searchParams.get("business") === "1" || !searchParams.get("business");
   const centerLat = searchParams.get("clat") || "";
   const radius = searchParams.get("radius") || "";
+
+  // Vehicle filters state
+  const [vehicleFilters, setVehicleFilters] = useState<VehicleFilter[]>([]);
+  const [isLoadingFilters, setIsLoadingFilters] = useState(false);
+
+  // Vehicle category slugs that should show vehicle filters
+  const vehicleCategorySlugs = ['auto-motor', 'bedrijfswagens', 'motoren', 'camper-mobilhomes'];
+  const isVehicleCategory = vehicleCategorySlugs.includes(category);
+
+  // Fetch vehicle filters when category changes to a vehicle category
+  useEffect(() => {
+    if (isVehicleCategory && category) {
+      setIsLoadingFilters(true);
+      
+      fetch(`/api/categories/filters?category=${category}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.filters) {
+            setVehicleFilters(data.filters);
+          }
+        })
+        .catch(error => {
+          console.error('Error loading vehicle filters:', error);
+        })
+        .finally(() => {
+          setIsLoadingFilters(false);
+        });
+    } else {
+      setVehicleFilters([]);
+    }
+  }, [isVehicleCategory, category]);
 
   const setParam = useCallback(
     (key: string, value: string | undefined) => {
@@ -227,6 +273,79 @@ export default function MarketplaceFilters() {
           </button>
         </div>
       </div>
+
+      {/* Vehicle-specific filters (only for vehicle categories) */}
+      {isVehicleCategory && (
+        <div className="pt-3 border-t border-gray-200">
+          <div className="flex items-center gap-2 mb-3">
+            <h3 className="text-sm font-medium text-gray-700">Voertuigfilters</h3>
+            {isLoadingFilters && (
+              <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            )}
+          </div>
+          
+          {vehicleFilters.length > 0 && (
+            <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-4">
+              {vehicleFilters.map((filter) => {
+                const filterValue = searchParams.get(filter.filter_key) || "";
+                
+                return (
+                  <div key={filter.filter_key} className="flex flex-col">
+                    <label className="block text-sm text-gray-600 mb-1">
+                      {filter.filter_label}
+                    </label>
+                    
+                    {filter.input_type === 'select' && (
+                      <select
+                        value={filterValue}
+                        onChange={(e) => setParam(filter.filter_key, e.target.value || undefined)}
+                        className="filter-select h-8 text-sm"
+                      >
+                        <option value="">{filter.placeholder}</option>
+                        {filter.filter_options.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                    
+                    {filter.input_type === 'range' && (
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          value={searchParams.get(`${filter.filter_key}_min`) || ""}
+                          onChange={(e) => setParam(`${filter.filter_key}_min`, e.target.value || undefined)}
+                          placeholder="Min"
+                          className="filter-input h-8 w-20 text-sm"
+                          min={filter.min_value}
+                          max={filter.max_value}
+                        />
+                        <span className="text-gray-400">-</span>
+                        <input
+                          type="number"
+                          value={searchParams.get(`${filter.filter_key}_max`) || ""}
+                          onChange={(e) => setParam(`${filter.filter_key}_max`, e.target.value || undefined)}
+                          placeholder="Max"
+                          className="filter-input h-8 w-20 text-sm"
+                          min={filter.min_value}
+                          max={filter.max_value}
+                        />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          
+          {isVehicleCategory && vehicleFilters.length === 0 && !isLoadingFilters && (
+            <p className="text-sm text-gray-500 italic">
+              Geen specifieke voertuigfilters beschikbaar voor deze categorie.
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

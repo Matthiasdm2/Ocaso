@@ -12,7 +12,7 @@
 
 // Schema exports
 export {
-  getSchema, vehicleSchemas, type VehicleSchema, type VehicleType
+  getSchema, type VehicleSchema, vehicleSchemas, type VehicleType
 } from './schema';
 
 // Validation exports

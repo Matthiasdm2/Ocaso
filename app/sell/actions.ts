@@ -43,7 +43,7 @@ export async function saveVehicleListingAction(
 
     // Validate vehicle data
     const validationErrors = validateVehiclePosting(
-      formData.vehicleType,
+      formData.vehicleType || '',
       formData
     );
     if (validationErrors) {

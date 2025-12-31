@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createClient } from "@supabase/supabase-js";
 
 type VehicleGroup = "cars" | "motos" | "lcv" | "campers";

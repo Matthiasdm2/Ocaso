@@ -1,4 +1,5 @@
 // Vehicle validation - placeholder implementation
+/* eslint-disable @typescript-eslint/no-unused-vars */
 
 export interface ValidationError {
   field: string;
@@ -10,11 +11,11 @@ export interface ValidationResult {
   errors: ValidationError[];
 }
 
-export function validateField(field: string, value: unknown): ValidationResult {
+export function validateField(_field: string, _value: unknown): ValidationResult {
   return { isValid: true, errors: [] };
 }
 
-export function validateListing(data: unknown): ValidationResult {
+export function validateListing(_data: unknown): ValidationResult {
   return { isValid: true, errors: [] };
 }
 

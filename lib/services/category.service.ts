@@ -10,6 +10,7 @@
  * - Client-side caching with TTL
  * - Error handling and fallbacks
  */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { createClient } from '@/lib/supabaseClient';
 

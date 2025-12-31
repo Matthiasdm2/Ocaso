@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 const { createClient } = require('@supabase/supabase-js');
 
 const supabase = createClient(

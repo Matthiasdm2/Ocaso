@@ -1,85 +1,29 @@
-export const runtime = "nodejs";
-// app/api/categories/route.ts
-import { createClient } from "@supabase/supabase-js";
-import { NextResponse } from "next/server";
-
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const key = process.env.SUPABASE_SERVICE_ROLE_KEY ||
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+import { NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabaseClient';
 
 export async function GET() {
   try {
-    if (!url || !key) {
-      return NextResponse.json({ error: "Supabase env ontbreekt" }, {
-        status: 500,
-        headers: { "X-Category-Source": "error-env" },
-      });
-    }
-    const sb = createClient(url, key, { auth: { persistSession: false } });
+    const supabase = createClient();
 
-    const { data, error } = await sb
-      .from("categories")
-      .select("id,name,slug,sort_order")
-      .order("sort_order", { ascending: true });
+    const { data, error } = await supabase
+      .from('categories')
+      .select('id,name,slug,icon_key,is_active,sort_order')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true });
 
     if (error) {
-      return NextResponse.json({ error: error.message }, {
-        status: 500,
-        headers: { "X-Category-Source": "error-db" },
-      });
+      console.error('Failed to fetch categories:', error);
+      return NextResponse.json({ error: 'Failed to fetch categories' }, { status: 500 });
     }
 
-    const rows = data || [];
-    if (!rows.length) {
-      return new NextResponse(null, {
-        status: 204,
-        headers: { "X-Category-Source": "empty-db" },
-      });
-    }
+    // Vercel CDN caching headers
+    const headers = {
+      'Cache-Control': 's-maxage=600, stale-while-revalidate=86400',
+    };
 
-    // Get subcategories for each category
-    const categoriesWithSubs = [];
-    for (const cat of rows) {
-      const { data: subs, error: subsError } = await sb
-        .from("subcategories")
-        .select("id,name,slug")
-        .eq("category_id", cat.id)
-        .order("name", { ascending: true });
-
-      if (!subsError) {
-        categoriesWithSubs.push({
-          id: cat.id,
-          name: cat.name,
-          slug: cat.slug,
-          subcategories: (subs || []).map((sub) => ({
-            id: sub.id,
-            name: sub.name,
-            slug: sub.slug,
-          })),
-        });
-      }
-    }
-
-    if (!categoriesWithSubs.length) {
-      return new NextResponse(null, {
-        status: 204,
-        headers: { "X-Category-Source": "no-parents" },
-      });
-    }
-    return NextResponse.json(categoriesWithSubs, {
-      status: 200,
-      headers: { "X-Category-Source": "supabase" },
-    });
-  } catch (e: unknown) {
-    const errorMessage = typeof e === "object" && e !== null && "message" in e
-      ? (e as { message?: string }).message
-      : "Onbekend";
-    return NextResponse.json({ error: errorMessage || "Onbekend" }, {
-      status: 500,
-      headers: { "X-Category-Source": "exception" },
-    });
+    return NextResponse.json(data || [], { headers });
+  } catch (error) {
+    console.error('Error in categories API:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

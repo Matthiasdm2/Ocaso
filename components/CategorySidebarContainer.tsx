@@ -24,11 +24,11 @@ export default function CategorySidebarContainer() {
         
         // Transform to CategorySidebarCategory format
         const transformedCategories: CategorySidebarCategory[] = categoriesData.map(cat => ({
-          id: cat.id,
+          id: Number(cat.id),
           name: cat.name,
           slug: cat.slug,
           subcategories: cat.subcategories.map(sub => ({
-            id: sub.id,
+            id: Number(sub.id),
             name: sub.name,
             slug: sub.slug,
           })),

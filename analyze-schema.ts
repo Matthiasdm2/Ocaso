@@ -1,4 +1,15 @@
 import { createClient } from '@supabase/supabase-js';
+interface ConstraintInfo {
+  table_name: string;
+  column_name: string;
+  constraint_type: string;
+}
+interface ColumnInfo {
+  column_name: string;
+  data_type: string;
+  is_nullable: string;
+  column_default: string | null;
+}
 
 const SUPABASE_URL = "https://dmnowaqinfkhovhyztan.supabase.co";
 const SUPABASE_SERVICE_ROLE_KEY = "sb_secret_N7UND0UgjKTVK-Uodkm0Hg_xSvEMPvz";
@@ -50,7 +61,7 @@ async function analyzeSchema() {
         ORDER BY ordinal_position;
       `
     });
-    catCols?.forEach(col => console.log(`  - ${col.column_name}: ${col.data_type} ${col.is_nullable === 'NO' ? 'NOT NULL' : 'NULL'} ${col.column_default || ''}`));
+    catCols?.forEach((col: ColumnInfo) => console.log(`  - ${col.column_name}: ${col.data_type} ${col.is_nullable === 'NO' ? 'NOT NULL' : 'NULL'} ${col.column_default || ''}`));
     
     // Check categories data
     const { data: catData } = await supabase.from('categories').select('*').limit(5);
@@ -69,7 +80,7 @@ async function analyzeSchema() {
         ORDER BY ordinal_position;
       `
     });
-    subCols?.forEach(col => console.log(`  - ${col.column_name}: ${col.data_type} ${col.is_nullable === 'NO' ? 'NOT NULL' : 'NULL'} ${col.column_default || ''}`));
+    subCols?.forEach((col: ColumnInfo) => console.log(`  - ${col.column_name}: ${col.data_type} ${col.is_nullable === 'NO' ? 'NOT NULL' : 'NULL'} ${col.column_default || ''}`));
   }
 
   // Check vehicle brands table
@@ -83,13 +94,13 @@ async function analyzeSchema() {
         ORDER BY ordinal_position;
       `
     });
-    brandCols?.forEach(col => console.log(`  - ${col.column_name}: ${col.data_type} ${col.is_nullable === 'NO' ? 'NOT NULL' : 'NULL'} ${col.column_default || ''}`));
+    brandCols?.forEach((col: ColumnInfo) => console.log(`  - ${col.column_name}: ${col.data_type} ${col.is_nullable === 'NO' ? 'NOT NULL' : 'NULL'} ${col.column_default || ''}`));
   } else {
     console.log("\n5. ❌ vehicle_brands table NOT FOUND");
   }
 
   // Check for mapping table
-  const mappingTable = tableNames.find(name => 
+  const mappingTable = tableNames.find((name: string) => 
     name.includes('category') && name.includes('brand')
   );
   if (mappingTable) {
@@ -115,7 +126,7 @@ async function analyzeSchema() {
       ORDER BY tc.table_name, tc.constraint_type;
     `
   });
-  constraints?.forEach(c => console.log(`  ${c.table_name}.${c.column_name}: ${c.constraint_type}`));
+  constraints?.forEach((c: ConstraintInfo) => console.log(`  ${c.table_name}.${c.column_name}: ${c.constraint_type}`));
 
   console.log("\n=== AUDIT COMPLETE ===");
 }

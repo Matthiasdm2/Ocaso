@@ -24,5 +24,5 @@
     "plugins": [{ "name": "next" }]
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "v4", "tests", "analyze-schema.ts", "check-current-schema.ts"]
+  "exclude": ["node_modules", "v4", "tests"]
 }

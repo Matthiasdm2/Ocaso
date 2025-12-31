@@ -42,10 +42,7 @@ export async function saveVehicleListingAction(
     }
 
     // Validate vehicle data
-    const validationErrors = validateVehiclePosting(
-      formData.vehicleType || '',
-      formData
-    );
+  const validationErrors = validateVehiclePosting();
     if (validationErrors) {
       return {
         success: false,

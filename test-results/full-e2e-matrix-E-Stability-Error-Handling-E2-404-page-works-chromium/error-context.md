@@ -1,0 +1,99 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - link "Over OCASO" [ref=e7] [cursor=pointer]:
+            - /url: /about
+          - link "Help & FAQ" [ref=e8] [cursor=pointer]:
+            - /url: /help
+          - link "Veilig handelen" [ref=e9] [cursor=pointer]:
+            - /url: /safety
+        - generic [ref=e10]:
+          - link "Inloggen" [ref=e11] [cursor=pointer]:
+            - /url: /login
+            - img [ref=e12]
+            - text: Inloggen
+          - link "Registreren" [ref=e15] [cursor=pointer]:
+            - /url: /register
+            - img [ref=e16]
+            - text: Registreren
+      - generic [ref=e19]:
+        - link "OCASO" [ref=e21] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e23]: OCASO
+        - navigation [ref=e24]:
+          - link "Ontdekken" [ref=e25] [cursor=pointer]:
+            - /url: /explore
+          - link "Marktplaats" [ref=e26] [cursor=pointer]:
+            - /url: /marketplace
+          - link "Ocaso Shops" [ref=e27] [cursor=pointer]:
+            - /url: /business
+          - link "Mijn profiel" [ref=e28] [cursor=pointer]:
+            - /url: /profile
+            - generic [ref=e29]: Mijn profiel
+        - link "Plaats zoekertje" [ref=e30] [cursor=pointer]:
+          - /url: /sell
+          - img [ref=e31]
+          - text: Plaats zoekertje
+    - main [ref=e32]:
+      - generic [ref=e33]:
+        - heading "Pagina niet gevonden" [level=1] [ref=e34]
+        - paragraph [ref=e35]:
+          - text: Ga terug naar de
+          - link "homepagina" [ref=e36] [cursor=pointer]:
+            - /url: /
+          - text: .
+    - contentinfo [ref=e37]:
+      - generic [ref=e38]:
+        - generic [ref=e39]:
+          - generic [ref=e40]: OCASO
+          - paragraph [ref=e41]: Slim tweedehands kopen en verkopen. Met AI‑zoek en prijscontrole.
+        - generic [ref=e42]:
+          - generic [ref=e43]: Navigatie
+          - list [ref=e44]:
+            - listitem [ref=e45]:
+              - link "Ontdekken" [ref=e46] [cursor=pointer]:
+                - /url: /explore
+            - listitem [ref=e47]:
+              - link "Marktplaats" [ref=e48] [cursor=pointer]:
+                - /url: /categories
+            - listitem [ref=e49]:
+              - link "Plaats zoekertje" [ref=e50] [cursor=pointer]:
+                - /url: /sell
+            - listitem [ref=e51]:
+              - link "Zakelijke oplossingen" [ref=e52] [cursor=pointer]:
+                - /url: /business
+        - generic [ref=e53]:
+          - generic [ref=e54]: Support
+          - list [ref=e55]:
+            - listitem [ref=e56]:
+              - link "Help & FAQ" [ref=e57] [cursor=pointer]:
+                - /url: /help
+            - listitem [ref=e58]:
+              - link "Veilig handelen" [ref=e59] [cursor=pointer]:
+                - /url: /safety
+            - listitem [ref=e60]:
+              - link "Contact" [ref=e61] [cursor=pointer]:
+                - /url: /contact
+            - listitem [ref=e62]:
+              - link "Voorwaarden" [ref=e63] [cursor=pointer]:
+                - /url: /terms
+        - generic [ref=e64]:
+          - generic [ref=e65]: Nieuwsbrief
+          - paragraph [ref=e66]: Ontvang tips, deals en updates.
+          - generic [ref=e67]:
+            - textbox "jouw@email.com" [ref=e68]
+            - button "Inschrijven" [ref=e69] [cursor=pointer]
+      - generic [ref=e71]:
+        - generic [ref=e72]: © 2025 OCASO. Alle rechten voorbehouden.
+        - generic [ref=e73]:
+          - link "Privacy" [ref=e74] [cursor=pointer]:
+            - /url: /privacy
+          - link "Cookies" [ref=e75] [cursor=pointer]:
+            - /url: /cookies
+  - alert [ref=e76]
+```

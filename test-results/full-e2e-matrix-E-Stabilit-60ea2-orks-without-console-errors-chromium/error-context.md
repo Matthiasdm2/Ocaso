@@ -1,0 +1,248 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - link "Over OCASO" [ref=e7] [cursor=pointer]:
+            - /url: /about
+          - link "Help & FAQ" [ref=e8] [cursor=pointer]:
+            - /url: /help
+          - link "Veilig handelen" [ref=e9] [cursor=pointer]:
+            - /url: /safety
+        - button "Uitloggen" [ref=e11] [cursor=pointer]:
+          - img [ref=e12]
+          - text: Uitloggen
+      - generic [ref=e15]:
+        - link "OCASO" [ref=e17] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e19]: OCASO
+        - navigation [ref=e20]:
+          - link "Ontdekken" [ref=e21] [cursor=pointer]:
+            - /url: /explore
+          - link "Marktplaats" [ref=e22] [cursor=pointer]:
+            - /url: /marketplace
+          - link "Ocaso Shops" [ref=e23] [cursor=pointer]:
+            - /url: /business
+          - link "Mijn profiel" [ref=e24] [cursor=pointer]:
+            - /url: /profile
+            - generic [ref=e25]: Mijn profiel
+        - link "Plaats zoekertje" [ref=e26] [cursor=pointer]:
+          - /url: /sell
+          - img [ref=e27]
+          - text: Plaats zoekertje
+    - main [ref=e28]:
+      - generic [ref=e29]:
+        - generic [ref=e31]:
+          - heading "Zoek nieuw of tweedehands. Slim, snel en veilig." [level=1] [ref=e32]
+          - generic [ref=e33]:
+            - search "Site" [ref=e34]:
+              - generic [ref=e35]:
+                - img [ref=e36]
+                - searchbox [ref=e39]
+            - button "Zoek op foto (AI)" [ref=e40] [cursor=pointer]:
+              - img [ref=e41]
+              - text: Zoek op foto (AI)
+        - generic "Hoofdcategorieën" [ref=e44]:
+          - button "Scroll links" [ref=e45] [cursor=pointer]:
+            - generic [ref=e46]: Links
+            - img [ref=e47]
+          - button "Scroll rechts" [ref=e49] [cursor=pointer]:
+            - generic [ref=e50]: Rechts
+            - img [ref=e51]
+          - listbox "Scrollbare lijst hoofdcategorieën" [ref=e53]:
+            - list [ref=e54]:
+              - option "Elektronica" [ref=e55]:
+                - link "Elektronica" [ref=e56] [cursor=pointer]:
+                  - /url: /marketplace?category=Elektronica
+                  - img [ref=e58]
+                  - generic [ref=e59]: Elektronica
+              - option "Phones & Tablets" [ref=e60]:
+                - link "Phones & Tablets" [ref=e61] [cursor=pointer]:
+                  - /url: /marketplace?category=Phones%20%26%20Tablets
+                  - generic [ref=e63]: 📱
+                  - generic [ref=e64]: Phones & Tablets
+              - option "Huis & Tuin" [ref=e65]:
+                - link "Huis & Tuin" [ref=e66] [cursor=pointer]:
+                  - /url: /marketplace?category=Huis%20%26%20Tuin
+                  - img [ref=e68]
+                  - generic [ref=e69]: Huis & Tuin
+              - option "Huis & Inrichting" [ref=e70]:
+                - link "Huis & Inrichting" [ref=e71] [cursor=pointer]:
+                  - /url: /marketplace?category=Huis%20%26%20Inrichting
+                  - generic [ref=e73]: 📦
+                  - generic [ref=e74]: Huis & Inrichting
+              - option "Auto & Motor" [ref=e75]:
+                - link "Auto & Motor" [ref=e76] [cursor=pointer]:
+                  - /url: /marketplace?category=Auto%20%26%20Motor
+                  - img [ref=e78]
+                  - generic [ref=e79]: Auto & Motor
+              - option "Kinderen & Baby" [ref=e80]:
+                - link "Kinderen & Baby" [ref=e81] [cursor=pointer]:
+                  - /url: /marketplace?category=Kinderen%20%26%20Baby
+                  - generic [ref=e83]: 🍼
+                  - generic [ref=e84]: Kinderen & Baby
+              - option "Mode & Schoenen" [ref=e85]:
+                - link "Mode & Schoenen" [ref=e86] [cursor=pointer]:
+                  - /url: /marketplace?category=Mode%20%26%20Schoenen
+                  - img [ref=e88]
+                  - generic [ref=e89]: Mode & Schoenen
+              - option "Sport & Fitness" [ref=e90]:
+                - link "Sport & Fitness" [ref=e91] [cursor=pointer]:
+                  - /url: /marketplace?category=Sport%20%26%20Fitness
+                  - generic [ref=e93]: 🏋️
+                  - generic [ref=e94]: Sport & Fitness
+              - option "Fietsen & Brommers" [ref=e95]:
+                - link "Fietsen & Brommers" [ref=e96] [cursor=pointer]:
+                  - /url: /marketplace?category=Fietsen%20%26%20Brommers
+                  - generic [ref=e98]: 🚲
+                  - generic [ref=e99]: Fietsen & Brommers
+              - option "Tuin & Terras" [ref=e100]:
+                - link "Tuin & Terras" [ref=e101] [cursor=pointer]:
+                  - /url: /marketplace?category=Tuin%20%26%20Terras
+                  - generic [ref=e103]: 📦
+                  - generic [ref=e104]: Tuin & Terras
+              - option "Sport & Hobby" [ref=e105]:
+                - link "Sport & Hobby" [ref=e106] [cursor=pointer]:
+                  - /url: /marketplace?category=Sport%20%26%20Hobby
+                  - img [ref=e108]
+                  - generic [ref=e109]: Sport & Hobby
+              - option "Hobbys" [ref=e110]:
+                - link "Hobbys" [ref=e111] [cursor=pointer]:
+                  - /url: /marketplace?category=Hobbys
+                  - generic [ref=e113]: 🎨
+                  - generic [ref=e114]: Hobbys
+              - option "Boeken & Media" [ref=e115]:
+                - link "Boeken & Media" [ref=e116] [cursor=pointer]:
+                  - /url: /marketplace?category=Boeken%20%26%20Media
+                  - img [ref=e118]
+                  - generic [ref=e119]: Boeken & Media
+              - option "Muziek, Boeken & Films" [ref=e120]:
+                - link "Muziek, Boeken & Films" [ref=e121] [cursor=pointer]:
+                  - /url: /marketplace?category=Muziek%2C%20Boeken%20%26%20Films
+                  - generic [ref=e123]: 🎵
+                  - generic [ref=e124]: Muziek, Boeken & Films
+              - option "Baby & Kind" [ref=e125]:
+                - link "Baby & Kind" [ref=e126] [cursor=pointer]:
+                  - /url: /marketplace?category=Baby%20%26%20Kind
+                  - img [ref=e128]
+                  - generic [ref=e129]: Baby & Kind
+              - option "Games" [ref=e130]:
+                - link "Games" [ref=e131] [cursor=pointer]:
+                  - /url: /marketplace?category=Games
+                  - generic [ref=e133]: 🎮
+                  - generic [ref=e134]: Games
+              - option "Zakelijk" [ref=e135]:
+                - link "Zakelijk" [ref=e136] [cursor=pointer]:
+                  - /url: /marketplace?category=Zakelijk
+                  - img [ref=e138]
+                  - generic [ref=e139]: Zakelijk
+              - option "Dieren" [ref=e140]:
+                - link "Dieren" [ref=e141] [cursor=pointer]:
+                  - /url: /marketplace?category=Dieren
+                  - generic [ref=e143]: 🐾
+                  - generic [ref=e144]: Dieren
+              - option "Bedrijfswagens" [ref=e145]:
+                - link "Bedrijfswagens" [ref=e146] [cursor=pointer]:
+                  - /url: /marketplace?category=Bedrijfswagens
+                  - img [ref=e148]
+                  - generic [ref=e149]: Bedrijfswagens
+              - option "Bouw & Tuin" [ref=e150]:
+                - link "Bouw & Tuin" [ref=e151] [cursor=pointer]:
+                  - /url: /marketplace?category=Bouw%20%26%20Tuin
+                  - generic [ref=e153]: 📦
+                  - generic [ref=e154]: Bouw & Tuin
+              - option "Camper & Mobilhomes" [ref=e155]:
+                - link "Camper & Mobilhomes" [ref=e156] [cursor=pointer]:
+                  - /url: /marketplace?category=Camper%20%26%20Mobilhomes
+                  - img [ref=e158]
+                  - generic [ref=e159]: Camper & Mobilhomes
+              - option "Caravans & Boten" [ref=e160]:
+                - link "Caravans & Boten" [ref=e161] [cursor=pointer]:
+                  - /url: /marketplace?category=Caravans%20%26%20Boten
+                  - generic [ref=e163]: 🚐
+                  - generic [ref=e164]: Caravans & Boten
+              - option "Computers" [ref=e165]:
+                - link "Computers" [ref=e166] [cursor=pointer]:
+                  - /url: /marketplace?category=Computers
+                  - generic [ref=e168]: 💻
+                  - generic [ref=e169]: Computers
+              - option "Tickets & Toegang" [ref=e170]:
+                - link "Tickets & Toegang" [ref=e171] [cursor=pointer]:
+                  - /url: /marketplace?category=Tickets%20%26%20Toegang
+                  - generic [ref=e173]: 📦
+                  - generic [ref=e174]: Tickets & Toegang
+              - option "Motoren" [ref=e175]:
+                - link "Motoren" [ref=e176] [cursor=pointer]:
+                  - /url: /marketplace?category=Motoren
+                  - img [ref=e178]
+                  - generic [ref=e179]: Motoren
+              - option "Diensten" [ref=e180]:
+                - link "Diensten" [ref=e181] [cursor=pointer]:
+                  - /url: /marketplace?category=Diensten
+                  - generic [ref=e183]: 🛠️
+                  - generic [ref=e184]: Diensten
+              - option "Kleding" [ref=e185]:
+                - link "Kleding" [ref=e186] [cursor=pointer]:
+                  - /url: /marketplace?category=Kleding
+                  - generic [ref=e188]: 👗
+                  - generic [ref=e189]: Kleding
+              - option "Gratis" [ref=e190]:
+                - link "Gratis" [ref=e191] [cursor=pointer]:
+                  - /url: /marketplace?category=Gratis
+                  - generic [ref=e193]: 🎁
+                  - generic [ref=e194]: Gratis
+        - heading "Ontdekken" [level=1] [ref=e195]
+        - heading "Aanbevolen voor jou" [level=2] [ref=e197]
+    - contentinfo [ref=e198]:
+      - generic [ref=e199]:
+        - generic [ref=e200]:
+          - generic [ref=e201]: OCASO
+          - paragraph [ref=e202]: Slim tweedehands kopen en verkopen. Met AI‑zoek en prijscontrole.
+        - generic [ref=e203]:
+          - generic [ref=e204]: Navigatie
+          - list [ref=e205]:
+            - listitem [ref=e206]:
+              - link "Ontdekken" [ref=e207] [cursor=pointer]:
+                - /url: /explore
+            - listitem [ref=e208]:
+              - link "Marktplaats" [ref=e209] [cursor=pointer]:
+                - /url: /categories
+            - listitem [ref=e210]:
+              - link "Plaats zoekertje" [ref=e211] [cursor=pointer]:
+                - /url: /sell
+            - listitem [ref=e212]:
+              - link "Zakelijke oplossingen" [ref=e213] [cursor=pointer]:
+                - /url: /business
+        - generic [ref=e214]:
+          - generic [ref=e215]: Support
+          - list [ref=e216]:
+            - listitem [ref=e217]:
+              - link "Help & FAQ" [ref=e218] [cursor=pointer]:
+                - /url: /help
+            - listitem [ref=e219]:
+              - link "Veilig handelen" [ref=e220] [cursor=pointer]:
+                - /url: /safety
+            - listitem [ref=e221]:
+              - link "Contact" [ref=e222] [cursor=pointer]:
+                - /url: /contact
+            - listitem [ref=e223]:
+              - link "Voorwaarden" [ref=e224] [cursor=pointer]:
+                - /url: /terms
+        - generic [ref=e225]:
+          - generic [ref=e226]: Nieuwsbrief
+          - paragraph [ref=e227]: Ontvang tips, deals en updates.
+          - generic [ref=e228]:
+            - textbox "jouw@email.com" [ref=e229]
+            - button "Inschrijven" [ref=e230] [cursor=pointer]
+      - generic [ref=e232]:
+        - generic [ref=e233]: © 2025 OCASO. Alle rechten voorbehouden.
+        - generic [ref=e234]:
+          - link "Privacy" [ref=e235] [cursor=pointer]:
+            - /url: /privacy
+          - link "Cookies" [ref=e236] [cursor=pointer]:
+            - /url: /cookies
+  - alert [ref=e237]
+```

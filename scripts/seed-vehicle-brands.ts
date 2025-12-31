@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createClient } from "@supabase/supabase-js";
 
 type VehicleGroup = "cars" | "motos" | "lcv" | "campers";
@@ -188,7 +187,7 @@ async function upsertBrands(brands: BrandSeed[]): Promise<Map<string, string>> {
   if (error) throw error;
 
   const map = new Map<string, string>();
-  (data || []).forEach((row: any) => map.set(row.slug, row.id));
+    (data || []).forEach((row: Record<string, unknown>) => map.set(String(row.slug), String(row.id)));
   return map;
 }
 

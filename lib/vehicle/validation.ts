@@ -1,5 +1,4 @@
 // Vehicle validation - placeholder implementation
-/* eslint-disable @typescript-eslint/no-unused-vars */
 
 export interface ValidationError {
   field: string;
@@ -11,15 +10,15 @@ export interface ValidationResult {
   errors: ValidationError[];
 }
 
-export function validateField(_field: string, _value: unknown): ValidationResult {
+export function validateField(): ValidationResult {
   return { isValid: true, errors: [] };
 }
 
-export function validateListing(_data: unknown): ValidationResult {
+export function validateListing(): ValidationResult {
   return { isValid: true, errors: [] };
 }
 
-export function validateRequiredFields(_vehicleType: unknown, _data: unknown): { valid: boolean; errors: { field: string; message: string }[] } {
+export function validateRequiredFields(): { valid: boolean; errors: { field: string; message: string }[] } {
   return { valid: true, errors: [] };
 }
 
@@ -48,18 +47,18 @@ export function isFieldSearchable(field: string): boolean {
 }
 
 // Legacy functions for backward compatibility
-export function validateVehicleField(_value: unknown, _field: unknown): boolean {
+export function validateVehicleField(): boolean {
   return true;
 }
 
-export function validateVehicleData(_data: unknown, _schema: unknown): { isValid: boolean; errors: string[] } {
+export function validateVehicleData(): { isValid: boolean; errors: string[] } {
   return { isValid: true, errors: [] };
 }
 
-export function hasValidationErrors(_data: unknown): boolean {
+export function hasValidationErrors(): boolean {
   return false;
 }
 
-export function validateVehiclePosting(_data: unknown): { isValid: boolean; errors: string[] } {
+export function validateVehiclePosting(): { isValid: boolean; errors: string[] } {
   return { isValid: true, errors: [] };
 }

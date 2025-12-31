@@ -3,10 +3,10 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 
 export type CategorySidebarCategory = {
-  id: string | number;
+  id: number;
   name: string;
   slug: string;
-  subcategories: { id: string | number; name: string; slug: string }[];
+  subcategories: { id: number; name: string; slug: string }[];
 };
 
 export default function CategorySidebar({ categories }: { categories: CategorySidebarCategory[] }) {
@@ -35,7 +35,7 @@ export default function CategorySidebar({ categories }: { categories: CategorySi
     return null;
   }, [activeCategorySlug, activeSubSlug, safeCategories]);
 
-  const [openId, setOpenId] = useState<string | number | null>(activeCategoryId);
+  const [openId, setOpenId] = useState<number | null>(activeCategoryId);
   const [isPending, startTransition] = useTransition();
   const asideRef = useRef<HTMLDivElement | null>(null);
   const lastScrollRef = useRef<number>(0);
@@ -59,7 +59,7 @@ export default function CategorySidebar({ categories }: { categories: CategorySi
       newParams.delete("sub");
       newParams.delete("subcategory");
     }
-    // Bewaar huidge scrollpositie zodat we hem kunnen herstellen
+    // Bewaar huidige scrollpositie zodat we hem kunnen herstellen
     lastScrollRef.current = window.scrollY;
     startTransition(() => {
       router.replace(`${pathname}?${newParams.toString()}`, { scroll: false });
@@ -81,7 +81,7 @@ export default function CategorySidebar({ categories }: { categories: CategorySi
     buildAndNavigate(cat.slug, undefined);
   };
 
-  const handleSubcategoryClick = (cat: CategorySidebarCategory, sub: { id: string | number; name: string; slug: string }) => {
+  const handleSubcategoryClick = (cat: CategorySidebarCategory, sub: { id: number; name: string; slug: string }) => {
     buildAndNavigate(cat.slug, sub.slug);
   };
   return (

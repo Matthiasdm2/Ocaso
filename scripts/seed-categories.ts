@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { createClient } from "@supabase/supabase-js";
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -289,7 +288,7 @@ async function upsertCategories(): Promise<Map<string, string>> {
   if (catError) throw catError;
 
   const categoryMap = new Map<string, string>();
-  (categories || []).forEach((cat: any) => categoryMap.set(cat.slug, cat.id));
+    (categories || []).forEach((cat: Record<string, unknown>) => categoryMap.set(String(cat.slug), String(cat.id)));
   
   console.log(`✅ Upserted ${categoryMap.size} categories`);
   return categoryMap;
@@ -298,7 +297,7 @@ async function upsertCategories(): Promise<Map<string, string>> {
 async function upsertSubcategories(categoryMap: Map<string, string>): Promise<void> {
   console.log("Seeding subcategories...");
   
-  const subcategoryPayload: any[] = [];
+  const subcategoryPayload: Record<string, unknown>[] = [];
   
   for (const cat of CATEGORIES) {
     const categoryId = categoryMap.get(cat.slug);

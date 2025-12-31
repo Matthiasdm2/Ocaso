@@ -1,0 +1,181 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - link "Over OCASO" [ref=e7] [cursor=pointer]:
+            - /url: /about
+          - link "Help & FAQ" [ref=e8] [cursor=pointer]:
+            - /url: /help
+          - link "Veilig handelen" [ref=e9] [cursor=pointer]:
+            - /url: /safety
+        - button "Uitloggen" [ref=e11] [cursor=pointer]:
+          - img [ref=e12]
+          - text: Uitloggen
+      - generic [ref=e15]:
+        - link "OCASO" [ref=e17] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e19]: OCASO
+        - navigation [ref=e20]:
+          - link "Ontdekken" [ref=e21] [cursor=pointer]:
+            - /url: /explore
+          - link "Marktplaats" [ref=e22] [cursor=pointer]:
+            - /url: /marketplace
+          - link "Ocaso Shops" [ref=e23] [cursor=pointer]:
+            - /url: /business
+          - link "Mijn profiel" [ref=e24] [cursor=pointer]:
+            - /url: /profile
+            - generic [ref=e25]: Mijn profiel
+        - link "Plaats zoekertje" [ref=e26] [cursor=pointer]:
+          - /url: /sell
+          - img [ref=e27]
+          - text: Plaats zoekertje
+    - main [ref=e28]:
+      - generic [ref=e30]:
+        - generic [ref=e31]:
+          - generic [ref=e34]:
+            - heading "Plaats een zoekertje" [level=1] [ref=e35]
+            - paragraph [ref=e36]: Stap 1/2 — Gegevens
+          - generic [ref=e37]:
+            - generic [ref=e38]:
+              - heading "Foto’s" [level=2] [ref=e39]
+              - generic [ref=e40]: 0/12 geselecteerd
+            - generic [ref=e41]:
+              - 'button "Klik om te kiezen, of sleep je foto’s hierheen Ondersteund: JPG, PNG, WEBP, HEIC Nog toe te voegen: 12" [ref=e42] [cursor=pointer]':
+                - generic [ref=e43]:
+                  - generic [ref=e44]: Klik om te kiezen, of sleep je foto’s hierheen
+                  - generic [ref=e45]: "Ondersteund: JPG, PNG, WEBP, HEIC"
+                  - generic [ref=e46]: "Nog toe te voegen: 12"
+              - generic [ref=e47]:
+                - textbox "https://voorbeeld.be/foto.jpg" [ref=e48]
+                - button "URL toevoegen" [disabled] [ref=e49]
+            - generic [ref=e50]: Voeg minstens 1 duidelijke foto toe.
+          - generic [ref=e51]:
+            - heading "Basisgegevens" [level=2] [ref=e52]
+            - generic [ref=e53]:
+              - generic [ref=e54]:
+                - text: Titel
+                - textbox "Titel van je product" [ref=e55]: TEST Auto test-1767195806337-a2ji2w
+                - button "Vul categorie automatisch in" [ref=e56] [cursor=pointer]
+              - generic [ref=e57]:
+                - generic [ref=e58]:
+                  - text: Marktplaats-categorie
+                  - generic [ref=e59]:
+                    - textbox "Typ om te zoeken… (lijst blijft volledig)" [ref=e60]: Motoren
+                    - button [ref=e61] [cursor=pointer]:
+                      - img [ref=e62]
+                - generic [ref=e64]:
+                  - text: Marktplaats-subcategorie (optioneel)
+                  - textbox "Typ om te zoeken… (lijst blijft volledig)" [ref=e66]
+          - generic [ref=e67]:
+            - generic [ref=e68]:
+              - heading "Omschrijving" [level=2] [ref=e69]
+              - generic [ref=e70]:
+                - button "FR" [ref=e71] [cursor=pointer]
+                - button "EN" [ref=e72] [cursor=pointer]
+                - button "DE" [ref=e73] [cursor=pointer]
+            - textbox "Beschrijf je product..." [ref=e74]: Test vehicle listing for test-1767195806337-a2ji2w
+          - generic [ref=e75]:
+            - heading "Prijs & staat" [level=2] [ref=e76]
+            - generic [ref=e77]:
+              - generic [ref=e78]:
+                - text: Prijs (€)
+                - textbox "0,00" [ref=e79]: "37485"
+              - generic [ref=e80]:
+                - text: Voorraad
+                - spinbutton [ref=e81]: "1"
+                - paragraph [ref=e82]: Hoeveel stuks heb je beschikbaar voor verkoop?
+              - generic [ref=e83]:
+                - text: Staat
+                - combobox [ref=e84]:
+                  - option "nieuw" [selected]
+                  - option "bijna nieuw"
+                  - option "in goede staat"
+                  - option "gebruikt"
+              - generic [ref=e85]:
+                - text: Locatie
+                - textbox "Zoek op postcode of gemeente..." [ref=e87]: Gent
+          - generic [ref=e88]:
+            - heading "Opties" [level=2] [ref=e89]
+            - generic [ref=e93] [cursor=pointer]: Bieden toestaan
+            - generic [ref=e94]:
+              - text: Minimum bod (optioneel)
+              - textbox "Optioneel" [ref=e95]
+            - generic [ref=e99] [cursor=pointer]: Veilig betalen via OCASO
+            - generic [ref=e103] [cursor=pointer]: Verzenden via OCASO
+            - paragraph [ref=e104]: Aan de integratie wordt gewerkt - binnenkort beschikbaar
+        - generic [ref=e106]:
+          - generic [ref=e107]:
+            - generic [ref=e108]:
+              - heading "Samenvatting" [level=3] [ref=e109]
+              - generic [ref=e110]: Nog geen prijs
+            - generic [ref=e111]:
+              - generic [ref=e112]:
+                - generic [ref=e113]: Prijs
+                - generic [ref=e114]: € 37485
+              - generic [ref=e115]:
+                - generic [ref=e116]: Categorie
+                - generic [ref=e117]: Motoren
+              - generic [ref=e118]:
+                - generic [ref=e119]: Staat
+                - generic [ref=e120]: nieuw
+              - generic [ref=e121]:
+                - generic [ref=e122]: Locatie
+                - generic [ref=e123]: Gent
+            - generic [ref=e125]:
+              - button "Preview" [ref=e126] [cursor=pointer]
+              - button "Bezig…" [disabled] [ref=e127]
+          - generic [ref=e128]: "Tip: een duidelijke titel en 3+ foto’s vergroten je kans op verkoop."
+    - contentinfo [ref=e129]:
+      - generic [ref=e130]:
+        - generic [ref=e131]:
+          - generic [ref=e132]: OCASO
+          - paragraph [ref=e133]: Slim tweedehands kopen en verkopen. Met AI‑zoek en prijscontrole.
+        - generic [ref=e134]:
+          - generic [ref=e135]: Navigatie
+          - list [ref=e136]:
+            - listitem [ref=e137]:
+              - link "Ontdekken" [ref=e138] [cursor=pointer]:
+                - /url: /explore
+            - listitem [ref=e139]:
+              - link "Marktplaats" [ref=e140] [cursor=pointer]:
+                - /url: /categories
+            - listitem [ref=e141]:
+              - link "Plaats zoekertje" [ref=e142] [cursor=pointer]:
+                - /url: /sell
+            - listitem [ref=e143]:
+              - link "Zakelijke oplossingen" [ref=e144] [cursor=pointer]:
+                - /url: /business
+        - generic [ref=e145]:
+          - generic [ref=e146]: Support
+          - list [ref=e147]:
+            - listitem [ref=e148]:
+              - link "Help & FAQ" [ref=e149] [cursor=pointer]:
+                - /url: /help
+            - listitem [ref=e150]:
+              - link "Veilig handelen" [ref=e151] [cursor=pointer]:
+                - /url: /safety
+            - listitem [ref=e152]:
+              - link "Contact" [ref=e153] [cursor=pointer]:
+                - /url: /contact
+            - listitem [ref=e154]:
+              - link "Voorwaarden" [ref=e155] [cursor=pointer]:
+                - /url: /terms
+        - generic [ref=e156]:
+          - generic [ref=e157]: Nieuwsbrief
+          - paragraph [ref=e158]: Ontvang tips, deals en updates.
+          - generic [ref=e159]:
+            - textbox "jouw@email.com" [ref=e160]
+            - button "Inschrijven" [ref=e161] [cursor=pointer]
+      - generic [ref=e163]:
+        - generic [ref=e164]: © 2025 OCASO. Alle rechten voorbehouden.
+        - generic [ref=e165]:
+          - link "Privacy" [ref=e166] [cursor=pointer]:
+            - /url: /privacy
+          - link "Cookies" [ref=e167] [cursor=pointer]:
+            - /url: /cookies
+  - alert [ref=e168]
+```

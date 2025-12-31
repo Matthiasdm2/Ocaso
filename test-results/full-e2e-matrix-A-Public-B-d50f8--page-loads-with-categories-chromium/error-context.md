@@ -1,0 +1,105 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - link "Over OCASO" [ref=e7] [cursor=pointer]:
+            - /url: /about
+          - link "Help & FAQ" [ref=e8] [cursor=pointer]:
+            - /url: /help
+          - link "Veilig handelen" [ref=e9] [cursor=pointer]:
+            - /url: /safety
+        - generic [ref=e10]:
+          - link "Inloggen" [ref=e11] [cursor=pointer]:
+            - /url: /login
+            - img [ref=e12]
+            - text: Inloggen
+          - link "Registreren" [ref=e15] [cursor=pointer]:
+            - /url: /register
+            - img [ref=e16]
+            - text: Registreren
+      - generic [ref=e19]:
+        - link "OCASO" [ref=e21] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e23]: OCASO
+        - navigation [ref=e24]:
+          - link "Ontdekken" [ref=e25] [cursor=pointer]:
+            - /url: /explore
+          - link "Marktplaats" [ref=e26] [cursor=pointer]:
+            - /url: /marketplace
+          - link "Ocaso Shops" [ref=e27] [cursor=pointer]:
+            - /url: /business
+          - link "Mijn profiel" [ref=e28] [cursor=pointer]:
+            - /url: /profile
+            - generic [ref=e29]: Mijn profiel
+        - link "Plaats zoekertje" [ref=e30] [cursor=pointer]:
+          - /url: /sell
+          - img [ref=e31]
+          - text: Plaats zoekertje
+    - main [ref=e32]:
+      - generic [ref=e33]:
+        - generic [ref=e35]:
+          - heading "Zoek nieuw of tweedehands. Slim, snel en veilig." [level=1] [ref=e36]
+          - generic [ref=e37]:
+            - search "Site" [ref=e38]:
+              - generic [ref=e39]:
+                - img [ref=e40]
+                - searchbox [ref=e43]
+            - button "Zoek op foto (AI)" [ref=e44] [cursor=pointer]:
+              - img [ref=e45]
+              - text: Zoek op foto (AI)
+        - heading "Ontdekken" [level=1] [ref=e48]
+        - heading "Aanbevolen voor jou" [level=2] [ref=e50]
+    - contentinfo [ref=e51]:
+      - generic [ref=e52]:
+        - generic [ref=e53]:
+          - generic [ref=e54]: OCASO
+          - paragraph [ref=e55]: Slim tweedehands kopen en verkopen. Met AI‑zoek en prijscontrole.
+        - generic [ref=e56]:
+          - generic [ref=e57]: Navigatie
+          - list [ref=e58]:
+            - listitem [ref=e59]:
+              - link "Ontdekken" [ref=e60] [cursor=pointer]:
+                - /url: /explore
+            - listitem [ref=e61]:
+              - link "Marktplaats" [ref=e62] [cursor=pointer]:
+                - /url: /categories
+            - listitem [ref=e63]:
+              - link "Plaats zoekertje" [ref=e64] [cursor=pointer]:
+                - /url: /sell
+            - listitem [ref=e65]:
+              - link "Zakelijke oplossingen" [ref=e66] [cursor=pointer]:
+                - /url: /business
+        - generic [ref=e67]:
+          - generic [ref=e68]: Support
+          - list [ref=e69]:
+            - listitem [ref=e70]:
+              - link "Help & FAQ" [ref=e71] [cursor=pointer]:
+                - /url: /help
+            - listitem [ref=e72]:
+              - link "Veilig handelen" [ref=e73] [cursor=pointer]:
+                - /url: /safety
+            - listitem [ref=e74]:
+              - link "Contact" [ref=e75] [cursor=pointer]:
+                - /url: /contact
+            - listitem [ref=e76]:
+              - link "Voorwaarden" [ref=e77] [cursor=pointer]:
+                - /url: /terms
+        - generic [ref=e78]:
+          - generic [ref=e79]: Nieuwsbrief
+          - paragraph [ref=e80]: Ontvang tips, deals en updates.
+          - generic [ref=e81]:
+            - textbox "jouw@email.com" [ref=e82]
+            - button "Inschrijven" [ref=e83] [cursor=pointer]
+      - generic [ref=e85]:
+        - generic [ref=e86]: © 2025 OCASO. Alle rechten voorbehouden.
+        - generic [ref=e87]:
+          - link "Privacy" [ref=e88] [cursor=pointer]:
+            - /url: /privacy
+          - link "Cookies" [ref=e89] [cursor=pointer]:
+            - /url: /cookies
+  - alert [ref=e90]
+```

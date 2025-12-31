@@ -10,7 +10,6 @@
  * - Client-side caching with TTL
  * - Error handling and fallbacks
  */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { createClient } from '@/lib/supabaseClient';
 
@@ -43,7 +42,8 @@ export type VehicleBrand = {
 /**
  * Cache with TTL
  */
-const categoryCache = new Map<string, { data: any; time: number }>();
+type CategoryCacheData = Category[] | Omit<Category, 'subcategories'>[] | VehicleBrand[];
+const categoryCache = new Map<string, { data: CategoryCacheData; time: number }>();
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 /**
@@ -55,7 +55,7 @@ export async function getCategoriesWithSubcategories(): Promise<Category[]> {
   const cached = categoryCache.get(cacheKey);
   
   if (cached && Date.now() - cached.time < CACHE_TTL) {
-    return cached.data;
+    return cached.data as Category[];
   }
 
   try {
@@ -72,16 +72,26 @@ export async function getCategoriesWithSubcategories(): Promise<Category[]> {
       return [];
     }
 
-    const categories: Category[] = (data || []).map((row: any) => ({
-      id: row.id,
-      name: row.name,
-      slug: row.slug,
-      icon_url: row.icon_url,
-      is_active: row.is_active,
-      sort_order: row.sort_order,
-      created_at: row.created_at,
-      subcategories: row.subcategories || [],
-    }));
+  interface SupabaseCategoryRow {
+    id: string | number;
+    name: string;
+    slug: string;
+    icon_url: string | null;
+    is_active: boolean;
+    sort_order: number;
+    created_at: string;
+    subcategories: SubCategory[];
+  }
+  const categories: Category[] = (data || []).map((row: SupabaseCategoryRow) => ({
+    id: String(row.id),
+    name: String(row.name),
+    slug: String(row.slug),
+    icon_url: row.icon_url ? String(row.icon_url) : null,
+    is_active: Boolean(row.is_active),
+    sort_order: Number(row.sort_order),
+    created_at: String(row.created_at),
+    subcategories: Array.isArray(row.subcategories) ? row.subcategories : [],
+  }));
 
     // Cache the result
     categoryCache.set(cacheKey, {
@@ -106,7 +116,7 @@ export async function getCategories(): Promise<Omit<Category, 'subcategories'>[]
   const cached = categoryCache.get(cacheKey);
   
   if (cached && Date.now() - cached.time < CACHE_TTL) {
-    return cached.data;
+    return cached.data as Omit<Category, 'subcategories'>[];
   }
 
   try {
@@ -148,7 +158,7 @@ export async function getVehicleBrandsByCategorySlug(categorySlug: string): Prom
   const cached = categoryCache.get(cacheKey);
   
   if (cached && Date.now() - cached.time < CACHE_TTL) {
-    return cached.data;
+    return cached.data as VehicleBrand[];
   }
 
   try {
@@ -163,12 +173,18 @@ export async function getVehicleBrandsByCategorySlug(categorySlug: string): Prom
       return [];
     }
 
-    const brands: VehicleBrand[] = (data || []).map((row: any) => ({
-      id: row.id,
-      name: row.name,
-      slug: row.slug,
-      sort_order: row.sort_order,
-    }));
+  interface SupabaseBrandRow {
+    id: string | number;
+    name: string;
+    slug: string;
+    sort_order: number;
+  }
+  const brands: VehicleBrand[] = (data || []).map((row: SupabaseBrandRow) => ({
+    id: String(row.id),
+    name: String(row.name),
+    slug: String(row.slug),
+    sort_order: Number(row.sort_order),
+  }));
 
     // Cache the result
     categoryCache.set(cacheKey, {

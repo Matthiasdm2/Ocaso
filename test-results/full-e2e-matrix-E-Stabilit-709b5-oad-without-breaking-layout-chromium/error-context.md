@@ -1,0 +1,231 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - link "Over OCASO" [ref=e7] [cursor=pointer]:
+            - /url: /about
+          - link "Help & FAQ" [ref=e8] [cursor=pointer]:
+            - /url: /help
+          - link "Veilig handelen" [ref=e9] [cursor=pointer]:
+            - /url: /safety
+        - button "Uitloggen" [ref=e11] [cursor=pointer]:
+          - img [ref=e12]
+          - text: Uitloggen
+      - generic [ref=e15]:
+        - link "OCASO" [ref=e17] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e19]: OCASO
+        - navigation [ref=e20]:
+          - link "Ontdekken" [ref=e21] [cursor=pointer]:
+            - /url: /explore
+          - link "Marktplaats" [ref=e22] [cursor=pointer]:
+            - /url: /marketplace
+          - link "Ocaso Shops" [ref=e23] [cursor=pointer]:
+            - /url: /business
+          - link "Mijn profiel" [ref=e24] [cursor=pointer]:
+            - /url: /profile
+            - generic [ref=e25]: Mijn profiel
+        - link "Plaats zoekertje" [ref=e26] [cursor=pointer]:
+          - /url: /sell
+          - img [ref=e27]
+          - text: Plaats zoekertje
+    - main [ref=e28]:
+      - generic [ref=e29]:
+        - generic [ref=e31]:
+          - heading "Zoek nieuw of tweedehands. Slim, snel en veilig." [level=1] [ref=e32]
+          - generic [ref=e33]:
+            - search "Site" [ref=e34]:
+              - generic [ref=e35]:
+                - img [ref=e36]
+                - searchbox [ref=e39]
+            - button "Zoek op foto (AI)" [ref=e40] [cursor=pointer]:
+              - img [ref=e41]
+              - text: Zoek op foto (AI)
+        - generic [ref=e44]:
+          - complementary [ref=e46]:
+            - heading "Categorieën" [level=2] [ref=e47]
+            - button "Alle categorieën" [ref=e48] [cursor=pointer]
+            - list [ref=e49]:
+              - listitem [ref=e50]:
+                - button "Auto & Motor" [ref=e51] [cursor=pointer]:
+                  - generic [ref=e52]: Auto & Motor
+              - listitem [ref=e53]:
+                - button "Baby & Kind" [ref=e54] [cursor=pointer]:
+                  - generic [ref=e55]: Baby & Kind
+              - listitem [ref=e56]:
+                - button "Bedrijfswagens" [ref=e57] [cursor=pointer]:
+                  - generic [ref=e58]: Bedrijfswagens
+              - listitem [ref=e59]:
+                - button "Boeken & Media" [ref=e60] [cursor=pointer]:
+                  - generic [ref=e61]: Boeken & Media
+              - listitem [ref=e62]:
+                - button "Bouw & Tuin" [ref=e63] [cursor=pointer]:
+                  - generic [ref=e64]: Bouw & Tuin
+              - listitem [ref=e65]:
+                - button "Camper & Mobilhomes" [ref=e66] [cursor=pointer]:
+                  - generic [ref=e67]: Camper & Mobilhomes
+              - listitem [ref=e68]:
+                - button "Caravans & Boten" [ref=e69] [cursor=pointer]:
+                  - generic [ref=e70]: Caravans & Boten
+              - listitem [ref=e71]:
+                - button "Computers" [ref=e72] [cursor=pointer]:
+                  - generic [ref=e73]: Computers
+              - listitem [ref=e74]:
+                - button "Diensten" [ref=e75] [cursor=pointer]:
+                  - generic [ref=e76]: Diensten
+              - listitem [ref=e77]:
+                - button "Dieren" [ref=e78] [cursor=pointer]:
+                  - generic [ref=e79]: Dieren
+              - listitem [ref=e80]:
+                - button "Elektronica" [ref=e81] [cursor=pointer]:
+                  - generic [ref=e82]: Elektronica
+              - listitem [ref=e83]:
+                - button "Fietsen & Brommers" [ref=e84] [cursor=pointer]:
+                  - generic [ref=e85]: Fietsen & Brommers
+              - listitem [ref=e86]:
+                - button "Games" [ref=e87] [cursor=pointer]:
+                  - generic [ref=e88]: Games
+              - listitem [ref=e89]:
+                - button "Gratis" [ref=e90] [cursor=pointer]:
+                  - generic [ref=e91]: Gratis
+              - listitem [ref=e92]:
+                - button "Hobbys" [ref=e93] [cursor=pointer]:
+                  - generic [ref=e94]: Hobbys
+              - listitem [ref=e95]:
+                - button "Huis & Inrichting" [ref=e96] [cursor=pointer]:
+                  - generic [ref=e97]: Huis & Inrichting
+              - listitem [ref=e98]:
+                - button "Huis & Tuin" [ref=e99] [cursor=pointer]:
+                  - generic [ref=e100]: Huis & Tuin
+              - listitem [ref=e101]:
+                - button "Kinderen & Baby" [ref=e102] [cursor=pointer]:
+                  - generic [ref=e103]: Kinderen & Baby
+              - listitem [ref=e104]:
+                - button "Kleding" [ref=e105] [cursor=pointer]:
+                  - generic [ref=e106]: Kleding
+              - listitem [ref=e107]:
+                - button "Mode & Schoenen" [ref=e108] [cursor=pointer]:
+                  - generic [ref=e109]: Mode & Schoenen
+              - listitem [ref=e110]:
+                - button "Motoren" [ref=e111] [cursor=pointer]:
+                  - generic [ref=e112]: Motoren
+              - listitem [ref=e113]:
+                - button "Muziek, Boeken & Films" [ref=e114] [cursor=pointer]:
+                  - generic [ref=e115]: Muziek, Boeken & Films
+              - listitem [ref=e116]:
+                - button "Phones & Tablets" [ref=e117] [cursor=pointer]:
+                  - generic [ref=e118]: Phones & Tablets
+              - listitem [ref=e119]:
+                - button "Sport & Fitness" [ref=e120] [cursor=pointer]:
+                  - generic [ref=e121]: Sport & Fitness
+              - listitem [ref=e122]:
+                - button "Sport & Hobby" [ref=e123] [cursor=pointer]:
+                  - generic [ref=e124]: Sport & Hobby
+              - listitem [ref=e125]:
+                - button "Tickets & Toegang" [ref=e126] [cursor=pointer]:
+                  - generic [ref=e127]: Tickets & Toegang
+              - listitem [ref=e128]:
+                - button "Tuin & Terras" [ref=e129] [cursor=pointer]:
+                  - generic [ref=e130]: Tuin & Terras
+              - listitem [ref=e131]:
+                - button "Zakelijk" [ref=e132] [cursor=pointer]:
+                  - generic [ref=e133]: Zakelijk
+          - main [ref=e134]:
+            - generic [ref=e135]:
+              - button "Filters" [ref=e136] [cursor=pointer]:
+                - generic [ref=e137]: Filters
+                - img [ref=e138]
+              - generic [ref=e142]:
+                - generic [ref=e143]:
+                  - generic [ref=e145]: Zakelijk zichtbaar
+                  - button "Reset" [ref=e146] [cursor=pointer]
+                - generic [ref=e147]:
+                  - generic [ref=e148]:
+                    - generic [ref=e149]: Locatie & straal
+                    - generic [ref=e150]:
+                      - textbox "Alle" [ref=e151]
+                      - button "Gebruik mijn locatie" [ref=e152] [cursor=pointer]
+                  - generic [ref=e153]:
+                    - generic [ref=e154]: Staat
+                    - combobox [ref=e155]:
+                      - option "Alle" [selected]
+                      - option "Nieuw"
+                      - option "Zo goed als nieuw"
+                      - option "Gebruikt"
+                      - option "Opknapper"
+                  - generic [ref=e156]:
+                    - generic [ref=e157]: Sorteren
+                    - combobox [ref=e158]:
+                      - option "Relevantie" [selected]
+                      - option "Nieuwste eerst"
+                      - option "Oudste eerst"
+                      - option "Prijs (laag → hoog)"
+                      - option "Prijs (hoog → laag)"
+                      - option "Meeste views"
+                      - option "Minste views"
+                      - option "Meeste favorieten"
+                      - option "Minste favorieten"
+                - generic [ref=e159]:
+                  - generic [ref=e160]:
+                    - generic [ref=e161]: Prijs min
+                    - spinbutton [ref=e162]
+                  - generic [ref=e163]:
+                    - generic [ref=e164]: Prijs max
+                    - spinbutton [ref=e165]
+                  - button "Zakelijke verkopers tonen of verbergen" [pressed] [ref=e167] [cursor=pointer]: Zakelijk
+            - generic [ref=e170]: 0 resultaten
+            - generic [ref=e171]: Geen zoekertjes gevonden.
+    - contentinfo [ref=e172]:
+      - generic [ref=e173]:
+        - generic [ref=e174]:
+          - generic [ref=e175]: OCASO
+          - paragraph [ref=e176]: Slim tweedehands kopen en verkopen. Met AI‑zoek en prijscontrole.
+        - generic [ref=e177]:
+          - generic [ref=e178]: Navigatie
+          - list [ref=e179]:
+            - listitem [ref=e180]:
+              - link "Ontdekken" [ref=e181] [cursor=pointer]:
+                - /url: /explore
+            - listitem [ref=e182]:
+              - link "Marktplaats" [ref=e183] [cursor=pointer]:
+                - /url: /categories
+            - listitem [ref=e184]:
+              - link "Plaats zoekertje" [ref=e185] [cursor=pointer]:
+                - /url: /sell
+            - listitem [ref=e186]:
+              - link "Zakelijke oplossingen" [ref=e187] [cursor=pointer]:
+                - /url: /business
+        - generic [ref=e188]:
+          - generic [ref=e189]: Support
+          - list [ref=e190]:
+            - listitem [ref=e191]:
+              - link "Help & FAQ" [ref=e192] [cursor=pointer]:
+                - /url: /help
+            - listitem [ref=e193]:
+              - link "Veilig handelen" [ref=e194] [cursor=pointer]:
+                - /url: /safety
+            - listitem [ref=e195]:
+              - link "Contact" [ref=e196] [cursor=pointer]:
+                - /url: /contact
+            - listitem [ref=e197]:
+              - link "Voorwaarden" [ref=e198] [cursor=pointer]:
+                - /url: /terms
+        - generic [ref=e199]:
+          - generic [ref=e200]: Nieuwsbrief
+          - paragraph [ref=e201]: Ontvang tips, deals en updates.
+          - generic [ref=e202]:
+            - textbox "jouw@email.com" [ref=e203]
+            - button "Inschrijven" [ref=e204] [cursor=pointer]
+      - generic [ref=e206]:
+        - generic [ref=e207]: © 2025 OCASO. Alle rechten voorbehouden.
+        - generic [ref=e208]:
+          - link "Privacy" [ref=e209] [cursor=pointer]:
+            - /url: /privacy
+          - link "Cookies" [ref=e210] [cursor=pointer]:
+            - /url: /cookies
+  - alert [ref=e211]
+```

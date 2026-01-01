@@ -58,6 +58,12 @@ export async function getCategoriesWithSubcategories(): Promise<Category[]> {
     return cached.data as Category[];
   }
 
+  // Check if Supabase is configured
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    console.warn('Supabase not configured, returning empty categories');
+    return [];
+  }
+
   try {
     const supabase = createClient();
     
@@ -117,6 +123,12 @@ export async function getCategories(): Promise<Omit<Category, 'subcategories'>[]
   
   if (cached && Date.now() - cached.time < CACHE_TTL) {
     return cached.data as Omit<Category, 'subcategories'>[];
+  }
+
+  // Check if Supabase is configured
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    console.warn('Supabase not configured, returning empty categories');
+    return [];
   }
 
   try {

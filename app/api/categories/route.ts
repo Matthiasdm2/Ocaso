@@ -3,6 +3,12 @@ import { createClient } from '@/lib/supabaseClient';
 
 export async function GET() {
   try {
+    // Check if Supabase is properly configured
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      console.warn('Supabase not configured, returning empty categories');
+      return NextResponse.json([], { status: 200 });
+    }
+
     const supabase = createClient();
 
     const { data, error } = await supabase

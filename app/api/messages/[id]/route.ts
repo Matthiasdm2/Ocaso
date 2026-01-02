@@ -479,7 +479,7 @@ export async function POST(
       const retryPayload = { ...basePayload, recipient_id: other };
       const { data: data2, error: error2 } = await supabase
         .from("messages")
-        .insert(retryPayload)
+        .insert(retryPayload as never)
         .select("id, sender_id, body, created_at, edited_at, deleted_at")
         .single();
       insertError = error2 as unknown;

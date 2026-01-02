@@ -9,7 +9,6 @@
 import { NextResponse } from 'next/server';
 
 import type { AffiliateProduct } from '@/lib/affiliate-helpers';
-import { isBusinessProfile } from '@/lib/affiliate-helpers';
 import { supabaseServer } from '@/lib/supabaseServer';
 
 const AFFILIATE_ENABLED = process.env.NEXT_PUBLIC_AFFILIATE_ENABLED !== 'false';
@@ -128,7 +127,9 @@ export async function GET(request: Request) {
     }
 
     // STRICT BUSINESS GATE: business users NEVER get affiliate data
-    if (isBusinessProfile(profile)) {
+    // Check business status directly since we only selected these fields
+    const isBusiness = profile.account_type === 'business' || profile.is_business === true;
+    if (isBusiness) {
       if (process.env.NODE_ENV === 'development') {
         console.log('[Affiliate API] Business user blocked:', user.id);
       }
@@ -187,12 +188,13 @@ async function logAffiliateEvent(
 ): Promise<void> {
   try {
     const supabase = supabaseServer();
-    await supabase.from('affiliate_events').insert({
+    // affiliate_events table may not exist in Database types, use type assertion
+    await (supabase.from('affiliate_events' as never) as any).insert({
       user_id: userId,
       event_type: eventType,
       query,
       created_at: new Date().toISOString(),
-    } as never);
+    });
   } catch (error) {
     // Silently fail - don't impact user experience
     if (process.env.NODE_ENV === 'development') {

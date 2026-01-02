@@ -207,37 +207,52 @@ export async function GET(req: Request) {
       const allowedNames = new Set<string>();
       try {
         // Relationele poging: haal parent + subcategories op (match op name)
+        interface CategoryWithSubs {
+          id: number;
+          name: string;
+          subcategories?: Array<{ name?: string | null }> | null;
+        }
         const rel = await supabase
           .from("categories")
           .select("id,name,subcategories(name)")
           .eq("name", cat)
           .limit(1)
           .maybeSingle();
-        if (rel.data) {
-          allowedNames.add(rel.data.name);
-          if (Array.isArray(rel.data.subcategories)) {
+        const relData = rel.data as CategoryWithSubs | null;
+        if (relData) {
+          allowedNames.add(relData.name);
+          if (Array.isArray(relData.subcategories)) {
             for (
-              const s of rel.data.subcategories as { name?: string | null }[]
+              const s of relData.subcategories as { name?: string | null }[]
             ) {
               if (s?.name) allowedNames.add(s.name);
             }
           }
         } else {
           // Fallback: flat structuur met parent_id
+          interface CategoryRow {
+            id: number;
+            name: string;
+          }
           const parent = await supabase
             .from("categories")
             .select("id,name")
             .eq("name", cat)
             .limit(1)
             .maybeSingle();
-          if (parent.data) {
-            allowedNames.add(parent.data.name);
+          const parentData = parent.data as CategoryRow | null;
+          if (parentData) {
+            allowedNames.add(parentData.name);
+            interface CategoryNameRow {
+              name?: string | null;
+            }
             const kids = await supabase
               .from("categories")
               .select("name")
-              .eq("parent_id", parent.data.id);
-            if (kids.data) {
-              for (const r of kids.data as { name?: string | null }[]) {
+              .eq("parent_id", parentData.id);
+            const kidsData = kids.data as CategoryNameRow[] | null;
+            if (kidsData) {
+              for (const r of kidsData) {
                 if (r?.name) allowedNames.add(r.name);
               }
             }

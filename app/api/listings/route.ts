@@ -132,16 +132,16 @@ export async function GET(request: Request) {
 
   // Normaliseren naar front-end Listing type
   interface ListingRow {
-    id: number;
+    id: string;
     title: string;
     price: number;
     location?: string | null;
     state?: string | null;
     images?: string[] | null;
     main_photo?: string | null;
-    created_at: string;
+    created_at: string | null;
   }
-  const items = (workingData as ListingRow[] | null | undefined ?? []).map((
+  const items = ((workingData as unknown) as ListingRow[] | null | undefined ?? []).map((
     l: ListingRow,
   ) => ({
     id: l.id,

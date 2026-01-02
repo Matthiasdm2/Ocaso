@@ -498,7 +498,7 @@ export async function POST(
   ) {
     const retry2 = await supabase
       .from("messages")
-      .insert({ ...basePayload, listing_id: listingId })
+      .insert({ ...basePayload, listing_id: listingId } as never)
       .select("id, sender_id, body, created_at, edited_at, deleted_at")
       .single();
     insertError = retry2.error as unknown;

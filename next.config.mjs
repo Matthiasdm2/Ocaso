@@ -68,12 +68,39 @@ const nextConfig = {
   experimental: {
     optimizeCss: true,
     // Allow native/node packages to be loaded at runtime in server components/routes
-    serverComponentsExternalPackages: ['sharp', '@xenova/transformers'],
+    serverComponentsExternalPackages: ['sharp', '@xenova/transformers', 'onnxruntime-node'],
   },
-  webpack: (config) => {
+  webpack: (config, { isServer }) => {
     // Ensure sharp is treated as external (server runtime will resolve it)
     config.externals = config.externals || [];
     config.externals.push({ sharp: 'commonjs sharp' });
+    
+    // Exclude onnxruntime-node and @xenova/transformers from webpack bundling
+    // These are native modules that can't be bundled - they'll be loaded at runtime
+    config.externals.push({
+      'onnxruntime-node': 'commonjs onnxruntime-node',
+      '@xenova/transformers': 'commonjs @xenova/transformers',
+    });
+    
+    // Exclude native .node files from webpack processing
+    // They're binary files that can't be processed by webpack
+    config.module = config.module || {};
+    config.module.rules = config.module.rules || [];
+    
+    // Ignore .node files completely - they're only needed at runtime on server
+    config.module.rules.push({
+      test: /\.node$/,
+      use: 'null-loader',
+    });
+    
+    // Also exclude from client-side bundling
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        'onnxruntime-node': false,
+        '@xenova/transformers': false,
+      };
+    }
 
     // Add path aliases for @ imports
     config.resolve.alias = {

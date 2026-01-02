@@ -179,6 +179,7 @@ export async function POST(request: Request) {
       ...baseMessage,
       listing_id: listingId,
       recipient_id: recipientId,
+    } as never)
     })
     .select("id, created_at")
     .single();

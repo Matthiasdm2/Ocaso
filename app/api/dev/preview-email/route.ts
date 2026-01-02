@@ -11,8 +11,8 @@ export async function GET() {
     const site = process.env.NEXT_PUBLIC_SITE_URL || "https://www.ocaso.be";
     const url = `${site}/auth/confirm?token=example-token`;
     // Simple placeholder substitution for preview only
-    html = html.replaceAll("{{ .ConfirmationURL }}", url).replaceAll(
-      "{{ .SiteURL }}",
+    html = html.replace(/\{\{ \.ConfirmationURL \}\}/g, url).replace(
+      /\{\{ \.SiteURL \}\}/g,
       site,
     ).replace(/\{\{year\}\}/g, String(new Date().getFullYear()));
     return new NextResponse(html, {

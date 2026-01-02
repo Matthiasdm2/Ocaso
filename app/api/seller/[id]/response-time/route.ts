@@ -36,7 +36,9 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     if ((error as { code?: string }).code === '42501' || /permission denied/i.test(error.message)) {
       return NextResponse.json({ averageMinutes: null, samples: 0, note: 'unauthorized' }, { status: 200 });
     }
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    // Log error but return graceful response instead of 500
+    console.error('[response-time] Error fetching messages:', error);
+    return NextResponse.json({ averageMinutes: null, samples: 0, note: 'error' }, { status: 200 });
   }
   if (!rows || !rows.length) return NextResponse.json({ averageMinutes: null, samples: 0, note: 'empty' });
 

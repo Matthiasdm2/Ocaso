@@ -56,13 +56,52 @@ export async function GET(request: Request) {
       }
     }
     if (!user) return NextResponse.json({ unread: 0 });
-    const { data, error } = await supabase.rpc("conversation_overview");
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    
+    // Try to use conversation_overview RPC, but fallback to manual query if it doesn't exist
+    let total = 0;
+    try {
+      const { data, error } = await supabase.rpc("conversation_overview");
+      if (error) {
+        // If RPC doesn't exist, fallback to manual query
+        console.warn("[unread] conversation_overview RPC failed, using fallback:", error.message);
+        const { data: conversations } = await supabase
+          .from("conversations")
+          .select("id, participants")
+          .contains("participants", [user.id]);
+        
+        if (conversations && conversations.length > 0) {
+          const conversationIds = conversations.map(c => c.id);
+          const { data: unreadMessages } = await supabase
+            .from("messages")
+            .select("id, conversation_id, sender_id, created_at")
+            .in("conversation_id", conversationIds)
+            .neq("sender_id", user.id)
+            .is("deleted_at", null);
+          
+          // Check against conversation_reads
+          const { data: reads } = await supabase
+            .from("conversation_reads")
+            .select("conversation_id, last_read_at")
+            .eq("user_id", user.id)
+            .in("conversation_id", conversationIds);
+          
+          const readMap = new Map(reads?.map(r => [r.conversation_id, r.last_read_at]) || []);
+          total = (unreadMessages || []).filter(m => {
+            const lastRead = readMap.get(m.conversation_id);
+            return !lastRead || new Date(m.created_at) > new Date(lastRead);
+          }).length;
+        }
+      } else {
+        type Row = { unread_count: number | null };
+        const arr: Row[] = Array.isArray(data) ? (data as Row[]) : [];
+        total = arr.reduce((sum, r) => sum + (r.unread_count || 0), 0);
+      }
+    } catch (rpcError) {
+      console.error("[unread] Error fetching unread count:", rpcError);
+      // Return 0 instead of error to prevent UI issues
+      total = 0;
     }
-    type Row = { unread_count: number | null };
-    const arr: Row[] = Array.isArray(data) ? (data as Row[]) : [];
-    const total = arr.reduce((sum, r) => sum + (r.unread_count || 0), 0);
+    
     return NextResponse.json({ unread: total });
   } catch (e: unknown) {
     let msg = "unexpected";

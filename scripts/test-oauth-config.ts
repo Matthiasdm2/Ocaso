@@ -40,7 +40,7 @@ if (!envPassed) {
 
 // Test 2: Supabase Client Creation
 console.log('2. Supabase Client Test:');
-let supabase;
+let supabase: ReturnType<typeof createClient> | null = null;
 try {
   supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   console.log('   ✅ Supabase client aangemaakt');
@@ -56,6 +56,9 @@ const expectedRedirectTo = `${SITE_URL}/auth/callback`;
 console.log(`   Verwachte redirectTo: ${expectedRedirectTo}`);
 
 async function testOAuthURL(provider: 'google' | 'facebook') {
+  if (!supabase) {
+    throw new Error('Supabase client not initialized');
+  }
   try {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider,

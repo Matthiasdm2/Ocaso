@@ -352,7 +352,7 @@ export default function MarketplaceFilters() {
                       } else if (min && max) {
                         // Year range
                         filterValue = `${min}-${max}`;
-                      } else if (max && parseInt(max) < 1980) {
+                      } else if (max && max < 1980) {
                         filterValue = 'Voor 1980';
                       }
                     } else if (filterKey === 'kilometerstand' || filterKey === 'mileage_km') {

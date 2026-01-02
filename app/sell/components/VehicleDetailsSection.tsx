@@ -56,11 +56,11 @@ export function VehicleDetailsSection({
           
           // API geeft { category, filters } terug
           if (data.filters && Array.isArray(data.filters)) {
-            console.log('[VEHICLE_DETAILS] Setting filters:', data.filters.map(f => ({ key: f.filter_key, label: f.filter_label })));
+            console.log('[VEHICLE_DETAILS] Setting filters:', data.filters.map((f: { filter_key?: string; filter_label?: string }) => ({ key: f.filter_key, label: f.filter_label })));
             setFilters(data.filters);
           } else if (Array.isArray(data)) {
             // Fallback: als data direct een array is
-            console.log('[VEHICLE_DETAILS] Setting filters (array):', data.map(f => ({ key: f.filter_key, label: f.filter_label })));
+            console.log('[VEHICLE_DETAILS] Setting filters (array):', data.map((f: { filter_key?: string; filter_label?: string }) => ({ key: f.filter_key, label: f.filter_label })));
             setFilters(data);
           } else {
             console.warn('[VEHICLE_DETAILS] Unexpected response format:', data);

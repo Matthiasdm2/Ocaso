@@ -102,13 +102,17 @@ export default function TestOAuthPage() {
       google: {
         hasUrl: !!googleResult.data,
         hasError: !!googleResult.error,
-        errorMessage: googleResult.error?.message,
+        errorMessage: googleResult.error && typeof googleResult.error === 'object' && 'message' in googleResult.error 
+          ? String(googleResult.error.message) 
+          : googleResult.error ? String(googleResult.error) : undefined,
         url: googleResult.data?.fullUrl,
       },
       facebook: {
         hasUrl: !!facebookResult.data,
         hasError: !!facebookResult.error,
-        errorMessage: facebookResult.error?.message,
+        errorMessage: facebookResult.error && typeof facebookResult.error === 'object' && 'message' in facebookResult.error 
+          ? String(facebookResult.error.message) 
+          : facebookResult.error ? String(facebookResult.error) : undefined,
         url: facebookResult.data?.fullUrl,
       },
       difference: {

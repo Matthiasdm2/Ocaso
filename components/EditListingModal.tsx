@@ -8,7 +8,7 @@ import PhotoUploader from "@/components/PhotoUploader";
 import { useToast } from "@/components/Toast";
 
 import { createClient } from "../lib/supabaseClient";
-import { VehicleDetailsSection } from "@/app/sell/components/VehicleDetailsSection";
+import { VehicleDetailsSection } from "../app/sell/components/VehicleDetailsSection";
 
 type Listing = {
   id: string;

@@ -99,17 +99,17 @@ async function fetchProfile(id: string): Promise<{ data: PublicProfile | null; e
       .order("created_at", { ascending: false })
       .limit(120);
     
-    const listings = (sellerListings || []).map(l => ({
+    const listings = (sellerListings || []).map((l: any) => ({
       ...l,
       favorites: l.favorites_count != null ? l.favorites_count : 0,
       status: l.status === 'actief' ? 'active' : l.status,
     }));
     
-    const listingIds = listings.map(l => l.id).filter(Boolean);
+    const listingIds = listings.map((l: any) => l.id).filter(Boolean);
     const listingTitles = new Map(
       listings
-        .filter(l => l.id && l.title)
-        .map(l => [l.id, l.title])
+        .filter((l: any) => l.id && l.title)
+        .map((l: any) => [l.id, l.title])
     );
     
     // Haal reviews op met volledige informatie
@@ -161,7 +161,7 @@ async function fetchProfile(id: string): Promise<{ data: PublicProfile | null; e
           .select("id, full_name, display_name, avatar_url")
           .in("id", authorIds);
         
-        reviewers?.forEach(profile => {
+        reviewers?.forEach((profile: any) => {
           reviewerMap.set(profile.id, {
             full_name: profile.full_name,
             display_name: profile.display_name,
@@ -171,11 +171,11 @@ async function fetchProfile(id: string): Promise<{ data: PublicProfile | null; e
       }
       
       // Map naar Review interface
-      reviews = uniqueReviews.map(r => {
+      reviews = uniqueReviews.map((r: any): Review => {
         const reviewer = reviewerMap.get(r.author_id) || {};
         const reviewerName = reviewer.display_name || reviewer.full_name || "Anonieme koper";
         const reviewerAvatar = reviewer.avatar_url || null;
-        const listingTitle = r.listing_id ? listingTitles.get(r.listing_id) || null : null;
+        const listingTitle = r.listing_id ? (listingTitles.get(r.listing_id) as string | undefined) || null : null;
         
         return {
           id: String(r.id),
@@ -184,7 +184,7 @@ async function fetchProfile(id: string): Promise<{ data: PublicProfile | null; e
           created_at: r.created_at || null,
           reviewer: reviewerName,
           reviewerAvatar: reviewerAvatar,
-          listingTitle: listingTitle,
+          listingTitle: listingTitle || null,
         };
       });
       

@@ -1,5 +1,7 @@
 "use client";
 
+import { formatPrice } from "@/lib/formatPrice";
+
 interface Bid {
   amount: number;
   created_at?: string;
@@ -20,7 +22,7 @@ export default function BidsBlock({ bids }: Props) {
         <ul className="space-y-2">
           {bids.map((bid, idx) => (
             <li key={idx} className="flex items-center gap-3 text-sm text-gray-800">
-              <span className="font-semibold text-emerald-700">€ {bid.amount}</span>
+              <span className="font-semibold text-emerald-700">{formatPrice(bid.amount)}</span>
               <span className="text-sm text-gray-500">{bid.created_at ? new Date(bid.created_at).toLocaleString("nl-BE") : ""}</span>
             </li>
           ))}

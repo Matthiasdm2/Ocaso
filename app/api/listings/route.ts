@@ -33,7 +33,7 @@ export async function GET(request: Request) {
     | "price_asc"
     | "price_desc";
 
-  // Basisquery: alleen actieve listings tonen
+  // Basisquery: alleen actieve listings tonen (niet verkocht)
   const wantCount = searchParams.get("count") !== "0";
   let query = supabase
     .from("listings")
@@ -41,7 +41,8 @@ export async function GET(request: Request) {
       "id,title,price,location,state,images,main_photo,created_at,categories,category_id,subcategory_id,status",
       { count: wantCount ? "exact" : undefined },
     )
-    .eq("status", "actief");
+    .eq("status", "actief")
+    .neq("status", "verkocht"); // Expliciet verkochte items uitsluiten
 
   // Zoeken
   if (q) {
@@ -119,6 +120,7 @@ export async function GET(request: Request) {
         "id,title,price,location,state,images,main_photo,created_at,categories,category_id,subcategory_id,status",
       )
       .eq("status", "actief")
+      .neq("status", "verkocht") // Expliciet verkochte items uitsluiten
       .order("created_at", { ascending: false })
       .range(from, to);
     const { data: fbData } = await fbQuery;
@@ -304,12 +306,12 @@ export async function POST(request: Request) {
     description: body.description as string | null || null,
     price: body.price as number,
     images: body.images as string[],
-    main_photo: (body.main_photo as string) || (body.images as string[])[0],
+    main_photo: (body.main_photo as string) || (body.images as string[])?.[0] || null,
     category_id: body.category_id as number,
     subcategory_id: body.subcategory_id as number | null || null,
     stock: body.stock as number,
     status: "actief",
-    allow_offers: body.allow_offers as boolean || false,
+    allowoffers: body.allow_offers as boolean || false,
     state: body.state as string || "nieuw",
     location: body.location as string | null || null,
     allow_shipping: body.allow_shipping as boolean || false,

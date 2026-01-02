@@ -51,7 +51,7 @@ export async function GET(request: Request) {
         "id,title,price,location,state,images,main_photo,created_at,status,organization_id",
         { count: "exact" },
       );
-    if (!showAll) base = base.eq("status", "actief");
+    if (!showAll) base = base.eq("status", "actief").neq("status", "verkocht"); // Expliciet verkochte items uitsluiten
     if (qLower) {
       base = base.or(`title.ilike.%${qLower}%,description.ilike.%${qLower}%`);
     }
@@ -131,7 +131,7 @@ export async function GET(request: Request) {
       { count: "exact" },
     );
   if (!showAll) {
-    query = query.eq("status", "actief");
+    query = query.eq("status", "actief").neq("status", "verkocht"); // Expliciet verkochte items uitsluiten
   }
 
   // Heuristische categoriedetectie alleen indien expliciet aangevraagd (?heuristics=1)
@@ -216,6 +216,7 @@ export async function GET(request: Request) {
         { count: "exact" },
       )
       .eq("status", "actief")
+      .neq("status", "verkocht") // Expliciet verkochte items uitsluiten
       .or(orString)
       .range(0, limit - 1);
     const fb = await fbQuery;
@@ -257,6 +258,7 @@ export async function GET(request: Request) {
         { count: "exact" },
       )
       .eq("status", "actief")
+      .neq("status", "verkocht") // Expliciet verkochte items uitsluiten
       .order("created_at", { ascending: false })
       .range(0, limit - 1);
     if (!any.error && (any.data?.length ?? 0) > 0) {

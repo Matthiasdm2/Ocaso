@@ -15,6 +15,7 @@ import ListingStats from "@/components/ListingStats";
 import MarkBidsSeen from "@/components/MarkBidsSeen";
 import SellerPanels from "@/components/SellerPanels";
 import SharePanel from "@/components/SharePanel";
+import { formatPrice } from "@/lib/formatPrice";
 import { supabaseServer } from "@/lib/supabaseServer";
 import type { Category, Subcategory } from "@/lib/types";
 
@@ -28,9 +29,35 @@ export default async function ListingPage({ params }: { params: { id: string } }
     .from("listings")
     // Via foreign key listings_seller_id_fkey koppelen we naar profiles en aliassen dit als seller
     // We halen extra velden op: is_business + created_at (aansluitdatum)
-  .select("*,categories,seller:profiles!listings_seller_id_fkey(id,display_name,full_name,avatar_url,is_business,created_at,address,invoice_address,stripe_account_id,vat)")
+  .select("*,categories,seller:profiles!listings_seller_id_fkey(id,display_name,full_name,avatar_url,is_business,created_at,address,invoice_address,stripe_account_id,vat,shop_slug)")
     .eq("id", params.id)
     .maybeSingle();
+
+  // Haal vehicle details op als dit een vehicle categorie is
+  let vehicleDetails = null;
+  let isVehicleCategory = false;
+  if (listing) {
+    // Check if this is a vehicle category by getting category slug
+    const categoryId = listing.category_id;
+    if (categoryId) {
+      const { data: category } = await supabase
+        .from("categories")
+        .select("slug")
+        .eq("id", categoryId)
+        .maybeSingle();
+      
+      if (category?.slug && ['auto-motor', 'bedrijfswagens', 'camper-mobilhomes', 'motoren-en-scooters'].includes(category.slug)) {
+        isVehicleCategory = true;
+        // Fetch vehicle details
+        const { data: vehicleData } = await supabase
+          .from("listing_vehicle_details")
+          .select("*")
+          .eq("listing_id", params.id)
+          .maybeSingle();
+        vehicleDetails = vehicleData;
+      }
+    }
+  }
 
   // Haal huidige gebruiker op om te controleren of deze de verkoper is
   const { data: { user: currentUser } } = await supabase.auth.getUser();
@@ -221,7 +248,7 @@ export default async function ListingPage({ params }: { params: { id: string } }
         {/* Linker hoofdcontainer */}
         <div className="md:col-span-2 flex flex-col gap-8">
           {/* Afbeeldingen container */}
-          <div className="relative rounded-2xl border bg-white shadow p-4 md:p-6 w-full mb-2">
+          <div className="relative rounded-2xl border bg-white p-1 md:p-2 w-full mb-2">
             <ImageGallery images={images} title={listing.title} main_photo={listing.main_photo} />
             <div className="absolute top-4 right-4 z-10">
               <ListingStats id={listing.id} views={listing.views ?? 0} favorites={(listing as { favorites_count?: number }).favorites_count ?? 0} />
@@ -233,7 +260,7 @@ export default async function ListingPage({ params }: { params: { id: string } }
               <div className="flex items-center gap-4">
                 <span className="text-sm text-gray-600">Aantal biedingen: {bidCount}</span>
                 <BidsModal bids={bids ?? []} />
-                <span className="text-sm text-emerald-700 font-semibold">{highestBid ? `€ ${highestBid}` : "—"}</span>
+                <span className="text-sm text-emerald-700 font-semibold">{formatPrice(highestBid)}</span>
               </div>
               <div className="ml-auto text-sm text-gray-500">
                 Geplaatst: {listing.created_at ? new Date(listing.created_at).toLocaleDateString("nl-BE") : "Onbekend"}
@@ -243,7 +270,7 @@ export default async function ListingPage({ params }: { params: { id: string } }
             <div className="flex flex-wrap items-start justify-between gap-4 mb-1">
               <h1 className="text-2xl font-bold text-gray-900 flex-1 min-w-0 break-words">{listing.title}</h1>
               <div className="flex items-center gap-3 shrink-0">
-                <span className="text-2xl font-semibold text-emerald-700 whitespace-nowrap">€ {listing.price}</span>
+                <span className="text-2xl font-semibold text-emerald-700 whitespace-nowrap">{formatPrice(listing.price)}</span>
                 <span className="text-sm px-3 py-1 rounded-full border bg-gray-50 text-gray-600 border-gray-200 whitespace-nowrap">
                   {listing.status ?? "Onbekend"}
                 </span>
@@ -290,6 +317,56 @@ export default async function ListingPage({ params }: { params: { id: string } }
               </div>
             )}
             {/* Datum verplaatst naar biedingen/hoogste bod rij */}
+            {/* Voertuiggegevens - alleen voor vehicle categorieën (boven beschrijving) */}
+            {isVehicleCategory && vehicleDetails && (
+              <div className="border-b pb-6 mb-6">
+                <h2 className="text-lg font-semibold text-gray-800 mb-4">Voertuiggegevens</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                  {vehicleDetails.year && (
+                    <div>
+                      <span className="block text-sm text-gray-500 mb-1">Bouwjaar</span>
+                      <span className="text-base text-gray-700 font-medium">{vehicleDetails.year}</span>
+                    </div>
+                  )}
+                  {vehicleDetails.mileage_km && (
+                    <div>
+                      <span className="block text-sm text-gray-500 mb-1">Kilometerstand</span>
+                      <span className="text-base text-gray-700 font-medium">{vehicleDetails.mileage_km.toLocaleString('nl-BE')} km</span>
+                    </div>
+                  )}
+                  {vehicleDetails.fuel_type && (
+                    <div>
+                      <span className="block text-sm text-gray-500 mb-1">Brandstof</span>
+                      <span className="text-base text-gray-700 font-medium">{vehicleDetails.fuel_type}</span>
+                    </div>
+                  )}
+                  {vehicleDetails.body_type && (
+                    <div>
+                      <span className="block text-sm text-gray-500 mb-1">Carrosserie</span>
+                      <span className="text-base text-gray-700 font-medium">{vehicleDetails.body_type}</span>
+                    </div>
+                  )}
+                  {vehicleDetails.transmission && (
+                    <div>
+                      <span className="block text-sm text-gray-500 mb-1">Transmissie</span>
+                      <span className="text-base text-gray-700 font-medium">{vehicleDetails.transmission}</span>
+                    </div>
+                  )}
+                  {vehicleDetails.power_hp && (
+                    <div>
+                      <span className="block text-sm text-gray-500 mb-1">Vermogen</span>
+                      <span className="text-base text-gray-700 font-medium">{vehicleDetails.power_hp} pk</span>
+                    </div>
+                  )}
+                  {vehicleDetails.condition && (
+                    <div>
+                      <span className="block text-sm text-gray-500 mb-1">Staat</span>
+                      <span className="text-base text-gray-700 font-medium">{vehicleDetails.condition}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
             {/* Beschrijving */}
             <div className="border-b pb-6 mb-6">
               <h2 className="text-lg font-semibold text-gray-800 mb-2">Beschrijving</h2>
@@ -312,7 +389,7 @@ export default async function ListingPage({ params }: { params: { id: string } }
                 price={listing.price}
                 sellerId={listing.seller_id}
                 sellerKycCompleted={sellerKycCompleted}
-                allowOffers={listing.allowOffers}
+                allowOffers={(listing as { allowoffers?: boolean | null }).allowoffers ?? false}
                 min_bid={listing.min_bid}
                 stock={listing.stock ?? 1}
                 isSeller={isSeller}
@@ -322,10 +399,15 @@ export default async function ListingPage({ params }: { params: { id: string } }
     {/* Verkoper info rechts */}
   <div className="md:col-span-1 md:sticky md:top-24 self-start flex flex-col gap-4 md:gap-6">
           {(() => {
-            type RawSeller = { id?: string; name?: string; full_name?: string; display_name?: string; avatar_url?: string } | null;
+            type RawSeller = { id?: string; name?: string; full_name?: string; display_name?: string; avatar_url?: string; shop_slug?: string | null } | null;
             // listing.seller komt uit de join (alias seller:profiles...) zie select hierboven
             const raw: RawSeller = (listing as { seller?: RawSeller }).seller || null;
             const sellerLocation = sellerLocationCombined || listing.location || null;
+            const sellerId = raw?.id || (listing as { seller_id?: string }).seller_id || null;
+            const isBusiness = !!(raw as { is_business?: boolean | null })?.is_business && !!(raw as { vat?: string | null })?.vat;
+            const shopSlug = (raw as { shop_slug?: string | null })?.shop_slug;
+            // Gebruik shop_slug voor business accounts, anders gebruik ID
+            const profileLink = sellerId ? (isBusiness && shopSlug ? `/business/${shopSlug}` : isBusiness ? `/business/${sellerId}` : `/seller/${sellerId}`) : null;
             const sellerObj: {
               id: string | null;
               seller_id: string | null;
@@ -340,9 +422,10 @@ export default async function ListingPage({ params }: { params: { id: string } }
               seller_vat?: string | null;
               joinedISO?: string | null;
               location?: string | null;
+              profileLink?: string | null;
             } = {
-              id: raw?.id || (listing as { seller_id?: string }).seller_id || null,
-              seller_id: (listing as { seller_id?: string }).seller_id || null,
+              id: sellerId,
+              seller_id: sellerId,
               name: raw?.name || raw?.full_name || raw?.display_name || null,
               avatarUrl: raw?.avatar_url || null,
               seller_avatar_url: raw?.avatar_url || null,
@@ -354,6 +437,7 @@ export default async function ListingPage({ params }: { params: { id: string } }
               seller_vat: (raw as { vat?: string | null })?.vat || null,
               joinedISO: (raw as { created_at?: string | null })?.created_at || null,
               location: sellerLocation,
+              profileLink: profileLink,
             };
             return (
               <SellerPanels
@@ -372,14 +456,14 @@ export default async function ListingPage({ params }: { params: { id: string } }
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               <div className="text-sm text-gray-500">Prijs</div>
-              <div className="text-lg font-semibold text-emerald-700">€ {listing.price}</div>
+              <div className="text-lg font-semibold text-emerald-700">{formatPrice(listing.price)}</div>
             </div>
               <ClientActions
                 listingId={listing.id}
                 price={listing.price}
                 sellerId={listing.seller_id}
                 sellerKycCompleted={sellerKycCompleted}
-                allowOffers={listing.allowOffers}
+                allowOffers={(listing as { allowoffers?: boolean | null }).allowoffers ?? false}
                 min_bid={listing.min_bid}
                 stock={listing.stock ?? 1}
                 isSeller={isSeller}

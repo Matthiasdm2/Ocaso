@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
+import ConfirmationModal from "@/components/admin/ConfirmationModal";
 
 type User = {
   id: string;
@@ -22,6 +23,7 @@ export default function UserManagement() {
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [userToDelete, setUserToDelete] = useState<{ id: string; name: string; email: string } | null>(null);
 
   // Filter states
   const [filters, setFilters] = useState({
@@ -60,10 +62,43 @@ export default function UserManagement() {
   };
 
   const deleteUser = async (id: string) => {
-    if (!confirm("Weet je het zeker?")) return;
-    const res = await fetch(`/api/admin/users/${id}`, { method: "DELETE" });
-    if (res.ok) {
-      setUsers(users.filter(u => u.id !== id));
+    const user = users.find(u => u.id === id);
+    if (!user) return;
+    
+    // Toon bevestigingsmodal
+    setUserToDelete({
+      id: user.id,
+      name: user.full_name || "Onbekend",
+      email: user.email || "",
+    });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!userToDelete) return;
+    
+    try {
+      const res = await fetch(`/api/admin/users/${userToDelete.id}`, { method: "DELETE" });
+      const responseData = await res.json().catch(() => ({}));
+      
+      if (res.ok) {
+        // Remove from local state immediately
+        setUsers(users.filter(u => u.id !== userToDelete.id));
+        setUserToDelete(null);
+        
+        // Refresh after a delay to ensure database is synced
+        setTimeout(async () => {
+          await fetchUsers();
+        }, 500);
+      } else {
+        const errorMsg = responseData.error || res.statusText || "Onbekende fout";
+        console.error("❌ Delete failed:", errorMsg);
+        alert(`Fout bij verwijderen: ${errorMsg}\n\nControleer server logs voor details.`);
+        setUserToDelete(null);
+      }
+    } catch (error) {
+      console.error("❌ Error deleting user:", error);
+      alert(`Er ging iets mis bij het verwijderen: ${error instanceof Error ? error.message : "Onbekende fout"}`);
+      setUserToDelete(null);
     }
   };
 
@@ -114,134 +149,155 @@ export default function UserManagement() {
 
   return (
     <div>
+      {/* Delete Confirmation Modal */}
+      {userToDelete && (
+        <ConfirmationModal
+          isOpen={!!userToDelete}
+          onClose={() => setUserToDelete(null)}
+          onConfirm={handleConfirmDelete}
+          title="Gebruiker verwijderen?"
+          message={`Weet je zeker dat je deze gebruiker wilt verwijderen?\n\nNaam: ${userToDelete.name}\nEmail: ${userToDelete.email}\n\nDeze actie kan niet ongedaan worden gemaakt. Alle gegevens van deze gebruiker (profiel, listings, orders, berichten) zullen permanent worden verwijderd.`}
+          confirmText="Verwijderen"
+          cancelText="Annuleren"
+          variant="danger"
+        />
+      )}
+
       {/* Header with filters */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <div className="flex items-center gap-4">
-          <h2 className="text-xl font-semibold">Gebruikers</h2>
-          <span className="text-sm text-gray-500">
-            {filteredUsers.length} van {users.length}
-          </span>
-        </div>
-        
-        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-          {/* Search by name */}
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Zoek op naam..."
-              value={filters.name}
-              onChange={(e) => setFilters(prev => ({ ...prev, name: e.target.value }))}
-              className="w-full sm:w-48 pl-3 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-            <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-              <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </div>
+      <div className="bg-white rounded-2xl shadow-smooth p-6 mb-6 border border-gray-100">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex items-center gap-4">
+            <h2 className="text-xl font-bold text-gray-900">Gebruikers</h2>
+            <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+              {filteredUsers.length} van {users.length}
+            </span>
           </div>
           
-          {/* Search by email */}
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Zoek op email..."
-              value={filters.email}
-              onChange={(e) => setFilters(prev => ({ ...prev, email: e.target.value }))}
-              className="w-full sm:w-48 pl-3 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-            <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-              <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            {/* Search by name */}
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Zoek op naam..."
+                value={filters.name}
+                onChange={(e) => setFilters(prev => ({ ...prev, name: e.target.value }))}
+                className="w-full sm:w-48 pl-4 pr-10 py-2.5 border border-gray-200 rounded-full bg-white text-sm focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+              />
+              <div className="absolute inset-y-0 right-0 flex items-center pr-4">
+                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
             </div>
+            
+            {/* Search by email */}
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Zoek op email..."
+                value={filters.email}
+                onChange={(e) => setFilters(prev => ({ ...prev, email: e.target.value }))}
+                className="w-full sm:w-48 pl-4 pr-10 py-2.5 border border-gray-200 rounded-full bg-white text-sm focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+              />
+              <div className="absolute inset-y-0 right-0 flex items-center pr-4">
+                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+              </div>
+            </div>
+            
+            {(filters.name || filters.email) && (
+              <button
+                onClick={clearFilters}
+                className="px-4 py-2.5 bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 text-sm font-medium transition-colors"
+              >
+                Wissen
+              </button>
+            )}
           </div>
-          
-          {(filters.name || filters.email) && (
-            <button
-              onClick={clearFilters}
-              className="px-3 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 text-sm"
-            >
-              Wissen
-            </button>
-          )}
         </div>
       </div>
 
       {error && (
-        <div className="mb-4 p-3 bg-red-50 text-red-700 border border-red-200 rounded">
+        <div className="mb-6 p-4 bg-red-50 text-red-700 border border-red-200 rounded-2xl">
           {error}
         </div>
       )}
 
-      <table className="w-full border">
-        <thead>
-          <tr>
-            <th className="border p-2">ID</th>
-            <th className="border p-2">Naam</th>
-            <th className="border p-2">Email</th>
-            <th className="border p-2">Accountsoort</th>
-            <th className="border p-2">Admin</th>
-            <th className="border p-2">Details</th>
-            <th className="border p-2">Acties</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredUsers.length === 0 && users.length > 0 && (
-            <tr>
-              <td colSpan={7} className="border p-4 text-center text-gray-500">
-                Geen gebruikers gevonden met de huidige filters.
-              </td>
-            </tr>
-          )}
-          {filteredUsers.length === 0 && users.length === 0 && !loading && !error && (
-            <tr>
-              <td colSpan={7} className="border p-4 text-center text-gray-500">
-                Geen gebruikers gevonden.
-              </td>
-            </tr>
-          )}
-          {filteredUsers.map(user => (
-            <>
-              <tr key={user.id}>
-                <td className="border p-2">{user.id}</td>
-                <td className="border p-2">{user.full_name}</td>
-                <td className="border p-2">{user.email}</td>
-                <td className="border p-2">{user.account_type}</td>
-                <td className="border p-2">
-                  <input
-                    type="checkbox"
-                    checked={user.is_admin}
-                    onChange={() => toggleAdmin(user.id, user.is_admin)}
-                  />
-                </td>
-                <td className="border p-2">
-                  <button
-                    onClick={() => setExpanded(expanded === user.id ? null : user.id)}
-                    className="bg-blue-500 text-white px-2 py-1 rounded"
-                  >
-                    {expanded === user.id ? "Sluit" : "Bewerk"}
-                  </button>
-                </td>
-                <td className="border p-2">
-                  <button
-                    className="bg-red-500 text-white px-2 py-1 rounded"
-                    onClick={() => deleteUser(user.id)}
-                  >
-                    Verwijder
-                  </button>
-                </td>
+      <div className="bg-white rounded-2xl shadow-smooth border border-gray-100 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-gray-50 border-b border-gray-200">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">ID</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Naam</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Email</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Accountsoort</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Admin</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Details</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Acties</th>
               </tr>
-              {expanded === user.id && (
+            </thead>
+            <tbody>
+              {filteredUsers.length === 0 && users.length > 0 && (
                 <tr>
-                  <td colSpan={7} className="border p-4 bg-gray-50">
-                    <UserDetailsForm user={user} onUpdate={updateUser} />
+                  <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
+                    Geen gebruikers gevonden met de huidige filters.
                   </td>
                 </tr>
               )}
-            </>
-          ))}
-        </tbody>
-      </table>
+              {filteredUsers.length === 0 && users.length === 0 && !loading && !error && (
+                <tr>
+                  <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
+                    Geen gebruikers gevonden.
+                  </td>
+                </tr>
+              )}
+              {filteredUsers.map(user => (
+                <React.Fragment key={user.id}>
+                  <tr className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3 text-sm text-gray-600 font-mono">{user.id.slice(0, 8)}...</td>
+                    <td className="px-4 py-3 text-sm font-medium text-gray-900">{user.full_name}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600">{user.email}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600">{user.account_type}</td>
+                    <td className="px-4 py-3">
+                      <input
+                        type="checkbox"
+                        checked={user.is_admin}
+                        onChange={() => toggleAdmin(user.id, user.is_admin)}
+                        className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
+                      />
+                    </td>
+                    <td className="px-4 py-3">
+                      <button
+                        onClick={() => setExpanded(expanded === user.id ? null : user.id)}
+                        className="rounded-full bg-primary text-black px-4 py-1.5 text-sm font-semibold hover:bg-primary/80 transition-colors"
+                      >
+                        {expanded === user.id ? "Sluit" : "Bewerk"}
+                      </button>
+                    </td>
+                    <td className="px-4 py-3">
+                      <button
+                        className="rounded-full bg-red-500 text-white px-4 py-1.5 text-sm font-semibold hover:bg-red-600 transition-colors"
+                        onClick={() => deleteUser(user.id)}
+                      >
+                        Verwijder
+                      </button>
+                    </td>
+                  </tr>
+                  {expanded === user.id && (
+                    <tr>
+                      <td colSpan={7} className="px-4 py-4 bg-gray-50">
+                        <UserDetailsForm user={user} onUpdate={updateUser} />
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }

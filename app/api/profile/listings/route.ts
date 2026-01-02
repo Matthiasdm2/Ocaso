@@ -26,13 +26,20 @@ interface ListingRow {
   images: string[] | null;
   main_photo: string | null;
   created_at: string | null;
-  views: number | null;
+  views: string | null;
   category_id?: number | null;
   subcategory_id?: number | null;
   categories?: number[] | null; // legacy array, maybe still populated
   state?: string | null;
   location?: string | null;
   allowoffers?: boolean | null;
+  allow_offers?: boolean | null;
+  allow_shipping?: boolean | null;
+  shipping_length?: number | null;
+  shipping_width?: number | null;
+  shipping_height?: number | null;
+  shipping_weight?: number | null;
+  min_bid?: number | null;
   status?: string | null;
   stock?: number | null;
 }
@@ -217,7 +224,7 @@ export async function GET(req: Request) {
       created_at: l.created_at,
       bids,
       highest_bid,
-      views: typeof l.views === "number" ? l.views : 0,
+      views: typeof l.views === "number" ? l.views : (typeof l.views === "string" ? parseInt(l.views) || 0 : 0),
       category: category_id
         ? nameMap[category_id] ?? null
         : (Array.isArray(l.categories) && l.categories.length > 0
@@ -230,7 +237,13 @@ export async function GET(req: Request) {
           : null),
       condition: l.state ?? null,
       location: l.location ?? null,
-      allow_offers: l.allowoffers ?? false,
+      allow_offers: l.allow_offers ?? l.allowoffers ?? false,
+      allow_shipping: l.allow_shipping ?? false,
+      shipping_length: l.shipping_length ?? null,
+      shipping_width: l.shipping_width ?? null,
+      shipping_height: l.shipping_height ?? null,
+      shipping_weight: l.shipping_weight ?? null,
+      min_bid: l.min_bid ?? null,
       status: mapStatus(l.status),
       stock: l.stock ?? null,
     });

@@ -8,6 +8,7 @@ import PhotoUploader from "@/components/PhotoUploader";
 import { useToast } from "@/components/Toast";
 
 import { createClient } from "../lib/supabaseClient";
+import { VehicleDetailsSection } from "@/app/sell/components/VehicleDetailsSection";
 
 type Listing = {
   id: string;
@@ -21,6 +22,12 @@ type Listing = {
   allow_offers?: boolean | null;
   min_bid?: number | null;
   shipping_via_ocaso?: boolean | null;
+  allow_shipping?: boolean | null;
+  shipping_length?: number | null;
+  shipping_width?: number | null;
+  shipping_height?: number | null;
+  shipping_weight?: number | null;
+  // Legacy field names for backward compatibility
   dimensions_length?: number | null;
   dimensions_width?: number | null;
   dimensions_height?: number | null;
@@ -29,7 +36,8 @@ type Listing = {
   category_id?: number | null;
   subcategory_id?: number | null;
   stock?: number | null;
-  // Add other fields as needed
+  // Vehicle details
+  vehicle_details?: Record<string, unknown> | null;
 };
 
 type Props = {
@@ -91,10 +99,22 @@ export default function EditListingModal({ listing, open, onClose, onSave }: Pro
 
   const [formData, setFormData] = useState<Partial<Listing>>({});
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   // Category selection state (IDs for CategorySelect component)
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
   const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<string>("");
+  const [categorySlug, setCategorySlug] = useState<string>("");
+
+  // Vehicle details state
+  const [vehicleDetails, setVehicleDetails] = useState<Record<string, string>>({});
+  
+  // Debug: log when vehicleDetails change
+  useEffect(() => {
+    console.log('[EditListingModal] Vehicle details state:', vehicleDetails);
+    console.log('[EditListingModal] Category slug:', categorySlug);
+    console.log('[EditListingModal] Is vehicle category?', categorySlug && ['auto-motor', 'bedrijfswagens', 'camper-mobilhomes', 'motoren-en-scooters'].includes(categorySlug));
+  }, [vehicleDetails, categorySlug]);
 
   // Image management state
   const [imageUrls, setImageUrls] = useState<string[]>([]);
@@ -113,40 +133,246 @@ export default function EditListingModal({ listing, open, onClose, onSave }: Pro
 
   useEffect(() => {
     if (listing && open) {
-      setFormData({
-        title: listing.title || "",
-        description: listing.description || "",
-        price: listing.price || undefined,
-        condition: listing.condition || "nieuw",
-        category: listing.category || "",
-        subcategory: listing.subcategory || "",
-        location: listing.location || "",
-        allow_offers: listing.allow_offers ?? true,
-        min_bid: listing.min_bid || undefined,
-        shipping_via_ocaso: listing.shipping_via_ocaso ?? false,
-        dimensions_length: listing.dimensions_length || undefined,
-        dimensions_width: listing.dimensions_width || undefined,
-        dimensions_height: listing.dimensions_height || undefined,
-        stock: listing.stock || 1,
-      });
+      setLoading(true);
+      
+      // Fetch full listing data from API to ensure we have all fields
+      const loadListingData = async () => {
+        try {
+          console.log('[EditListingModal] Loading listing data for:', listing.id);
+          const response = await fetch(`/api/listings/${listing.id}`);
+          if (!response.ok) {
+            console.error('[EditListingModal] Failed to fetch full listing data:', response.status);
+            // Fallback to using the provided listing data
+            return listing;
+          }
+          const fullListing = await response.json();
+          console.log('[EditListingModal] Fetched full listing:', fullListing);
+          return fullListing;
+        } catch (error) {
+          console.error('[EditListingModal] Error fetching full listing:', error);
+          return listing;
+        }
+      };
 
-      // Initialize images
-      const images = listing.images || [];
-      setImageUrls(images);
-      const mainPhoto = listing.main_photo;
-      if (mainPhoto && images.includes(mainPhoto)) {
-        setMainIndex(images.indexOf(mainPhoto));
-      } else if (images.length > 0) {
-        setMainIndex(0);
-      }
+      (async () => {
+        const listingData = await loadListingData();
+        console.log('[EditListingModal] Using listing data:', listingData);
+        
+        // Use shipping_* fields if available, fallback to dimensions_* for backward compatibility
+        const shippingLength = listingData.shipping_length ?? listingData.dimensions_length ?? undefined;
+        const shippingWidth = listingData.shipping_width ?? listingData.dimensions_width ?? undefined;
+        const shippingHeight = listingData.shipping_height ?? listingData.dimensions_height ?? undefined;
+        const allowShipping = listingData.allow_shipping ?? listingData.shipping_via_ocaso ?? false;
+        
+        const formDataToSet = {
+          title: listingData.title || "",
+          description: listingData.description || "",
+          price: listingData.price ?? undefined,
+          condition: listingData.condition || listingData.state || "nieuw",
+          category: listingData.category || "",
+          subcategory: listingData.subcategory || "",
+          location: listingData.location || "",
+          allow_offers: listingData.allow_offers ?? listingData.allowoffers ?? true,
+          min_bid: listingData.min_bid ?? undefined,
+          shipping_via_ocaso: allowShipping,
+          dimensions_length: shippingLength,
+          dimensions_width: shippingWidth,
+          dimensions_height: shippingHeight,
+          stock: listingData.stock ?? 1,
+        };
+        
+        console.log('[EditListingModal] Setting form data:', formDataToSet);
+        setFormData(formDataToSet);
 
-      // Load category IDs from names
-      if (listing.category) {
-        findCategoryIdsByName(supabase, listing.category, listing.subcategory || undefined).then(({ categoryId, subcategoryId }) => {
-          setSelectedCategoryId(categoryId);
+        // Initialize images
+        const images = listingData.images || [];
+        setImageUrls(images);
+        const mainPhoto = listingData.main_photo;
+        if (mainPhoto && images.includes(mainPhoto)) {
+          setMainIndex(images.indexOf(mainPhoto));
+        } else if (images.length > 0) {
+          setMainIndex(0);
+        }
+
+        // Load category IDs from names and fetch vehicle details if needed
+        const categoryName = listingData.category;
+        const categoryId = listingData.category_id;
+        const categorySlugFromApi = listingData.categorySlug;
+        
+        // Set category IDs immediately if available
+        if (categoryId) {
+          setSelectedCategoryId(String(categoryId));
+          if (listingData.subcategory_id) {
+            setSelectedSubcategoryId(String(listingData.subcategory_id));
+          }
+        }
+        
+        if (categoryId) {
+          // Use categorySlug from API if available, otherwise fetch it
+          if (categorySlugFromApi) {
+            setCategorySlug(categorySlugFromApi);
+            
+            // If it's a vehicle category, fetch vehicle details
+            const vehicleCategorySlugs = ['auto-motor', 'bedrijfswagens', 'camper-mobilhomes', 'motoren-en-scooters'];
+            if (vehicleCategorySlugs.includes(categorySlugFromApi)) {
+              console.log('[EditListingModal] Fetching vehicle details for listing_id:', listing.id);
+              const { data: vehicleData, error: vehicleError } = await supabase
+                .from("listing_vehicle_details")
+                .select("*")
+                .eq("listing_id", listing.id)
+                .maybeSingle();
+              
+              console.log('[EditListingModal] Vehicle details query result:', { vehicleData, vehicleError });
+              
+              if (vehicleError) {
+                console.error('[EditListingModal] Error fetching vehicle details:', vehicleError);
+              } else if (vehicleData) {
+                // Transform database fields to filter keys
+                // The API uses English keys (year, body_type, mileage_km) - use them directly
+                const transformed: Record<string, string> = {};
+                
+                console.log('[EditListingModal] Raw vehicle data:', vehicleData);
+                
+                // Map database fields directly to filter keys (API uses English keys)
+                for (const [dbField, value] of Object.entries(vehicleData)) {
+                  if (value !== null && value !== undefined && dbField !== 'id' && dbField !== 'listing_id' && dbField !== 'created_at' && dbField !== 'updated_at') {
+                    // Use database field name directly as filter key (API uses English keys)
+                    transformed[dbField] = String(value);
+                    console.log(`[EditListingModal] Mapped ${dbField} (${value}) -> ${dbField}`);
+                  }
+                }
+                
+                console.log('[EditListingModal] Transformed vehicle details:', transformed);
+                setVehicleDetails(transformed);
+              } else {
+                console.log('[EditListingModal] No vehicle details found for listing:', listing.id);
+              }
+            }
+          } else {
+            // Fetch category slug to determine if it's a vehicle category
+            const { data: category, error: categoryError } = await supabase
+              .from("categories")
+              .select("slug, name")
+              .eq("id", categoryId)
+              .maybeSingle();
+            
+            if (categoryError) {
+              console.error('[EditListingModal] Error fetching category:', categoryError);
+            } else if (category?.slug) {
+              setCategorySlug(category.slug);
+              
+              // Update category name in formData if needed
+              if (category.name && !listingData.category) {
+                setFormData(prev => ({ ...prev, category: category.name }));
+              }
+              
+              // If it's a vehicle category, fetch vehicle details
+              const vehicleCategorySlugs = ['auto-motor', 'bedrijfswagens', 'camper-mobilhomes', 'motoren-en-scooters'];
+              if (vehicleCategorySlugs.includes(category.slug)) {
+                const { data: vehicleData, error: vehicleError } = await supabase
+                  .from("listing_vehicle_details")
+                  .select("*")
+                  .eq("listing_id", listing.id)
+                  .maybeSingle();
+                
+                if (vehicleError) {
+                  console.error('[EditListingModal] Error fetching vehicle details:', vehicleError);
+                } else if (vehicleData) {
+                  // Transform database fields to filter keys
+                  // The API uses English keys (year, body_type, mileage_km) - use them directly
+                  const transformed: Record<string, string> = {};
+                  
+                  console.log('[EditListingModal] Raw vehicle data:', vehicleData);
+                  
+                  // Map database fields directly to filter keys (API uses English keys)
+                  for (const [dbField, value] of Object.entries(vehicleData)) {
+                    if (value !== null && value !== undefined && dbField !== 'id' && dbField !== 'listing_id' && dbField !== 'created_at' && dbField !== 'updated_at') {
+                      // Use database field name directly as filter key (API uses English keys)
+                      transformed[dbField] = String(value);
+                      console.log(`[EditListingModal] Mapped ${dbField} (${value}) -> ${dbField}`);
+                    }
+                  }
+                  
+                  console.log('[EditListingModal] Transformed vehicle details:', transformed);
+                  setVehicleDetails(transformed);
+                } else {
+                  console.log('[EditListingModal] No vehicle details found for listing:', listing.id);
+                }
+              }
+            }
+          }
+        } else if (categoryName) {
+          // Fallback: find category IDs by name
+          const { categoryId: foundCategoryId, subcategoryId } = await findCategoryIdsByName(supabase, categoryName, listingData.subcategory || undefined);
+          setSelectedCategoryId(foundCategoryId);
           setSelectedSubcategoryId(subcategoryId);
-        }).catch(console.error);
-      }
+          
+          // Fetch category slug to determine if it's a vehicle category
+          if (foundCategoryId) {
+            const { data: category, error: categoryError } = await supabase
+              .from("categories")
+              .select("slug")
+              .eq("id", parseInt(foundCategoryId))
+              .maybeSingle();
+            
+            if (categoryError) {
+              console.error('[EditListingModal] Error fetching category:', categoryError);
+            } else if (category?.slug) {
+              setCategorySlug(category.slug);
+              
+              // If it's a vehicle category, fetch vehicle details
+              const vehicleCategorySlugs = ['auto-motor', 'bedrijfswagens', 'camper-mobilhomes', 'motoren-en-scooters'];
+              if (vehicleCategorySlugs.includes(category.slug)) {
+                const { data: vehicleData, error: vehicleError } = await supabase
+                  .from("listing_vehicle_details")
+                  .select("*")
+                  .eq("listing_id", listing.id)
+                  .maybeSingle();
+                
+                if (vehicleError) {
+                  console.error('[EditListingModal] Error fetching vehicle details:', vehicleError);
+                } else if (vehicleData) {
+                  // Transform database fields to filter keys
+                  // The API uses English keys (year, body_type, mileage_km) - use them directly
+                  const transformed: Record<string, string> = {};
+                  
+                  console.log('[EditListingModal] Raw vehicle data:', vehicleData);
+                  
+                  // Map database fields directly to filter keys (API uses English keys)
+                  for (const [dbField, value] of Object.entries(vehicleData)) {
+                    if (value !== null && value !== undefined && dbField !== 'id' && dbField !== 'listing_id' && dbField !== 'created_at' && dbField !== 'updated_at') {
+                      // Use database field name directly as filter key (API uses English keys)
+                      transformed[dbField] = String(value);
+                      console.log(`[EditListingModal] Mapped ${dbField} (${value}) -> ${dbField}`);
+                    }
+                  }
+                  
+                  console.log('[EditListingModal] Transformed vehicle details:', transformed);
+                  setVehicleDetails(transformed);
+                } else {
+                  console.log('[EditListingModal] No vehicle details found for listing:', listing.id);
+                }
+              }
+            }
+          }
+        }
+        
+        // Set loading to false after all data is loaded
+        setLoading(false);
+      })().catch((error) => {
+        console.error('[EditListingModal] Error loading listing data:', error);
+        setLoading(false);
+      });
+    } else {
+      // Reset state when modal closes
+      setCategorySlug("");
+      setVehicleDetails({});
+      setFormData({});
+      setImageUrls([]);
+      setMainIndex(0);
+      setSelectedCategoryId("");
+      setSelectedSubcategoryId("");
+      setLoading(false);
     }
   }, [listing, open, supabase]);
 
@@ -275,11 +501,11 @@ export default function EditListingModal({ listing, open, onClose, onSave }: Pro
     setSelectedCategoryId(categoryId);
     setSelectedSubcategoryId(""); // Reset subcategory when category changes
 
-    // Update formData with category name
+    // Update formData with category name and fetch slug
     if (categoryId) {
       const { data: category } = await supabase
         .from("categories")
-        .select("name")
+        .select("name, slug")
         .eq("id", parseInt(categoryId))
         .single();
 
@@ -288,12 +514,27 @@ export default function EditListingModal({ listing, open, onClose, onSave }: Pro
         category: category?.name || "",
         subcategory: "" // Reset subcategory name too
       }));
+      
+      // Update category slug for vehicle details detection
+      if (category?.slug) {
+        setCategorySlug(category.slug);
+        // Reset vehicle details if switching away from vehicle category
+        const vehicleCategorySlugs = ['auto-motor', 'bedrijfswagens', 'camper-mobilhomes', 'motoren-en-scooters'];
+        if (!vehicleCategorySlugs.includes(category.slug)) {
+          setVehicleDetails({});
+        }
+      } else {
+        setCategorySlug("");
+        setVehicleDetails({});
+      }
     } else {
       setFormData(prev => ({
         ...prev,
         category: "",
         subcategory: ""
       }));
+      setCategorySlug("");
+      setVehicleDetails({});
     }
   };
 
@@ -325,7 +566,7 @@ export default function EditListingModal({ listing, open, onClose, onSave }: Pro
 
     setSaving(true);
     try {
-      const updateData = { ...formData };
+      const updateData: Record<string, unknown> = { ...formData };
       delete updateData.category;
       delete updateData.subcategory;
 
@@ -340,6 +581,66 @@ export default function EditListingModal({ listing, open, onClose, onSave }: Pro
       // Add image data
       updateData.images = imageUrls;
       updateData.main_photo = imageUrls[mainIndex] || null;
+
+      // Map shipping dimensions to correct database field names
+      if (updateData.dimensions_length !== undefined) {
+        updateData.shipping_length = updateData.dimensions_length;
+        delete updateData.dimensions_length;
+      }
+      if (updateData.dimensions_width !== undefined) {
+        updateData.shipping_width = updateData.dimensions_width;
+        delete updateData.dimensions_width;
+      }
+      if (updateData.dimensions_height !== undefined) {
+        updateData.shipping_height = updateData.dimensions_height;
+        delete updateData.dimensions_height;
+      }
+      // Map shipping_via_ocaso to allow_shipping
+      if (updateData.shipping_via_ocaso !== undefined) {
+        updateData.allow_shipping = updateData.shipping_via_ocaso;
+        delete updateData.shipping_via_ocaso;
+      }
+
+      // Add vehicle details if it's a vehicle category
+      const vehicleCategorySlugs = ['auto-motor', 'bedrijfswagens', 'camper-mobilhomes', 'motoren-en-scooters'];
+      if (categorySlug && vehicleCategorySlugs.includes(categorySlug) && Object.keys(vehicleDetails).length > 0) {
+        // Transform filter keys to database field names
+        const transformed: Record<string, unknown> = {};
+        const keyMapping: Record<string, string> = {
+          'bouwjaar': 'year',
+          'year': 'year',
+          'kilometerstand': 'mileage_km',
+          'mileage_km': 'mileage_km',
+          'carrosserie': 'body_type',
+          'body_type': 'body_type',
+          'staat': 'condition',
+          'condition': 'condition',
+          'brandstof': 'fuel_type',
+          'fuel_type': 'fuel_type',
+          'vermogen': 'power_hp',
+          'power_hp': 'power_hp',
+          'transmissie': 'transmission',
+          'transmission': 'transmission',
+        };
+        
+        for (const [key, value] of Object.entries(vehicleDetails)) {
+          if (!value || value === '') continue;
+          
+          const dbField = keyMapping[key] || key;
+          
+          // Convert numeric fields
+          if (dbField === 'year' || dbField === 'mileage_km' || dbField === 'power_hp') {
+            const numValue = parseInt(value);
+            if (!isNaN(numValue)) {
+              transformed[dbField] = numValue;
+            }
+          } else {
+            transformed[dbField] = value;
+          }
+        }
+        
+        updateData.vehicle_details = transformed;
+      }
 
       // Wait for images to be accessible before saving
       if (imageUrls.length > 0) {
@@ -357,6 +658,23 @@ export default function EditListingModal({ listing, open, onClose, onSave }: Pro
   };
 
   if (!open || !listing) return null;
+
+  // Show loading state while fetching data
+  if (loading) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="bg-white rounded-xl shadow-lg p-8">
+          <div className="flex items-center gap-3">
+            <svg className="animate-spin h-5 w-5 text-emerald-600" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span className="text-gray-700">Gegevens laden...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
@@ -559,6 +877,17 @@ export default function EditListingModal({ listing, open, onClose, onSave }: Pro
               />
             </div>
           </div>
+
+          {/* Vehicle Details - only show for vehicle categories */}
+          {categorySlug && ['auto-motor', 'bedrijfswagens', 'camper-mobilhomes', 'motoren-en-scooters'].includes(categorySlug) && (
+            <div className="space-y-4">
+              <VehicleDetailsSection
+                categorySlug={categorySlug}
+                vehicleDetails={vehicleDetails}
+                onDetailsChange={setVehicleDetails}
+              />
+            </div>
+          )}
 
           {/* Locatie */}
           <div className="space-y-4">

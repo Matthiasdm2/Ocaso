@@ -76,7 +76,7 @@ export default function ImageGallery({ images, title, main_photo }: ImageGallery
 
   return (
     <div className="space-y-3">
-      <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-gray-100 cursor-pointer" onClick={openLightbox}>
+      <div className="relative w-full aspect-[3/2] rounded-xl overflow-hidden bg-gray-100 cursor-pointer" onClick={openLightbox}>
         <Image
           src={main}
           alt={title ?? `Foto ${active + 1}`}

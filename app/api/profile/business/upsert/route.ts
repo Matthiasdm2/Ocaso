@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 
 import { supabaseServer } from "@/lib/supabaseServer";
 import { supabaseServiceRole } from "@/lib/supabaseServiceRole";
+import { isSubscriptionActive } from "@/lib/subscription-helpers";
 
 export const dynamic = "force-dynamic";
 
@@ -77,7 +78,7 @@ export async function PUT(req: Request) {
     const service = supabaseServiceRole();
     const { data: profile, error: profileError } = await service
       .from("profiles")
-      .select("business")
+      .select("business_plan")
       .eq("id", user.id)
       .maybeSingle();
 
@@ -89,9 +90,8 @@ export async function PUT(req: Request) {
       );
     }
 
-    // Extract subscription_active from business JSONB
-    const business = profile.business as Record<string, unknown> | null;
-    const subscriptionActive = business?.subscription_active === true;
+    // Check subscription status using helper function
+    const subscriptionActive = isSubscriptionActive(profile.business_plan);
 
     if (!subscriptionActive) {
       return NextResponse.json(

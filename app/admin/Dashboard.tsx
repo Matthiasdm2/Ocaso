@@ -98,19 +98,21 @@ export default function Dashboard() {
     fetchStats();
   }, [fetchStats]);
 
-  if (loading) return <div>Laden...</div>;
+  if (loading) return (
+    <div className="flex items-center justify-center py-12">
+      <div className="text-gray-500">Laden...</div>
+    </div>
+  );
 
   return (
-    <div>
-      <h2 className="text-xl font-semibold mb-4">Dashboard</h2>
-
+    <div className="space-y-6">
       {/* Periode selectie */}
-      <div className="mb-6">
-        <label className="block text-sm font-medium mb-2">Periode</label>
+      <div className="bg-white rounded-2xl shadow-smooth p-6">
+        <label className="block text-sm font-semibold text-gray-900 mb-3">Periode</label>
         <select
           value={period}
           onChange={(e) => setPeriod(e.target.value as Period)}
-          className="border p-2"
+          className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-colors"
         >
           <option value="7d">Laatste 7 dagen</option>
           <option value="31d">Laatste 31 dagen</option>
@@ -120,111 +122,111 @@ export default function Dashboard() {
       </div>
 
       {/* Statistieken kaarten */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h3 className="text-lg font-semibold text-gray-700">Bezoekers</h3>
-          <p className="text-3xl font-bold text-blue-600">{stats.visitors}</p>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="bg-white p-6 rounded-2xl shadow-smooth border border-gray-100">
+          <h3 className="text-sm font-semibold text-gray-600 mb-2">Bezoekers</h3>
+          <p className="text-3xl font-bold text-primary">{stats.visitors.toLocaleString('nl-BE')}</p>
         </div>
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h3 className="text-lg font-semibold text-gray-700">Zoekertjes</h3>
-          <p className="text-3xl font-bold text-green-600">{stats.listings}</p>
+        <div className="bg-white p-6 rounded-2xl shadow-smooth border border-gray-100">
+          <h3 className="text-sm font-semibold text-gray-600 mb-2">Zoekertjes</h3>
+          <p className="text-3xl font-bold text-emerald-600">{stats.listings.toLocaleString('nl-BE')}</p>
         </div>
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h3 className="text-lg font-semibold text-gray-700">Verkocht</h3>
-          <p className="text-3xl font-bold text-purple-600">{stats.sales}</p>
+        <div className="bg-white p-6 rounded-2xl shadow-smooth border border-gray-100">
+          <h3 className="text-sm font-semibold text-gray-600 mb-2">Verkocht</h3>
+          <p className="text-3xl font-bold text-secondary">{stats.sales.toLocaleString('nl-BE')}</p>
         </div>
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h3 className="text-lg font-semibold text-gray-700">Verzendingen</h3>
-          <p className="text-3xl font-bold text-orange-600">{stats.shipments}</p>
-          <p className="text-xs text-gray-500 mt-1">Binnenkort beschikbaar</p>
+        <div className="bg-white p-6 rounded-2xl shadow-smooth border border-gray-100">
+          <h3 className="text-sm font-semibold text-gray-600 mb-2">Verzendingen</h3>
+          <p className="text-3xl font-bold text-orange-500">{stats.shipments.toLocaleString('nl-BE')}</p>
+          <p className="text-xs text-gray-500 mt-2">Binnenkort beschikbaar</p>
         </div>
       </div>
 
       {/* Grafieken */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Lijndiagram voor dagelijkse bezoekers */}
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h3 className="text-lg font-semibold text-gray-700 mb-4">Dagelijkse Website Bezoekers</h3>
+        <div className="bg-white p-6 rounded-2xl shadow-smooth border border-gray-100">
+          <h3 className="text-lg font-bold text-gray-900 mb-4">Dagelijkse Website Bezoekers</h3>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={dailyVisitors}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="day" />
-              <YAxis />
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis dataKey="day" stroke="#6b7280" />
+              <YAxis stroke="#6b7280" />
               <Tooltip />
-              <Line type="monotone" dataKey="visitors" stroke="#8884d8" strokeWidth={2} />
+              <Line type="monotone" dataKey="visitors" stroke="#6EE7B7" strokeWidth={2} />
             </LineChart>
           </ResponsiveContainer>
         </div>
 
         {/* Staafdiagram voor dagelijkse bezoekers */}
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h3 className="text-lg font-semibold text-gray-700 mb-4">Bezoekers per Dag</h3>
+        <div className="bg-white p-6 rounded-2xl shadow-smooth border border-gray-100">
+          <h3 className="text-lg font-bold text-gray-900 mb-4">Bezoekers per Dag</h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={dailyVisitors}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="day" />
-              <YAxis />
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis dataKey="day" stroke="#6b7280" />
+              <YAxis stroke="#6b7280" />
               <Tooltip />
-              <Bar dataKey="visitors" fill="#8884d8" />
+              <Bar dataKey="visitors" fill="#6EE7B7" />
             </BarChart>
           </ResponsiveContainer>
         </div>
       </div>
 
       {/* Extra rij voor staafdiagrammen */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Staafdiagram voor nieuwe zoekertjes per dag */}
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h3 className="text-lg font-semibold text-gray-700 mb-4">Nieuwe Zoekertjes per Dag</h3>
+        <div className="bg-white p-6 rounded-2xl shadow-smooth border border-gray-100">
+          <h3 className="text-lg font-bold text-gray-900 mb-4">Nieuwe Zoekertjes per Dag</h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={dailyListings}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="day" />
-              <YAxis />
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis dataKey="day" stroke="#6b7280" />
+              <YAxis stroke="#6b7280" />
               <Tooltip />
-              <Bar dataKey="listings" fill="#00C49F" />
+              <Bar dataKey="listings" fill="#10b981" />
             </BarChart>
           </ResponsiveContainer>
         </div>
 
         {/* Staafdiagram voor nieuwe gebruikers per dag */}
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h3 className="text-lg font-semibold text-gray-700 mb-4">Nieuwe Gebruikers per Dag</h3>
+        <div className="bg-white p-6 rounded-2xl shadow-smooth border border-gray-100">
+          <h3 className="text-lg font-bold text-gray-900 mb-4">Nieuwe Gebruikers per Dag</h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={dailyUsers}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="day" />
-              <YAxis />
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis dataKey="day" stroke="#6b7280" />
+              <YAxis stroke="#6b7280" />
               <Tooltip />
-              <Bar dataKey="users" fill="#FFBB28" />
+              <Bar dataKey="users" fill="#93C5FD" />
             </BarChart>
           </ResponsiveContainer>
         </div>
       </div>
 
       {/* Categorie verdeling tabel */}
-      <div className="bg-white p-6 rounded-lg shadow-md mt-8">
-        <h3 className="text-lg font-semibold text-gray-700 mb-4">Verdeling per Categorie (Alle Actieve Zoekertjes)</h3>
+      <div className="bg-white p-6 rounded-2xl shadow-smooth border border-gray-100">
+        <h3 className="text-lg font-bold text-gray-900 mb-4">Verdeling per Categorie (Alle Actieve Zoekertjes)</h3>
         <div className="overflow-x-auto">
-          <table className="min-w-full table-auto">
+          <table className="min-w-full">
             <thead>
-              <tr className="bg-gray-50">
-                <th className="px-4 py-2 text-left">Categorie</th>
-                <th className="px-4 py-2 text-right">Aantal Zoekertjes</th>
-                <th className="px-4 py-2 text-left">Subcategorieën</th>
+              <tr className="border-b border-gray-200">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Categorie</th>
+                <th className="px-4 py-3 text-right text-sm font-semibold text-gray-900">Aantal Zoekertjes</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Subcategorieën</th>
               </tr>
             </thead>
             <tbody>
               {categoryStats.map((category, index) => (
-                <tr key={index} className="border-t">
-                  <td className="px-4 py-2 font-medium">{category.name}</td>
-                  <td className="px-4 py-2 text-right">{category.count}</td>
-                  <td className="px-4 py-2">
+                <tr key={index} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                  <td className="px-4 py-3 font-medium text-gray-900">{category.name}</td>
+                  <td className="px-4 py-3 text-right font-semibold text-gray-900">{category.count}</td>
+                  <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-2">
                       {(category.subcategories || [])
                         .filter(sub => sub.count > 0)
                         .map((sub, subIndex) => (
-                        <span key={subIndex} className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm">
+                        <span key={subIndex} className="bg-primary/20 text-gray-900 px-3 py-1 rounded-full text-xs font-medium">
                           {sub.name} ({sub.count})
                         </span>
                       ))}

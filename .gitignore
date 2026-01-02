@@ -103,3 +103,4 @@ amplifytools.xcconfig
 **.sample
 #amplify-do-not-edit-end
 .vercel
+docs/GOOGLE_CLIENT_SECRET_RESET.md

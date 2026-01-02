@@ -20,12 +20,7 @@ export type Listing = {
   subcategory?: string;
 };
 
-function toPrice(n: number) {
-  return n.toLocaleString("nl-BE", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  });
-}
+import { formatPrice } from "@/lib/formatPrice";
 
 
 export default function ClientListingsGrid({ initial }: { initial: Listing[] }) {
@@ -266,7 +261,7 @@ export default function ClientListingsGrid({ initial }: { initial: Listing[] }) 
                 {x.category ? <span> • {x.category}</span> : null}
               </div>
               <div className="mt-2 flex items-center justify-between">
-                <div className="text-base font-semibold">€ {toPrice(x.price ?? 0)}</div>
+                <div className="text-base font-semibold">{formatPrice(x.price ?? 0)}</div>
                 <Link href={`/listings/${x.id}`} className="btn btn-xs">Bekijken</Link>
               </div>
             </div>

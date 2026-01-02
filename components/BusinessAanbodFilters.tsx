@@ -2,6 +2,8 @@
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
+import { formatPrice } from "@/lib/formatPrice";
+
 interface Initial {
   q: string;
   min?: number;
@@ -61,8 +63,8 @@ export default function BusinessAanbodFilters({ initial, categories }: { initial
     <div className="rounded-2xl border bg-white/70 backdrop-blur p-4 md:p-5 shadow-sm space-y-3 text-[13px]">
       <div className="flex justify-between items-start gap-4">
         <div className="flex flex-wrap gap-2 text-[10px] text-gray-500 leading-tight">
-          {min && <span className="px-2 py-0.5 bg-gray-100 rounded-full">min €{min}</span>}
-          {max && <span className="px-2 py-0.5 bg-gray-100 rounded-full">max €{max}</span>}
+          {min && <span className="px-2 py-0.5 bg-gray-100 rounded-full">min {formatPrice(min)}</span>}
+          {max && <span className="px-2 py-0.5 bg-gray-100 rounded-full">max {formatPrice(max)}</span>}
           {q && <span className="px-2 py-0.5 bg-gray-100 rounded-full truncate max-w-[12rem]">“{q}”</span>}
           {cat && <span className="px-2 py-0.5 bg-gray-100 rounded-full">cat #{cat}</span>}
         </div>

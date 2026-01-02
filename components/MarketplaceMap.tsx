@@ -12,6 +12,8 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Circle as LeafletCircle, Marker as LeafletMarker, Popup as LeafletPopup, MapContainer, TileLayer } from "react-leaflet";
 
+import { formatPrice } from "@/lib/formatPrice";
+
 // Prevent default icon issues in Leaflet when using webpack
 // (Leaflet tries to load images from relative paths)
 // We'll inline a simple circle marker instead of default icon.
@@ -210,7 +212,7 @@ export default function MarketplaceMap({ listings, centerLat, centerLng, radiusK
             <LeafletPopup>
               <div className="space-y-1 text-sm">
                 <a href={`/listings/${l.id}`} className="font-semibold text-primary hover:underline line-clamp-2 block max-w-[160px]">{l.title}</a>
-                {typeof l.price === 'number' && <div className="text-gray-700 font-medium">€ {l.price}</div>}
+                {typeof l.price === 'number' && <div className="text-gray-700 font-medium">{formatPrice(l.price)}</div>}
                 {l.location && <div className="text-gray-500">{l.location}</div>}
               </div>
             </LeafletPopup>

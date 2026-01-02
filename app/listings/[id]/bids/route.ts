@@ -2,14 +2,38 @@ import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
 function getSupabaseWithAuth(request: Request) {
-  const accessToken = request.headers.get("Authorization")?.replace("Bearer ", "");
-  return createClient(
+  const authHeader = request.headers.get("Authorization");
+  const accessToken = authHeader?.replace("Bearer ", "");
+  
+  // Create Supabase client with custom fetch that includes the Authorization header
+  // This ensures RLS policies can access auth.uid() correctly
+  const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    accessToken
-      ? { global: { headers: { Authorization: `Bearer ${accessToken}` } } }
-      : undefined
+    {
+      global: {
+        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+        // Custom fetch to ensure Authorization header is sent with all requests
+        fetch: async (url, options = {}) => {
+          const headers = new Headers(options.headers);
+          if (accessToken) {
+            headers.set('Authorization', `Bearer ${accessToken}`);
+          }
+          return fetch(url, {
+            ...options,
+            headers,
+          });
+        },
+      },
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      }
+    }
   );
+  
+  return supabase;
 }
 
 export async function POST(request: Request) {
@@ -17,20 +41,52 @@ export async function POST(request: Request) {
   if (!listingId || !amount || !bidderId) {
     return NextResponse.json({ error: "Missing data" }, { status: 400 });
   }
+  
+  const authHeader = request.headers.get("Authorization");
+  const accessToken = authHeader?.replace("Bearer ", "");
+  
+  if (!accessToken) {
+    return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+  }
+  
   const supabase = getSupabaseWithAuth(request);
+  
+  // Verify the user is authenticated
+  const { data: { user }, error: authError } = await supabase.auth.getUser(accessToken);
+  if (authError || !user || user.id !== bidderId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  
   // Controleer of bieden is toegestaan
   const { data: listing, error: listingError } = await supabase
     .from("listings")
-    .select("allowOffers")
+    .select("allowoffers, seller_id, status")
     .eq("id", listingId)
     .maybeSingle();
-  if (listingError || !listing || !listing.allowOffers) {
+    
+  if (listingError || !listing) {
+    return NextResponse.json({ error: "Listing not found" }, { status: 404 });
+  }
+  
+  if (!listing.allowoffers) {
     return NextResponse.json({ error: "Bieden niet toegestaan" }, { status: 403 });
   }
-  const { data, error } = await supabase.from("bids").insert({ listing_id: listingId, amount, bidder_id: bidderId });
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  
+  if (listing.seller_id === bidderId) {
+    return NextResponse.json({ error: "Je kunt niet bieden op je eigen listing" }, { status: 403 });
   }
+  
+  // Insert bid - RLS policy should allow this if user is authenticated
+  const { data, error } = await supabase
+    .from("bids")
+    .insert({ listing_id: listingId, amount, bidder_id: bidderId })
+    .select();
+    
+  if (error) {
+    console.error("Bid insert error:", error);
+    return NextResponse.json({ error: error.message || "Failed to place bid" }, { status: 500 });
+  }
+  
   return NextResponse.json({ success: true, bid: data?.[0] });
 }
 

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import { formatPrice } from "@/lib/formatPrice";
 import { useProfile } from "@/lib/useProfile";
 
 interface Props {
@@ -293,7 +294,7 @@ export default function ClientActions({
           className="flex-1 rounded-full bg-primary text-black px-3 py-1.5 text-sm font-semibold text-center border border-primary/30 hover:bg-primary/80 transition disabled:opacity-60 disabled:cursor-not-allowed"
           aria-label="Koop nu"
         >
-          {payBusy ? "Bezig…" : `Koop nu — ${typeof price === "number" ? new Intl.NumberFormat("nl-BE", { style: "currency", currency: "EUR" }).format(price * quantity) : "—"}`}
+          {payBusy ? "Bezig…" : `Koop nu — ${formatPrice(typeof price === "number" ? price * quantity : null)}`}
         </button>
 
         <button
@@ -397,10 +398,10 @@ export default function ClientActions({
                     value={bidValue}
                     onChange={e => setBidValue(e.target.value)}
                     className="rounded-full border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                    placeholder={typeof min_bid === "number" ? `Min. bod: €${min_bid}` : "Voer uw bod in"}
+                    placeholder={typeof min_bid === "number" ? `Min. bod: ${formatPrice(min_bid)}` : "Voer uw bod in"}
                   />
                   {typeof min_bid === "number" && (
-                    <div className="text-sm text-gray-500 mt-1">Minimumbod: <span className="font-semibold">€ {min_bid}</span></div>
+                    <div className="text-sm text-gray-500 mt-1">Minimumbod: <span className="font-semibold">{formatPrice(min_bid)}</span></div>
                   )}
                 </div>
                 <div className="flex gap-2 mt-4">
@@ -414,7 +415,7 @@ export default function ClientActions({
                       }
                       const bodBedrag = Number(bidValue);
                       if (typeof min_bid === "number" && bodBedrag < min_bid) {
-                        setConfirmMsg(`Bod geweigerd: lager dan minimumbod (€${min_bid})`);
+                        setConfirmMsg(`Bod geweigerd: lager dan minimumbod (${formatPrice(min_bid)})`);
                         return;
                       }
                       // Bod plaatsen via API met access token
@@ -429,7 +430,7 @@ export default function ClientActions({
                       });
                       const result = await res.json();
                       if (result.success) {
-                        setConfirmMsg(`Bod geplaatst: €${bidValue}`);
+                        setConfirmMsg(`Bod geplaatst: ${formatPrice(bidValue)}`);
                         setBidValue("");
                       } else {
                         setConfirmMsg(result.error || "Er ging iets mis bij het plaatsen van je bod.");

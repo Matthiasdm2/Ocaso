@@ -4,6 +4,7 @@ import QRCode from 'qrcode';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import Avatar from '@/components/Avatar';
+import { formatPrice } from '@/lib/formatPrice';
 import { createClient } from '@/lib/supabaseClient';
 import { useProfile } from '@/lib/useProfile';
 // Chat attachments bucket (must exist as public in Supabase). Override via NEXT_PUBLIC_CHAT_BUCKET
@@ -628,7 +629,7 @@ export default function ChatDock({
       return;
     }
     const amt = parseFloat((epcAmount || '').replace(',', '.'));
-    const amountText = isFinite(amt) && amt > 0 ? `€${amt.toFixed(2)}` : 'Bedrag naar keuze';
+    const amountText = isFinite(amt) && amt > 0 ? formatPrice(amt, { decimals: 2 }) : 'Bedrag naar keuze';
     const rem = sanitize((epcDesc || listingTitle || `Ocaso ${listingId || ''}`), 35);
     
     // Generate EPC QR code - the European standard that most bank apps support

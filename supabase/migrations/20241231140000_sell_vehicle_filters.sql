@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS category_filters (
 DO $$
 BEGIN
     IF NOT EXISTS (
-        SELECT 1 FROM pg_constraint WHERE conname = 'category_filters_unique_idx'
+        SELECT 1 FROM pg_indexes WHERE indexname = 'category_filters_unique_idx'
     ) THEN
         CREATE UNIQUE INDEX category_filters_unique_idx 
         ON category_filters(category_slug, filter_key);

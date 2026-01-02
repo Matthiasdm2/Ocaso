@@ -7,6 +7,7 @@ import KycForm from '@/components/KycForm';
 import { CATEGORIES } from '@/lib/categories';
 import type { BillingCycle, BusinessPlan, Profile } from '@/lib/profiletypes';
 import { createClient } from '@/lib/supabaseClient';
+import { getSubscriptionData, isSubscriptionActive } from '@/lib/subscription-helpers';
 // Nieuwe API integratie voor business update
 
 // Type for business subscription data from database
@@ -133,88 +134,161 @@ export default function BusinessProfilePage() {
 
   // Ververs profiel na succesvolle checkout om nieuwe subscription data te laden
   useEffect(() => {
-    if (checkoutSuccess) {
-      // Wacht even voor webhook processing en laad profiel opnieuw
-      const timer = setTimeout(async () => {
-        setLoading(true);
-        try {
-          const { data: { user } } = await supabase.auth.getUser();
-          if (!user) return;
-
-          const { data: r } = await supabase
-            .from('profiles')
-            .select(`
-              id, email, full_name, phone,
-              is_business, company_name, vat, registration_nr, website, invoice_email,
-              bank, invoice_address,
-              shop_name, shop_slug,
-              business_logo_url, business_banner_url,
-              business_bio,
-              social_instagram, social_facebook, social_tiktok,
-              public_show_email, public_show_phone,
-              business
-            `)
-            .eq('id', user.id)
-            .maybeSingle();
-
-          if (r) {
-            const name = splitName(r.full_name);
-            const ui: Profile = {
-              ...profile,
-              firstName: name.firstName,
-              lastName: name.lastName,
-              email: r.email ?? user.email ?? '',
-              phone: r.phone ?? '',
-              business: {
-                ...profile.business,
-                isBusiness: !!r.is_business,
-                companyName: r.company_name ?? '',
-                vatNumber: r.vat ?? '',
-                registrationNr: r.registration_nr ?? '',
-                website: r.website ?? '',
-                invoiceEmail: r.invoice_email ?? '',
-                bank: { iban: r.bank?.iban ?? '', bic: r.bank?.bic ?? '' },
-                invoiceAddress: {
-                  firstName: r.invoice_address?.firstName ?? '',
-                  lastName: r.invoice_address?.lastName ?? '',
-                  street: r.invoice_address?.street ?? '',
-                  city: r.invoice_address?.city ?? '',
-                  zip: r.invoice_address?.zip ?? '',
-                  country: r.invoice_address?.country ?? 'België',
-                },
-                shopName: r.shop_name ?? '',
-                shopSlug: r.shop_slug ?? '',
-                logoUrl: r.business_logo_url ?? '',
-                bannerUrl: r.business_banner_url ?? '',
-                description: r.business_bio ?? '',
-                socials: {
-                  instagram: r.social_instagram ?? '',
-                  facebook: r.social_facebook ?? '',
-                  tiktok: r.social_tiktok ?? '',
-                },
-                public: {
-                  showEmail: !!r.public_show_email,
-                  showPhone: !!r.public_show_phone,
-                },
-                // Business subscription data
-                plan: ((r.business as BusinessSubscriptionData)?.plan as BusinessPlan) ?? 'basic',
-                billingCycle: ((r.business as BusinessSubscriptionData)?.billing_cycle as BillingCycle) ?? 'monthly',
-                subscriptionActive: (r.business as BusinessSubscriptionData)?.subscription_active ?? false,
-                subscriptionUpdatedAt: (r.business as BusinessSubscriptionData)?.subscription_updated_at,
-              },
-            };
-            setProfile(ui);
-          }
-        } catch (e) {
-          console.error('Profiel verversen na checkout mislukt:', e);
-        } finally {
-          setLoading(false);
+    if (!checkoutSuccess) return;
+    
+    let pollCount = 0;
+    const maxPolls = 10; // Max 10 pogingen (10 seconden)
+    let pollInterval: NodeJS.Timeout | null = null;
+    let isMounted = true;
+    
+    const checkSubscription = async () => {
+      if (!isMounted) return true;
+      
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          console.warn('⚠️ User not authenticated during subscription check');
+          return false;
         }
-      }, 2000); // 2 second delay voor webhook processing
 
-      return () => clearTimeout(timer);
-    }
-  }, [checkoutSuccess, supabase, profile]);
+        const { data: r, error: queryError } = await supabase
+          .from('profiles')
+          .select(`
+            id, email, full_name, phone,
+            is_business, company_name, vat, registration_nr, website, invoice_email,
+            bank, invoice_address,
+            shop_name, shop_slug,
+            business_logo_url, business_banner_url,
+            business_bio,
+            social_instagram, social_facebook, social_tiktok,
+            public_show_email, public_show_phone,
+            business_plan, business
+          `)
+          .eq('id', user.id)
+          .maybeSingle();
+
+        if (queryError) {
+          console.error('❌ Error querying profile:', queryError);
+          return false;
+        }
+
+        if (r) {
+          const subscriptionData = getSubscriptionData(
+            r.business as Record<string, unknown> | null,
+            r.business_plan
+          );
+          
+          const isActive = subscriptionData?.subscriptionActive || isSubscriptionActive(r.business_plan);
+          
+          console.log(`[Subscription Check ${pollCount + 1}]`, {
+            business_plan: r.business_plan,
+            business: r.business,
+            subscriptionData,
+            isActive,
+          });
+          
+          // Als subscription actief is, update profiel en stop polling
+          if (isActive) {
+            const name = splitName(r.full_name);
+            setProfile((prevProfile) => {
+              const ui: Profile = {
+                ...prevProfile,
+                firstName: name.firstName,
+                lastName: name.lastName,
+                email: r.email ?? user.email ?? '',
+                phone: r.phone ?? '',
+                business: {
+                  ...prevProfile.business,
+                  isBusiness: !!r.is_business,
+                  companyName: r.company_name ?? '',
+                  vatNumber: r.vat ?? '',
+                  registrationNr: r.registration_nr ?? '',
+                  website: r.website ?? '',
+                  invoiceEmail: r.invoice_email ?? '',
+                  bank: { iban: r.bank?.iban ?? '', bic: r.bank?.bic ?? '' },
+                  invoiceAddress: {
+                    firstName: r.invoice_address?.firstName ?? '',
+                    lastName: r.invoice_address?.lastName ?? '',
+                    street: r.invoice_address?.street ?? '',
+                    city: r.invoice_address?.city ?? '',
+                    zip: r.invoice_address?.zip ?? '',
+                    country: r.invoice_address?.country ?? 'België',
+                  },
+                  shopName: r.shop_name ?? '',
+                  shopSlug: r.shop_slug ?? '',
+                  logoUrl: r.business_logo_url ?? '',
+                  bannerUrl: r.business_banner_url ?? '',
+                  description: r.business_bio ?? '',
+                  socials: {
+                    instagram: r.social_instagram ?? '',
+                    facebook: r.social_facebook ?? '',
+                    tiktok: r.social_tiktok ?? '',
+                  },
+                  public: {
+                    showEmail: !!r.public_show_email,
+                    showPhone: !!r.public_show_phone,
+                  },
+                  subscriptionActive: true,
+                  plan: (subscriptionData?.plan || 'basic') as BusinessPlan,
+                  billingCycle: (subscriptionData?.billing || 'monthly') as BillingCycle,
+                  subscriptionUpdatedAt: subscriptionData?.subscriptionUpdatedAt,
+                },
+              };
+              return ui;
+            });
+            
+            console.log('✅ Subscription activated! Profile updated');
+            setLoading(false);
+            return true; // Stop polling
+          }
+          
+          // Nog niet actief, blijf pollen
+          pollCount++;
+          console.log(`⏳ Waiting for subscription activation... (attempt ${pollCount}/${maxPolls})`);
+          
+          if (pollCount >= maxPolls) {
+            console.warn('⚠️ Subscription not activated after max polls, showing current state');
+            setLoading(false);
+            return true; // Stop polling na max pogingen
+          }
+          
+          return false; // Blijf pollen
+        }
+      } catch (e) {
+        console.error('❌ Error checking subscription:', e);
+        pollCount++;
+        if (pollCount >= maxPolls) {
+          setLoading(false);
+          return true; // Stop bij error na max pogingen
+        }
+        return false;
+      }
+      
+      return false;
+    };
+    
+    // Start met directe check, dan poll elke seconde
+    setLoading(true);
+    checkSubscription().then((shouldStop) => {
+      if (!shouldStop && isMounted) {
+        pollInterval = setInterval(async () => {
+          const stop = await checkSubscription();
+          if (stop && pollInterval) {
+            clearInterval(pollInterval);
+            pollInterval = null;
+          }
+        }, 1000); // Poll elke seconde
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      if (pollInterval) {
+        clearInterval(pollInterval);
+        pollInterval = null;
+      }
+    };
+  }, [checkoutSuccess, supabase]); // Alleen checkoutSuccess en supabase in dependencies
 
   // Helper: euro weergave
   function fmtEUR(v: number) {
@@ -238,7 +312,7 @@ export default function BusinessProfilePage() {
       let ui: Profile = { ...emptyProfile, id: user.id, email: user.email || '' };
 
       try {
-        const { data: r } = await supabase
+        const { data: r, error: profileError } = await supabase
           .from('profiles')
           .select(`
             id, email, full_name, phone,
@@ -249,13 +323,55 @@ export default function BusinessProfilePage() {
             business_bio,
             social_instagram, social_facebook, social_tiktok,
             public_show_email, public_show_phone,
-            business
+            business_plan, business
           `)
           .eq('id', user.id)
           .maybeSingle();
+        
+        if (profileError) {
+          console.error('[BusinessProfilePage] Profile fetch error:', profileError.message, profileError.details);
+          // Fallback: probeer alleen essentiële kolommen
+          const { data: fallbackData } = await supabase
+            .from('profiles')
+            .select('id, email, full_name, business_plan, business')
+            .eq('id', user.id)
+            .maybeSingle();
+          if (fallbackData) {
+            const name = splitName(fallbackData.full_name || '');
+            ui = {
+              ...ui,
+              firstName: name.first,
+              lastName: name.last,
+            };
+            // Probeer subscription data te laden met fallback
+            const subscriptionData = getSubscriptionData(fallbackData.business, fallbackData.business_plan);
+            if (subscriptionData) {
+              ui.business = {
+                ...ui.business,
+                subscriptionActive: subscriptionData.subscriptionActive,
+                plan: subscriptionData.plan as BusinessPlan,
+                billingCycle: subscriptionData.billing as BillingCycle,
+                subscriptionUpdatedAt: subscriptionData.subscriptionUpdatedAt,
+              };
+            }
+            setProfile(ui);
+            setLoading(false);
+            return;
+          }
+        }
 
         if (r) {
           const name = splitName(r.full_name);
+          
+          // Debug: log business_plan waarde
+          const subscriptionActive = !!(r.business_plan && r.business_plan.trim() !== '');
+          console.log('Business profile data loaded:', {
+            business_plan: r.business_plan,
+            subscriptionActive,
+            userId: user.id,
+            hasBusinessPlan: !!r.business_plan,
+          });
+          
           ui = {
             ...ui,
             firstName: name.firstName,
@@ -303,21 +419,103 @@ export default function BusinessProfilePage() {
                 showPhone: !!r.public_show_phone,
               },
               // Business subscription data
-              plan: ((r.business as BusinessSubscriptionData)?.plan as BusinessPlan) ?? 'basic',
-              billingCycle: ((r.business as BusinessSubscriptionData)?.billing_cycle as BillingCycle) ?? 'monthly',
-              subscriptionActive: (r.business as BusinessSubscriptionData)?.subscription_active ?? false,
-              subscriptionUpdatedAt: (r.business as BusinessSubscriptionData)?.subscription_updated_at,
+              // Gebruik helper functie voor consistente parsing
+              ...(() => {
+                const subscriptionData = getSubscriptionData(
+                  r.business as Record<string, unknown> | null,
+                  r.business_plan
+                );
+                
+                if (subscriptionData) {
+                  return {
+                    subscriptionActive: subscriptionData.subscriptionActive,
+                    plan: subscriptionData.plan as BusinessPlan,
+                    billingCycle: subscriptionData.billing as BillingCycle,
+                    subscriptionUpdatedAt: subscriptionData.subscriptionUpdatedAt,
+                  };
+                }
+                
+                // Fallback als geen subscription data gevonden
+                return {
+                  subscriptionActive: isSubscriptionActive(r.business_plan),
+                  plan: 'basic' as BusinessPlan,
+                  billingCycle: 'monthly' as BillingCycle,
+                  subscriptionUpdatedAt: undefined,
+                };
+              })(),
             },
           };
+          
+          // Debug: log final subscriptionActive waarde
+          console.log('Final subscriptionActive:', ui.business.subscriptionActive, 'plan:', ui.business.plan);
+          
+          // Set profile state
+          setProfile(ui);
+          
+          // Als subscription actief is, log dit voor debugging
+          if (ui.business.subscriptionActive) {
+            console.log('✅ Subscription is ACTIVE - shop velden zouden zichtbaar moeten zijn');
+          } else {
+            console.log('❌ Subscription is NOT ACTIVE - shop velden zijn verborgen');
+          }
+        } else {
+          // Geen profiel gevonden, maar gebruiker is wel ingelogd - zet basis profiel met user ID
+          console.log('No profile found in database, but user is authenticated. Setting basic profile.');
+          setProfile(ui);
         }
       } catch (e) {
         console.error('Business-profiel laden mislukt:', e);
+        // Zelfs bij error, als we een user hebben, zet het profiel met de user ID
+        if (user) {
+          setProfile({ ...emptyProfile, id: user.id, email: user.email || '' });
+        }
+      } finally {
+        setLoading(false);
       }
-
-      setProfile(ui);
-      setLoading(false);
     })();
   }, [supabase]);
+
+  // Real-time subscription: luister naar profiel updates
+  useEffect(() => {
+    if (!profile?.id) return;
+
+    const channel = supabase
+      .channel(`profile-subscription:${profile.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles',
+          filter: `id=eq.${profile.id}`,
+        },
+        (payload) => {
+          console.log('Profile updated via real-time:', payload);
+          
+          // Check of business_plan of business JSONB is geüpdatet
+          const businessPlanChanged = payload.new.business_plan !== payload.old?.business_plan;
+          const businessChanged = JSON.stringify(payload.new.business) !== JSON.stringify(payload.old?.business);
+          
+          if (businessPlanChanged || businessChanged) {
+            console.log('Subscription data changed, refreshing profile...', {
+              businessPlanChanged,
+              businessChanged,
+              newBusinessPlan: payload.new.business_plan,
+              newBusiness: payload.new.business,
+            });
+            
+            // Reload de pagina om nieuwe data te laden
+            // Dit zorgt ervoor dat de subscription status correct wordt weergegeven
+            window.location.reload();
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [supabase, profile?.id]);
 
   // Load Stripe KYC status
   useEffect(() => {

@@ -1,10 +1,11 @@
 "use client";
 
-import { createClient } from "@supabase/supabase-js";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 
 import type { Listing } from "@/lib/types";
+import { getCategoriesWithSubcategories } from "@/lib/services/category.service";
+import type { Category as CatType } from "@/lib/services/category.service";
 
 import HighlightedSlider from "../../components/HighlightedSlider";
 import ListingRow from "../../components/ListingRow";
@@ -22,6 +23,7 @@ type Subcategory = {
   slug: string;
   sort_order?: number;
   is_active?: boolean;
+  category_id?: number;
 };
 
 type Category = {
@@ -34,69 +36,29 @@ type Category = {
 };
 
 /**
- * Categorieën ophalen
+ * Categorieën ophalen - nu via centrale service
  */
 async function fetchCategories(): Promise<Category[]> {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-
-  const { data, error } = await supabase
-    .from("categories")
-    .select(`
-      id,
-      name,
-      slug,
-      sort_order,
-      is_active,
-      subcategories:subcategories (
-        id,
-        name,
-        slug,
-        sort_order,
-        is_active,
-        category_id
-      )
-    `)
-    .order("name", { ascending: true })
-    .order("name", { ascending: true, foreignTable: "subcategories" });
-
-  if (error) {
-    if (process.env.NODE_ENV !== "production") console.error("fetchCategories error:", error);
+  try {
+    const categories = await getCategoriesWithSubcategories();
+    return categories.map(cat => ({
+      id: parseInt(cat.id),
+      name: cat.name,
+      slug: cat.slug,
+      sort_order: cat.sort_order,
+      is_active: cat.is_active,
+      subs: cat.subcategories.map(sub => ({
+        id: parseInt(sub.id),
+        name: sub.name,
+        slug: sub.slug,
+        sort_order: sub.sort_order,
+        category_id: parseInt(sub.category_id),
+      })),
+    }));
+  } catch (error) {
+    console.error('Failed to fetch categories:', error);
     return [];
   }
-
-  const rows = (data ?? []) as {
-    id: number;
-    name: string;
-    slug: string;
-    sort_order?: number;
-    is_active?: boolean;
-    subcategories?: Subcategory[];
-  }[];
-
-  const normalized: Category[] = rows.map((c) => ({
-    id: c.id,
-    name: c.name,
-    slug: c.slug,
-    sort_order: c.sort_order,
-    is_active: c.is_active,
-    subs: Array.isArray(c.subcategories)
-      ? c.subcategories
-          .filter((s: Subcategory) => s?.is_active !== false)
-          .sort((a: Subcategory, b: Subcategory) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-          .map((s: Subcategory) => ({
-            id: s.id,
-            name: s.name,
-            slug: s.slug,
-            sort_order: s.sort_order,
-            is_active: s.is_active,
-          }))
-      : [],
-  }));
-
-  return normalized;
 }
 
 /**
@@ -129,8 +91,8 @@ async function fetchResults(opts: {
   });
   const data = await res.json();
   return {
-    items: data.results,
-    total: data.total ?? data.results.length,
+    items: data.items || data.results || [],
+    total: data.total ?? (data.items || data.results || []).length,
     facets: (data.facets ?? {
       locations: [],
       states: ["new", "like-new", "good", "used"],
@@ -138,7 +100,6 @@ async function fetchResults(opts: {
   };
 }
 
-// Wrapper component voor useSearchParams
 function CategoriesContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -172,8 +133,7 @@ function CategoriesContent() {
     [catSlug, categories]
   );
   const selectedSub = useMemo(
-    () =>
-      selectedCat?.subs?.find((s) => s.name === subName) || null,
+    () => selectedCat?.subs?.find((s) => s.name === subName) || null,
     [selectedCat, subName]
   );
 
@@ -204,7 +164,7 @@ function CategoriesContent() {
   const load = useCallback(async () => {
     const catId = selectedCat?.id;
     const subId = selectedSub?.id;
-    const { items, total, facets } = await fetchResults({
+    const result = await fetchResults({
       catId,
       subId,
       page,
@@ -215,46 +175,36 @@ function CategoriesContent() {
       location,
       sort,
     });
-    setItems(items);
-    setTotal(total);
-    setFacets(facets);
+    setItems(result.items);
+    setTotal(result.total);
+    setFacets(result.facets);
   }, [page, limit, selectedCat?.id, selectedSub?.id, priceMin, priceMax, state, location, sort]);
 
   useEffect(() => {
     if (selectedCat) load();
   }, [load, selectedCat]);
 
-  const setParam = (
-    key: string,
-    value: string | number | undefined | null
-  ) => {
+  const setParam = (key: string, value: string | number | undefined | null) => {
     const sp = new URLSearchParams(Array.from(searchParams.entries()));
     if (value === undefined || value === "" || value === null) sp.delete(key);
     else sp.set(key, String(value));
-    if (
-      ["cat", "sub", "priceMin", "priceMax", "state", "location", "sort"].includes(
-        key
-      )
-    )
+    if (["cat", "sub", "priceMin", "priceMax", "state", "location", "sort"].includes(key))
       sp.delete("page");
     router.push("/categories?" + sp.toString(), { scroll: false });
   };
 
   const baseUrl =
     "/categories" +
-    (catSlug ? `?cat=${catSlug}` : "") +
-    (subName
-      ? `${catSlug ? "&" : "?"}sub=${encodeURIComponent(subName)}`
-      : "") +
-    (priceMin ? `&priceMin=${priceMin}` : "") +
-    (priceMax ? `&priceMax=${priceMax}` : "") +
-    (state ? `&state=${state}` : "") +
-    (location ? `&location=${encodeURIComponent(location || "")}` : "") +
-    (sort && sort !== "relevance" ? `&sort=${sort}` : "");
+    (catSlug ? "?cat=" + catSlug : "") +
+    (subName ? (catSlug ? "&" : "?") + "sub=" + encodeURIComponent(subName) : "") +
+    (priceMin ? "&priceMin=" + priceMin : "") +
+    (priceMax ? "&priceMax=" + priceMax : "") +
+    (state ? "&state=" + state : "") +
+    (location ? "&location=" + encodeURIComponent(location || "") : "") +
+    (sort && sort !== "relevance" ? "&sort=" + sort : "");
 
   const [openCat, setOpenCat] = useState<string | null>(catSlug);
 
-  // Update openCat wanneer catSlug verandert (bijv. via browser navigation)
   useEffect(() => {
     setOpenCat(catSlug);
   }, [catSlug]);
@@ -276,9 +226,9 @@ function CategoriesContent() {
               <div key={c.slug}>
                 <button
                   onClick={() => {
-                    setOpenCat(c.slug); // Altijd openen wanneer geklikt
+                    setOpenCat(c.slug);
                     setParam("cat", c.slug);
-                    setParam("sub", undefined); // Reset subcategorie bij categorie klik
+                    setParam("sub", undefined);
                   }}
                   className="font-medium"
                   aria-expanded={isOpen}
@@ -295,14 +245,14 @@ function CategoriesContent() {
                               setParam("cat", c.slug);
                               setParam("sub", s.name);
                             }}
-                            className={`hover:underline ${subName === s.name && isActive ? "font-medium" : ""}`}
+                            className={"hover:underline " + (subName === s.name && isActive ? "font-medium" : "")}
                           >
                             {s.name}
                           </button>
                         </li>
                       ))
                     ) : (
-                      <li className="text-gray-500">Geen subcategorieën</li>
+                      <li className="text-gray-500">Geen subcategorieen</li>
                     )}
                   </ul>
                 )}
@@ -321,7 +271,7 @@ function CategoriesContent() {
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-semibold">
             {selectedCat ? selectedCat.name : "Marktplaats"}
-            {subName ? ` › ${subName}` : ""}
+            {subName ? " > " + subName : ""}
           </h1>
           <div className="text-sm text-gray-600">{total} resultaten</div>
         </div>
@@ -345,21 +295,15 @@ function CategoriesContent() {
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6 items-stretch">
             <div>
-              <label className="block text-sm text-gray-600 mb-1">
-                Locatie
-              </label>
+              <label className="block text-sm text-gray-600 mb-1">Locatie</label>
               <select
                 value={location || ""}
-                onChange={(e) =>
-                  setParam("location", e.target.value || undefined)
-                }
+                onChange={(e) => setParam("location", e.target.value || undefined)}
                 className="filter-select"
               >
                 <option value="">Alle locaties</option>
                 {facets.locations.map((loc) => (
-                  <option key={loc} value={loc}>
-                    {loc}
-                  </option>
+                  <option key={loc} value={loc}>{loc}</option>
                 ))}
               </select>
             </div>
@@ -372,44 +316,32 @@ function CategoriesContent() {
               >
                 <option value="">Alle</option>
                 {facets.states.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
+                  <option key={s} value={s}>{s}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="block text-sm text-gray-600 mb-1">
-                Prijs min
-              </label>
+              <label className="block text-sm text-gray-600 mb-1">Prijs min</label>
               <input
                 type="number"
                 value={priceMin ?? ""}
-                onChange={(e) =>
-                  setParam("priceMin", e.target.value || undefined)
-                }
+                onChange={(e) => setParam("priceMin", e.target.value || undefined)}
                 className="filter-input"
-                placeholder="€"
+                placeholder="EUR"
               />
             </div>
             <div>
-              <label className="block text-sm text-gray-600 mb-1">
-                Prijs max
-              </label>
+              <label className="block text-sm text-gray-600 mb-1">Prijs max</label>
               <input
                 type="number"
                 value={priceMax ?? ""}
-                onChange={(e) =>
-                  setParam("priceMax", e.target.value || undefined)
-                }
+                onChange={(e) => setParam("priceMax", e.target.value || undefined)}
                 className="filter-input"
-                placeholder="€"
+                placeholder="EUR"
               />
             </div>
             <div className="lg:col-span-2">
-              <label className="block text-sm text-gray-600 mb-1">
-                Sorteren
-              </label>
+              <label className="block text-sm text-gray-600 mb-1">Sorteren</label>
               <select
                 value={sort || "relevance"}
                 onChange={(e) => setParam("sort", e.target.value || undefined)}
@@ -417,8 +349,8 @@ function CategoriesContent() {
               >
                 <option value="relevance">Relevantie</option>
                 <option value="date_desc">Nieuwste eerst</option>
-                <option value="price_asc">Prijs (laag → hoog)</option>
-                <option value="price_desc">Prijs (hoog → laag)</option>
+                <option value="price_asc">Prijs (laag naar hoog)</option>
+                <option value="price_desc">Prijs (hoog naar laag)</option>
               </select>
             </div>
           </div>
@@ -440,7 +372,6 @@ function CategoriesContent() {
   );
 }
 
-/** ---------- Page Component ---------- */
 export default function CategoriesPage() {
   return (
     <Suspense fallback={<div className="container py-8">Loading...</div>}>

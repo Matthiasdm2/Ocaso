@@ -176,19 +176,25 @@ export async function POST(req: Request) {
         // Create checkout session
         let session;
         try {
+            // Metadata voor zowel session als payment_intent (voor embedded checkout)
+            const subscriptionMetadata = {
+                userId: user.id,
+                plan,
+                billing,
+                buyerType: buyerType === "business"
+                    ? "business"
+                    : "consumer",
+            };
+            
             session = await stripe.checkout.sessions.create({
                 ui_mode: "embedded", // Use embedded mode
                 mode: "payment",
                 return_url: returnUrl,
                 customer: stripeCustomerId, // Use the customer we created/updated
                 customer_email: stripeCustomerId ? undefined : customerEmail, // Only use email if no customer
-                metadata: {
-                    userId: user.id,
-                    plan,
-                    billing,
-                    buyerType: buyerType === "business"
-                        ? "business"
-                        : "consumer",
+                metadata: subscriptionMetadata,
+                payment_intent_data: {
+                    metadata: subscriptionMetadata, // Belangrijk: metadata ook op payment_intent voor webhook
                 },
                 line_items: [
                     {

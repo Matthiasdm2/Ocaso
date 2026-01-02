@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+import { formatPrice } from '@/lib/formatPrice';
 import { createClient } from '@/lib/supabaseClient';
 
 // Extend window interface for Stripe global flag
@@ -59,11 +60,7 @@ export default function EmbeddedCheckoutPage() {
       const qty = Number(credits || 0);
       const pricing: Record<number, number> = { 4: 1, 25: 5 };
       const amount = pricing[qty] ?? 0;
-      try {
-        return new Intl.NumberFormat('nl-BE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 }).format(amount);
-      } catch {
-        return `€${amount.toFixed(2)}`;
-      }
+      return formatPrice(amount, { decimals: 2 });
     }
     const prices = {
       basic: { monthly: 15, yearly: 150 },
@@ -73,11 +70,7 @@ export default function EmbeddedCheckoutPage() {
     const c = (billing === 'yearly' ? 'yearly' : 'monthly') as keyof (typeof prices)['basic'];
     const amount = prices[p][c];
     const unit = c === 'yearly' ? '/jaar' : '/maand';
-    try {
-      return new Intl.NumberFormat('nl-BE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(amount) + unit;
-    } catch {
-      return `€${amount}${unit}`;
-    }
+    return formatPrice(amount, { decimals: 0 }) + unit;
   }, [mode, plan, billing, credits]);
 
   // One-time profile load and initial buyer type suggestion
@@ -94,12 +87,24 @@ export default function EmbeddedCheckoutPage() {
             .from('profiles')
             .select('full_name, first_name, last_name, email, phone, address, company_name, vat, registration_nr, invoice_email, invoice_address')
             .eq('id', user.user.id)
-            .single();
+            .maybeSingle();
           
           if (error) {
             console.error('Profile load error:', error.message, error.details, error.hint);
             console.error('Full error object:', error);
-            // Don't throw, just log and continue with empty profile
+            // Fallback: probeer alleen essentiële kolommen
+            const { data: fallbackData } = await supabase
+              .from('profiles')
+              .select('full_name, email, phone')
+              .eq('id', user.user.id)
+              .maybeSingle();
+            if (fallbackData) {
+              setProfileBilling({
+                full_name: fallbackData.full_name || '',
+                email: fallbackData.email || '',
+                phone: fallbackData.phone || '',
+              } as ProfileBilling);
+            }
           } else if (data) {
             console.log('Profile loaded successfully:', {
               hasFirstName: !!data.first_name,

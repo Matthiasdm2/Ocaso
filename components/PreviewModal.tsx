@@ -2,6 +2,8 @@
 
 import { useEffect } from "react";
 
+import { formatPrice } from "@/lib/formatPrice";
+
 type PreviewData = {
   title: string;
   description: string;
@@ -141,7 +143,7 @@ export default function PreviewModal({
               <div className="shrink-0 rounded-xl bg-neutral-50 px-4 py-2 text-right">
                 <div className="text-sm text-neutral-500">Vraagprijs</div>
                 <div className="text-2xl font-bold">
-                  {price ? `€ ${Number(price).toLocaleString("nl-BE")}` : "—"}
+                  {formatPrice(price)}
                 </div>
               </div>
             </div>
@@ -165,7 +167,7 @@ export default function PreviewModal({
                   {allowOffers && minBid && (
                     <span className="text-neutral-500">
                       {" "}
-                      — minimum bod € {Number(minBid).toLocaleString("nl-BE")}
+                      — minimum bod {formatPrice(minBid)}
                     </span>
                   )}
                 </div>
@@ -181,7 +183,7 @@ export default function PreviewModal({
                     <div className="mt-1 text-sm text-neutral-500">
                       {shipping.service ? `Dienst: ${shipping.service} · ` : ""}
                       {shipping.price
-                        ? `+/- € ${Number(shipping.price).toLocaleString("nl-BE")}`
+                        ? `+/- ${formatPrice(shipping.price)}`
                         : ""}
                       <div className="mt-1">
                         {shipping.length ? `L: ${shipping.length} ` : ""}

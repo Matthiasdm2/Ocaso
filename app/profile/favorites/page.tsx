@@ -7,6 +7,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { formatPrice } from "@/lib/formatPrice";
 import { createClient } from "@/lib/supabaseClient";
 import { useProfile } from "@/lib/useProfile";
 
@@ -261,7 +262,7 @@ export default function FavoritesPage() {
                     <div className="text-base text-gray-700 line-clamp-2">{item.description ?? ""}</div>
                   </div>
                   <div className="shrink-0 text-right flex flex-col gap-2 items-end">
-                    <div className="font-bold text-primary text-2xl">€ {item.price}</div>
+                    <div className="font-bold text-primary text-2xl">{formatPrice(item.price)}</div>
                     <Link
                       href={item.href}
                       className="mt-2 inline-block rounded-full bg-primary text-white px-5 py-2 text-base font-semibold shadow transition hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"

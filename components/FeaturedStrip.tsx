@@ -3,6 +3,8 @@
 import Image from "next/image";
 import { useRef } from "react";
 
+import { formatPrice } from "@/lib/formatPrice";
+
 type FeaturedItem = {
   id: string | number;
   title: string;
@@ -94,7 +96,7 @@ export default function FeaturedStrip({ title = "Uitgelicht in deze categorie", 
                   ) : null}
                 </div>
                 <div className="shrink-0 rounded-lg bg-gray-900 font-semibold text-white px-2 py-1 text-sm">
-                  € {Number(it.price).toLocaleString("nl-BE")}
+                  {formatPrice(it.price)}
                 </div>
               </div>
             </div>

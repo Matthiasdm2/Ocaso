@@ -75,23 +75,35 @@ export function useUnreadReviews() {
         }
 
         if (profile?.is_business) {
-          if (lastSeen) {
-            const { data: bizReviews } = await supabase
-              .from('reviews')
-              .select('id,created_at,business_id')
-              .eq('business_id', user.id)
-              .gt('created_at', lastSeen)
-              .order('created_at', { ascending: false })
-              .limit(500);
-            if (bizReviews) all.push(...(bizReviews as ReviewLite[]));
-          } else {
-            const { data: bizReviews } = await supabase
-              .from('reviews')
-              .select('id,created_at,business_id')
-              .eq('business_id', user.id)
-              .order('created_at', { ascending: false })
-              .limit(500);
-            if (bizReviews) all.push(...(bizReviews as ReviewLite[]));
+          try {
+            if (lastSeen) {
+              const { data: bizReviews, error: bizError } = await supabase
+                .from('reviews')
+                .select('id,created_at,business_id')
+                .eq('business_id', user.id)
+                .gt('created_at', lastSeen)
+                .order('created_at', { ascending: false })
+                .limit(500);
+              if (bizError) {
+                console.warn('[useUnreadReviews] Business reviews query error:', bizError.message);
+              } else if (bizReviews) {
+                all.push(...(bizReviews as ReviewLite[]));
+              }
+            } else {
+              const { data: bizReviews, error: bizError } = await supabase
+                .from('reviews')
+                .select('id,created_at,business_id')
+                .eq('business_id', user.id)
+                .order('created_at', { ascending: false })
+                .limit(500);
+              if (bizError) {
+                console.warn('[useUnreadReviews] Business reviews query error:', bizError.message);
+              } else if (bizReviews) {
+                all.push(...(bizReviews as ReviewLite[]));
+              }
+            }
+          } catch (e) {
+            console.warn('[useUnreadReviews] Error fetching business reviews:', e);
           }
         }
 

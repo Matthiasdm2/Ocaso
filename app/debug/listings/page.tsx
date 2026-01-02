@@ -1,3 +1,4 @@
+import { formatPrice } from "@/lib/formatPrice";
 import { supabaseServer } from "@/lib/supabaseServer";
 
 export const dynamic = 'force-dynamic';
@@ -19,7 +20,7 @@ export default async function ListingsDebugPage() {
       <ul>
   {(data as { id: number; title: string; price: number | null; created_at?: string | null; status?: string | null }[]).map((l) => (
           <li key={l.id}>
-            <strong>{l.title}</strong> — €{l.price} — Status: <em>{l.status || 'geen'}</em>{" "}
+            <strong>{l.title}</strong> — {formatPrice(l.price)} — Status: <em>{l.status || 'geen'}</em>{" "}
             <small>({new Date(l.created_at!).toLocaleString()})</small>
           </li>
         ))}

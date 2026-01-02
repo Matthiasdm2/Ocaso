@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { formatPrice } from "@/lib/formatPrice";
 import type { Listing } from "@/lib/types";
 
 export default function ListingRow({ item }: { item: Listing }) {
@@ -30,7 +31,7 @@ export default function ListingRow({ item }: { item: Listing }) {
         </div>
       </div>
       <div className="text-right">
-        <div className="font-semibold">€ {item.price.toFixed(0)}</div>
+        <div className="font-semibold">{formatPrice(item.price)}</div>
       </div>
     </Link>
   );

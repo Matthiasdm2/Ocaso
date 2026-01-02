@@ -32,14 +32,20 @@ declare
 begin
   perform public.ensure_dashboard_stats_row(bid);
 
+  -- Get listings stats
   select count(*) filter (where status in ('active','published')),
          count(*) filter (where status = 'sold'),
          coalesce(avg(price)::int,0),
-         coalesce(sum(l.views),0),
-         coalesce((select count(*) from bids b where b.listing_id = l.id),0)
-  into v_listings, v_sold, v_avg, v_views, v_bids
+         coalesce(sum(l.views),0)
+  into v_listings, v_sold, v_avg, v_views
   from listings l
   where l.seller_id = bid;
+
+  -- Get bids count separately to avoid subquery grouping issue
+  select coalesce(count(*), 0)
+  into v_bids
+  from bids b
+  where b.listing_id IN (SELECT id FROM listings WHERE seller_id = bid);
 
   -- Followers optioneel: probeer query; als tabel niet bestaat => 0
   begin

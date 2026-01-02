@@ -7,6 +7,7 @@ import {
   getSupabaseServiceRoleKey,
 } from "@/lib/env";
 import { supabaseServiceRole } from "@/lib/supabaseServiceRole";
+import { formatBusinessPlan } from "@/lib/subscription-helpers";
 
 export const runtime = "nodejs"; // ensure Node runtime for raw body
 
@@ -56,15 +57,36 @@ export async function POST(req: Request) {
           : session.payment_intent?.id ?? null;
 
         // Check if this is a subscription checkout (has metadata)
-        if (session.metadata?.plan && session.metadata?.userId) {
+        // Check session metadata first, fallback to payment_intent metadata
+        let subscriptionMeta = session.metadata;
+        if (!subscriptionMeta?.plan && piId) {
+          // Try to get metadata from payment_intent
+          try {
+            const pi = await stripe.paymentIntents.retrieve(piId);
+            if (pi.metadata?.plan) {
+              subscriptionMeta = pi.metadata as Record<string, string>;
+            }
+          } catch (e) {
+            console.warn("Could not retrieve payment_intent metadata:", e);
+          }
+        }
+        
+        if (subscriptionMeta?.plan && subscriptionMeta?.userId) {
           // Handle subscription activation
-          const { plan, billing, userId } = session.metadata;
+          const { plan, billing, userId } = subscriptionMeta;
+          
+          // Convert plan and billing to business_plan format using helper
+          const planType = String(plan).toLowerCase() as "basic" | "pro";
+          const billingCycle = String(billing).toLowerCase() as "monthly" | "yearly";
+          const businessPlan = formatBusinessPlan(planType, billingCycle);
+          
           const { error } = await supabase
             .from("profiles")
             .update({
+              business_plan: businessPlan,
               business: {
-                plan: plan,
-                billing_cycle: billing,
+                plan: planType,
+                billing_cycle: billingCycle,
                 subscription_active: true,
                 subscription_updated_at: new Date().toISOString(),
               },
@@ -75,7 +97,7 @@ export async function POST(req: Request) {
             console.error("subscription update error:", error);
           } else {
             console.log(
-              `Subscription activated: ${plan} (${billing}) for user ${userId}`,
+              `✅ Subscription activated via checkout.session.completed: ${plan} (${billing}) -> ${businessPlan} for user ${userId}`,
             );
           }
         } else {
@@ -120,15 +142,20 @@ export async function POST(req: Request) {
 
         if (meta.plan && meta.userId) {
           // Embedded subscription checkout: activate on profile
-          const plan = String(meta.plan);
-          const billing = String(meta.billing || "monthly");
+          const planType = String(meta.plan).toLowerCase() as "basic" | "pro";
+          const billingCycle = String(meta.billing || "monthly").toLowerCase() as "monthly" | "yearly";
           const userId = String(meta.userId);
+          
+          // Convert plan and billing to business_plan format using helper
+          const businessPlan = formatBusinessPlan(planType, billingCycle);
+          
           const { error: subErr } = await supabase
             .from("profiles")
             .update({
+              business_plan: businessPlan,
               business: {
-                plan,
-                billing_cycle: billing,
+                plan: planType,
+                billing_cycle: billingCycle,
                 subscription_active: true,
                 subscription_updated_at: new Date().toISOString(),
               },
@@ -136,6 +163,10 @@ export async function POST(req: Request) {
             .eq("id", userId);
           if (subErr) {
             console.error("subscription update (pi.succeeded)", subErr);
+          } else {
+            console.log(
+              `Subscription activated via payment_intent.succeeded: ${plan} (${billing}) -> ${businessPlan} for user ${userId}`,
+            );
           }
         } else {
           // Marketplace order: succeeded means captured (for manual capture flows)

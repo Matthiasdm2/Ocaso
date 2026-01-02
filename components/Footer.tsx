@@ -19,7 +19,7 @@ export default function Footer() {
               </Link>
             </li>
             <li>
-              <Link href="/categories" className="hover:underline">
+              <Link href="/marketplace" className="hover:underline">
                 Marktplaats
               </Link>
             </li>

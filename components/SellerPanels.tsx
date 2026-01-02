@@ -32,6 +32,7 @@ type Seller = {
   seller_is_verified?: boolean | null;
   seller_vat?: string | null;
   seller_review_count?: number | null;
+  profileLink?: string | null;
 };
 
 interface Props {
@@ -68,6 +69,7 @@ export default function SellerPanels({
   const [starting, setStarting] = useState(false);
   const id = seller.id ?? seller.seller_id ?? null;
   const name = seller.name ?? seller.seller_name ?? "Onbekend";
+  const profileLink = seller.profileLink ?? null;
   // Fallback naar /placeholder.png als /images/avatar-placeholder.png niet bestaat
   let avatar = seller.avatarUrl ?? seller.seller_avatar_url ?? "/images/avatar-placeholder.png";
   if (avatar === "/images/avatar-placeholder.png") {
@@ -203,7 +205,14 @@ export default function SellerPanels({
           <Avatar src={avatar} name={name ?? undefined} size={72} rounded="full" />
           <div className="flex-1 min-w-0 space-y-1.5">
             <div className="flex items-center gap-2 flex-wrap">
-              {id ? (
+              {profileLink ? (
+                <Link
+                  href={profileLink}
+                  className="font-semibold text-lg leading-tight truncate max-w-full hover:underline decoration-emerald-600/60 decoration-2 underline-offset-2"
+                >
+                  {name}
+                </Link>
+              ) : id ? (
                 <Link
                   href={isBusiness ? `/business/${id}` : `/seller/${id}`}
                   className="font-semibold text-lg leading-tight truncate max-w-full hover:underline decoration-emerald-600/60 decoration-2 underline-offset-2"
@@ -275,7 +284,7 @@ export default function SellerPanels({
         {/* Acties */}
         <div className="flex flex-col sm:flex-row gap-2">
           <Link
-            href={id ? `/seller/${id}` : '#'}
+            href={profileLink || (id ? (isBusiness ? `/business/${id}` : `/seller/${id}`) : '#')}
             className="flex-1 inline-flex items-center justify-center rounded-full bg-primary text-gray-900 px-3 py-1.5 text-[13px] font-semibold border border-primary/40 hover:bg-primary/80 active:scale-[.98] transition focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 shadow-sm"
           >
             Profiel

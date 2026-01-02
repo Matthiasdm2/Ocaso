@@ -3,6 +3,8 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
+import { formatPrice } from "@/lib/formatPrice";
+
 // Vehicle category filter interface
 interface VehicleFilter {
   id: number;
@@ -55,27 +57,49 @@ export default function MarketplaceFilters() {
       
       console.log('[VEHICLE_FILTERS_DEBUG] Fetching filters for:', category);
       fetch(`/api/categories/filters?category=${category}`)
-        .then(res => {
+        .then(async res => {
           console.log('[VEHICLE_FILTERS_DEBUG] API Response status:', res.status);
+          const data = await res.json();
+          
           if (!res.ok) {
-            throw new Error(`API responded with status ${res.status}`);
+            // API returned an error response
+            const errorMsg = data.error || `API responded with status ${res.status}`;
+            const details = data.details ? `: ${data.details}` : '';
+            throw new Error(`${errorMsg}${details}`);
           }
-          return res.json();
+          
+          return data;
         })
         .then(data => {
           console.log('[VEHICLE_FILTERS_DEBUG] API Response data:', data);
           if (data.filters && Array.isArray(data.filters)) {
+            // Debug: log each filter
+            data.filters.forEach((f: any) => {
+              console.log('[VEHICLE_FILTERS_DEBUG] Filter:', {
+                key: f.filter_key,
+                label: f.filter_label,
+                input_type: f.input_type,
+                is_range: f.is_range,
+                options_count: f.filter_options?.length || 0,
+                options: f.filter_options
+              });
+            });
             setVehicleFilters(data.filters);
             setFiltersFetchError(null);
+            console.log('[VEHICLE_FILTERS_DEBUG] Loaded', data.filters.length, 'filters');
+          } else if (data.error) {
+            // API returned error in response body
+            setVehicleFilters([]);
+            setFiltersFetchError(data.error + (data.details ? `: ${data.details}` : ''));
           } else {
             setVehicleFilters([]);
-            setFiltersFetchError('Invalid response format');
+            setFiltersFetchError('Invalid response format - missing filters array');
           }
         })
         .catch(error => {
           console.error('[VEHICLE_FILTERS_DEBUG] Error loading vehicle filters:', error);
           setVehicleFilters([]);
-          setFiltersFetchError(error.message);
+          setFiltersFetchError(error.message || 'Onbekende fout bij het laden van filters');
         })
         .finally(() => {
           setIsLoadingFilters(false);
@@ -137,8 +161,8 @@ export default function MarketplaceFilters() {
     <div className="space-y-3 text-sm">
       <div className="flex justify-between items-start gap-4">
         <div className="flex flex-wrap gap-2 text-sm text-gray-500 leading-tight">
-          {priceMin && <span className="px-2 py-0.5 bg-gray-100 rounded-full">min €{priceMin}</span>}
-          {priceMax && <span className="px-2 py-0.5 bg-gray-100 rounded-full">max €{priceMax}</span>}
+          {priceMin && <span className="px-2 py-0.5 bg-gray-100 rounded-full">min {formatPrice(priceMin)}</span>}
+          {priceMax && <span className="px-2 py-0.5 bg-gray-100 rounded-full">max {formatPrice(priceMax)}</span>}
           {state && <span className="px-2 py-0.5 bg-gray-100 rounded-full">{state}</span>}
           {location && <span className="px-2 py-0.5 bg-gray-100 rounded-full">{location}</span>}
           {business && <span className="px-2 py-0.5 bg-gray-100 rounded-full">Zakelijk zichtbaar</span>}
@@ -307,29 +331,84 @@ export default function MarketplaceFilters() {
           {vehicleFilters.length > 0 && (
             <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-4">
               {vehicleFilters.map((filter) => {
-                const filterValue = searchParams.get(filter.filter_key) || "";
+                // Determine selected value - check for range filters first
+                let filterValue = searchParams.get(filter.filter_key) || "";
+                const filterKey = filter.filter_key.toLowerCase();
+                
+                // For range filters, reconstruct the selected range string from min/max params
+                if (filter.input_type === 'select' && !filter.is_range && filter.filter_options && filter.filter_options.length > 0) {
+                  const minParam = searchParams.get(`${filter.filter_key}_min`);
+                  const maxParam = searchParams.get(`${filter.filter_key}_max`);
+                  
+                  if (minParam || maxParam) {
+                    // Try to match with an option
+                    if (filterKey === 'bouwjaar' || filterKey === 'year') {
+                      const min = minParam ? parseInt(minParam) : null;
+                      const max = maxParam ? parseInt(maxParam) : null;
+                      
+                      if (min === max && min !== null) {
+                        // Exact year match
+                        filterValue = min.toString();
+                      } else if (min && max) {
+                        // Year range
+                        filterValue = `${min}-${max}`;
+                      } else if (max && parseInt(max) < 1980) {
+                        filterValue = 'Voor 1980';
+                      }
+                    } else if (filterKey === 'kilometerstand' || filterKey === 'mileage_km') {
+                      const min = minParam ? parseInt(minParam) : null;
+                      const max = maxParam ? parseInt(maxParam) : null;
+                      
+                      // Format to match options: "< 20.000 km", "20.000 - 50.000 km", etc.
+                      if (min && max) {
+                        // Format with dots as thousand separators (Dutch format)
+                        const formatKm = (km: number) => {
+                          const thousands = Math.floor(km / 1000);
+                          return `${thousands.toLocaleString('nl-NL')}.000`;
+                        };
+                        filterValue = `${formatKm(min)} - ${formatKm(max)} km`;
+                      } else if (max) {
+                        const formatKm = (km: number) => {
+                          const thousands = Math.floor(km / 1000);
+                          return `${thousands.toLocaleString('nl-NL')}.000`;
+                        };
+                        filterValue = `< ${formatKm(max)} km`;
+                      } else if (min) {
+                        const formatKm = (km: number) => {
+                          const thousands = Math.floor(km / 1000);
+                          return `${thousands.toLocaleString('nl-NL')}.000`;
+                        };
+                        filterValue = `> ${formatKm(min)} km`;
+                      }
+                    } else if (filterKey === 'vermogen' || filterKey === 'power_hp') {
+                      const min = minParam ? parseInt(minParam) : null;
+                      const max = maxParam ? parseInt(maxParam) : null;
+                      
+                      if (min && max) {
+                        filterValue = `${min} - ${max} kW`;
+                      } else if (max) {
+                        filterValue = `< ${max} kW`;
+                      } else if (min) {
+                        filterValue = `> ${min} kW`;
+                      }
+                    }
+                    
+                    // Check if the reconstructed value exists in options
+                    if (!filter.filter_options.includes(filterValue)) {
+                      filterValue = ""; // Reset if no match
+                    }
+                  }
+                } else {
+                  filterValue = searchParams.get(filter.filter_key) || "";
+                }
                 
                 return (
                   <div key={filter.filter_key} className="flex flex-col">
                     <label className="block text-sm text-gray-600 mb-1">
-                      {filter.filter_label}
+                      {filter.filter_label?.replace(/_/g, ' ') || filter.filter_key.replace(/_/g, ' ')}
                     </label>
                     
-                    {filter.input_type === 'select' && (
-                      <select
-                        value={filterValue}
-                        onChange={(e) => setParam(filter.filter_key, e.target.value || undefined)}
-                        className="filter-select h-8 text-sm"
-                      >
-                        <option value="">{filter.placeholder}</option>
-                        {filter.filter_options.map((option) => (
-                          <option key={option} value={option}>
-                            {option}
-                          </option>
-                        ))}
-                      </select>
-                    )}
-                    
+                    {/* Range filters: min/max number inputs (bouwjaar) */}
                     {filter.input_type === 'range' && (
                       <div className="flex items-center gap-2">
                         <input
@@ -353,6 +432,140 @@ export default function MarketplaceFilters() {
                         />
                       </div>
                     )}
+                    
+                    {/* Number input: single number field (kilometerstand) */}
+                    {filter.input_type === 'number' && (
+                      <input
+                        type="number"
+                        value={filterValue}
+                        onChange={(e) => setParam(filter.filter_key, e.target.value || undefined)}
+                        placeholder={filter.placeholder}
+                        className="filter-input h-8 text-sm"
+                        min={filter.min_value}
+                        max={filter.max_value}
+                      />
+                    )}
+                    
+                    {/* Select filters: dropdown with options */}
+                    {filter.input_type === 'select' && Array.isArray(filter.filter_options) && filter.filter_options.length > 0 && (
+                      <select
+                        value={filterValue}
+                        onChange={(e) => {
+                          const selectedValue = e.target.value;
+                          if (!selectedValue) {
+                            // Clear filter
+                            setParam(filter.filter_key, undefined);
+                            // Also clear min/max if they exist
+                            setParam(`${filter.filter_key}_min`, undefined);
+                            setParam(`${filter.filter_key}_max`, undefined);
+                            return;
+                          }
+                          
+                          // Parse AutoScout24-style ranges
+                          const filterKey = filter.filter_key.toLowerCase();
+                          
+                          // Year ranges: "2020-2025" or "2020"
+                          if (filterKey === 'bouwjaar' || filterKey === 'year') {
+                            if (selectedValue.includes('-')) {
+                              const [min, max] = selectedValue.split('-').map(s => parseInt(s.trim()));
+                              if (!isNaN(min)) setParam(`${filter.filter_key}_min`, min.toString());
+                              if (!isNaN(max)) setParam(`${filter.filter_key}_max`, max.toString());
+                              setParam(filter.filter_key, undefined); // Clear the range string
+                            } else if (selectedValue === 'Voor 1980') {
+                              setParam(`${filter.filter_key}_max`, '1979');
+                              setParam(filter.filter_key, undefined);
+                            } else {
+                              const year = parseInt(selectedValue);
+                              if (!isNaN(year)) {
+                                setParam(`${filter.filter_key}_min`, year.toString());
+                                setParam(`${filter.filter_key}_max`, year.toString());
+                                setParam(filter.filter_key, undefined);
+                              }
+                            }
+                            return;
+                          }
+                          
+                          // Mileage ranges: "< 20.000 km", "20.000 - 50.000 km", etc.
+                          if (filterKey === 'kilometerstand' || filterKey === 'mileage_km') {
+                            const kmMatch = selectedValue.match(/(\d+\.?\d*)\s*-\s*(\d+\.?\d*)\s*km/i);
+                            const lessThanMatch = selectedValue.match(/<\s*(\d+\.?\d*)\s*km/i);
+                            const moreThanMatch = selectedValue.match(/>\s*(\d+\.?\d*)\s*km/i);
+                            
+                            if (kmMatch) {
+                              const min = parseInt(kmMatch[1].replace('.', ''));
+                              const max = parseInt(kmMatch[2].replace('.', ''));
+                              if (!isNaN(min)) setParam(`${filter.filter_key}_min`, min.toString());
+                              if (!isNaN(max)) setParam(`${filter.filter_key}_max`, max.toString());
+                            } else if (lessThanMatch) {
+                              const max = parseInt(lessThanMatch[1].replace('.', ''));
+                              if (!isNaN(max)) setParam(`${filter.filter_key}_max`, max.toString());
+                              setParam(`${filter.filter_key}_min`, undefined);
+                            } else if (moreThanMatch) {
+                              const min = parseInt(moreThanMatch[1].replace('.', ''));
+                              if (!isNaN(min)) setParam(`${filter.filter_key}_min`, min.toString());
+                              setParam(`${filter.filter_key}_max`, undefined);
+                            }
+                            setParam(filter.filter_key, undefined); // Clear the range string
+                            return;
+                          }
+                          
+                          // Power ranges: "< 50 kW", "50 - 100 kW", etc.
+                          if (filterKey === 'vermogen' || filterKey === 'power_hp') {
+                            const kwMatch = selectedValue.match(/(\d+)\s*-\s*(\d+)\s*kw/i);
+                            const lessThanMatch = selectedValue.match(/<\s*(\d+)\s*kw/i);
+                            const moreThanMatch = selectedValue.match(/>\s*(\d+)\s*kw/i);
+                            
+                            if (kwMatch) {
+                              setParam(`${filter.filter_key}_min`, kwMatch[1]);
+                              setParam(`${filter.filter_key}_max`, kwMatch[2]);
+                            } else if (lessThanMatch) {
+                              setParam(`${filter.filter_key}_max`, lessThanMatch[1]);
+                              setParam(`${filter.filter_key}_min`, undefined);
+                            } else if (moreThanMatch) {
+                              setParam(`${filter.filter_key}_min`, moreThanMatch[1]);
+                              setParam(`${filter.filter_key}_max`, undefined);
+                            }
+                            setParam(filter.filter_key, undefined);
+                            return;
+                          }
+                          
+                          // Other ranges (cilinderinhoud, laadvermogen, lengte) - similar pattern
+                          const rangeMatch = selectedValue.match(/(\d+\.?\d*)\s*-\s*(\d+\.?\d*)/);
+                          const lessThanMatch2 = selectedValue.match(/<\s*(\d+\.?\d*)/);
+                          const moreThanMatch2 = selectedValue.match(/>\s*(\d+\.?\d*)/);
+                          
+                          if (rangeMatch) {
+                            const min = parseFloat(rangeMatch[1].replace('.', '').replace(',', '.'));
+                            const max = parseFloat(rangeMatch[2].replace('.', '').replace(',', '.'));
+                            if (!isNaN(min)) setParam(`${filter.filter_key}_min`, min.toString());
+                            if (!isNaN(max)) setParam(`${filter.filter_key}_max`, max.toString());
+                            setParam(filter.filter_key, undefined);
+                          } else if (lessThanMatch2) {
+                            const max = parseFloat(lessThanMatch2[1].replace('.', '').replace(',', '.'));
+                            if (!isNaN(max)) setParam(`${filter.filter_key}_max`, max.toString());
+                            setParam(`${filter.filter_key}_min`, undefined);
+                            setParam(filter.filter_key, undefined);
+                          } else if (moreThanMatch2) {
+                            const min = parseFloat(moreThanMatch2[1].replace('.', '').replace(',', '.'));
+                            if (!isNaN(min)) setParam(`${filter.filter_key}_min`, min.toString());
+                            setParam(`${filter.filter_key}_max`, undefined);
+                            setParam(filter.filter_key, undefined);
+                          } else {
+                            // Regular select value
+                            setParam(filter.filter_key, selectedValue);
+                          }
+                        }}
+                        className="filter-select h-8 text-sm"
+                      >
+                        <option value="">{filter.placeholder}</option>
+                        {filter.filter_options.map((option) => (
+                          <option key={option} value={option}>
+                            {option.replace(/_/g, ' ')}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                    
                   </div>
                 );
               })}

@@ -31,10 +31,12 @@ BEGIN
       SELECT avg(price)::int FROM listings l WHERE (l.seller_id = bid OR l.organization_id = bid)
     ),0),
     views = COALESCE((
-      SELECT sum(v.count) FROM listing_views v JOIN listings l ON l.id = v.listing_id WHERE (l.seller_id = bid OR l.organization_id = bid)
+      SELECT sum(v.count) FROM listing_views v 
+      WHERE v.listing_id IN (SELECT id FROM listings WHERE (seller_id = bid OR organization_id = bid))
     ),0),
     bids = COALESCE((
-      SELECT sum(b.count) FROM listing_bids b JOIN listings l ON l.id = b.listing_id WHERE (l.seller_id = bid OR l.organization_id = bid)
+      SELECT count(*) FROM bids b 
+      WHERE b.listing_id IN (SELECT id FROM listings WHERE (seller_id = bid OR organization_id = bid))
     ),0)
   WHERE ds.business_id = bid;
 END;

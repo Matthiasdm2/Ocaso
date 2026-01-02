@@ -15,7 +15,7 @@ export default function ListingImageSlider({ images, title, link }: { images: st
           src={imgs[active]}
           alt={title}
           fill
-          className="rounded-xl object-cover border bg-white hover:scale-[1.02] transition"
+          className="object-cover hover:scale-[1.02] transition"
           sizes="(max-width: 1024px) 100vw, 192px"
         />
       </a>
@@ -24,15 +24,15 @@ export default function ListingImageSlider({ images, title, link }: { images: st
           <button
             type="button"
             onClick={prev}
-            className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 rounded-full p-1 shadow hover:bg-primary/80 hover:text-white"
+            className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/90 rounded-full p-1.5 hover:bg-white transition-colors"
             aria-label="Vorige foto"
           >
-            <svg width="24" height="24" fill="none" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </button>
           <button
             type="button"
             onClick={next}
-            className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 rounded-full p-1 shadow hover:bg-primary/80 hover:text-white"
+            className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/90 rounded-full p-1.5 hover:bg-white transition-colors"
             aria-label="Volgende foto"
           >
             <svg width="24" height="24" fill="none" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>

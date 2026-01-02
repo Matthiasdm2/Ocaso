@@ -2,6 +2,8 @@
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 
+import { formatPrice } from "@/lib/formatPrice";
+
 interface QuickViewItem {
   id: string | number;
   title: string;
@@ -52,7 +54,7 @@ export default function QuickViewModal({
                 <div className="text-sm text-gray-600">
                   {item.location} • {item.state}
                 </div>
-                <div className="text-2xl font-bold mt-2">€ {item.price}</div>
+                <div className="text-2xl font-bold mt-2">{formatPrice(item.price)}</div>
                 <p className="text-sm mt-2 line-clamp-3">{item.description}</p>
                 <div className="mt-3 flex gap-2">
                   <a

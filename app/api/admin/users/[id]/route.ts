@@ -54,112 +54,146 @@ export async function DELETE(
 ) {
     const admin = supabaseAdmin();
 
-    // Try to delete the Supabase Auth user first (requires service role)
-    // This must be done before deleting the profile due to foreign key constraints
-    console.log(`Attempting to delete auth user: ${params.id}`);
+    // CRITICAL: Delete auth user FIRST, otherwise trigger will recreate profile
+    // The handle_new_user trigger automatically creates a profile when auth.users row exists
+    console.log(`🗑️ Attempting to delete user: ${params.id}`);
+    
     let authUserDeleted = false;
+    let authError: Error | null = null;
+    
     try {
-        console.log(
-            "Service role client created, key available:",
-            !!process.env.SUPABASE_SERVICE_ROLE_KEY,
-        );
-
-        // Test if service role works by trying to get user info
+        // Check if user exists first
         const { data: userInfo, error: getError } = await admin.auth.admin
             .getUserById(params.id);
-        console.log("Get user test:", {
-            userExists: !!userInfo?.user,
-            error: getError,
+        
+        console.log("User lookup:", {
+            exists: !!userInfo?.user,
+            email: userInfo?.user?.email,
+            error: getError?.message,
         });
 
-        if (!getError && userInfo?.user) {
-            const { data, error: authError } = await admin.auth.admin
-                .deleteUser(params.id);
-            console.log("deleteUser result:", { data, error: authError });
-            if (!authError) {
-                authUserDeleted = true;
-                console.log("Auth user deleted successfully");
+        if (getError) {
+            console.warn("⚠️ Could not lookup user:", getError.message);
+            // User might not exist in auth, continue with profile deletion
+        } else if (userInfo?.user) {
+            // User exists, delete it
+            const { error: deleteError } = await admin.auth.admin.deleteUser(params.id);
+            
+            if (deleteError) {
+                authError = deleteError as Error;
+                console.error("❌ Failed to delete auth user:", deleteError.message);
+                return NextResponse.json({ 
+                    error: `Kon auth gebruiker niet verwijderen: ${deleteError.message}`,
+                    details: "Als de auth gebruiker niet wordt verwijderd, maakt de handle_new_user trigger het profiel automatisch opnieuw aan."
+                }, { status: 500 });
             } else {
-                console.error("Error deleting auth user:", authError);
+                // Verify deletion by checking again
+                await new Promise(resolve => setTimeout(resolve, 500)); // Wait a bit
+                const { data: verifyUser, error: verifyError } = await admin.auth.admin.getUserById(params.id);
+                
+                if (verifyError || !verifyUser?.user) {
+                    authUserDeleted = true;
+                    console.log("✅ Auth user deleted successfully (verified)");
+                } else {
+                    console.error("❌ Auth user still exists after deletion attempt!");
+                    return NextResponse.json({ 
+                        error: "Auth gebruiker verwijdering mislukt - gebruiker bestaat nog steeds",
+                        details: "Dit kan gebeuren als de service role key niet de juiste permissions heeft."
+                    }, { status: 500 });
+                }
             }
         } else {
-            console.log("Auth user not found or cannot access admin API");
+            console.log("ℹ️ Auth user not found, may already be deleted");
+            // If auth user doesn't exist, we can safely delete profile
+            authUserDeleted = true; // Mark as deleted since it doesn't exist
         }
     } catch (error) {
-        console.error("Exception deleting auth user:", error);
-        // Continue with profile deletion even if auth user deletion fails
+        console.error("❌ Exception deleting auth user:", error);
+        return NextResponse.json({ 
+            error: `Fout bij verwijderen auth gebruiker: ${error instanceof Error ? error.message : "Onbekende fout"}` 
+        }, { status: 500 });
     }
 
-    if (!authUserDeleted) {
-        console.log(
-            "Warning: Auth user was not deleted, but continuing with profile deletion",
-        );
-    }
-
-    // Delete profile
+    // Delete profile (will be cascade deleted if auth user was deleted, but delete explicitly anyway)
     const { error: profileError } = await admin
         .from("profiles")
         .delete()
         .eq("id", params.id);
 
     if (profileError) {
+        console.error("❌ Failed to delete profile:", profileError.message);
+        // If auth user was deleted but profile deletion fails, this is a problem
+        if (authUserDeleted) {
+            return NextResponse.json({ 
+                error: `Auth gebruiker verwijderd, maar profiel verwijderen mislukt: ${profileError.message}`,
+                warning: "Auth user was deleted but profile deletion failed"
+            }, { status: 500 });
+        }
         return NextResponse.json({ error: profileError.message }, {
             status: 400,
         });
     }
 
-    // Delete all listings associated with this user
-    const { error: listingsError } = await admin
-        .from("listings")
-        .delete()
-        .eq("seller_id", params.id);
+    console.log("✅ Profile deleted successfully");
 
-    if (listingsError) {
-        console.error("Error deleting user listings:", listingsError);
+    // Delete related data (non-critical, log errors but don't fail)
+    try {
+        // Delete all listings associated with this user
+        const { error: listingsError } = await admin
+            .from("listings")
+            .delete()
+            .eq("seller_id", params.id);
+        if (listingsError) {
+            console.warn("⚠️ Error deleting user listings:", listingsError.message);
+        }
+
+        // Delete all bids placed by this user
+        const { error: bidsError } = await admin
+            .from("bids")
+            .delete()
+            .eq("bidder_id", params.id);
+        if (bidsError) {
+            console.warn("⚠️ Error deleting user bids:", bidsError.message);
+        }
+
+        // Delete all orders where this user is buyer or seller
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error: ordersError } = await (admin as any)
+            .from("orders")
+            .delete()
+            .or(`buyer_id.eq.${params.id},seller_id.eq.${params.id}`);
+        if (ordersError) {
+            console.warn("⚠️ Error deleting user orders:", ordersError.message);
+        }
+
+        // Delete all messages sent by this user
+        const { error: messagesError } = await admin
+            .from("messages")
+            .delete()
+            .eq("sender_id", params.id);
+        if (messagesError) {
+            console.warn("⚠️ Error deleting user messages:", messagesError.message);
+        }
+
+        // Delete conversations where this user is the only participant
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error: conversationsError } = await (admin as any)
+            .from("conversations")
+            .delete()
+            .contains("participants", [params.id]);
+        if (conversationsError) {
+            console.warn("⚠️ Error deleting user conversations:", conversationsError.message);
+        }
+    } catch (relatedDataError) {
+        console.warn("⚠️ Error deleting related data:", relatedDataError);
+        // Don't fail the entire operation if related data deletion fails
     }
 
-    // Delete all bids placed by this user
-    const { error: bidsError } = await admin
-        .from("bids")
-        .delete()
-        .eq("bidder_id", params.id);
-
-    if (bidsError) {
-        console.error("Error deleting user bids:", bidsError);
-    }
-
-    // Delete all orders where this user is buyer or seller
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error: ordersError } = await (admin as any)
-        .from("orders")
-        .delete()
-        .or(`buyer_id.eq.${params.id},seller_id.eq.${params.id}`);
-
-    if (ordersError) {
-        console.error("Error deleting user orders:", ordersError);
-    }
-
-    // Delete all messages sent by this user
-    const { error: messagesError } = await admin
-        .from("messages")
-        .delete()
-        .eq("sender_id", params.id);
-
-    if (messagesError) {
-        console.error("Error deleting user messages:", messagesError);
-    }
-
-    // Delete conversations where this user is the only participant
-    // (conversations with multiple participants should be handled differently)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error: conversationsError } = await (admin as any)
-        .from("conversations")
-        .delete()
-        .contains("participants", [params.id]);
-
-    if (conversationsError) {
-        console.error("Error deleting user conversations:", conversationsError);
-    }
-
-    return NextResponse.json({ success: true });
+    console.log(`✅ User ${params.id} successfully deleted (auth: ${authUserDeleted ? 'yes' : 'no'}, profile: yes)`);
+    
+    return NextResponse.json({ 
+        success: true,
+        authUserDeleted,
+        message: "Gebruiker succesvol verwijderd"
+    });
 }

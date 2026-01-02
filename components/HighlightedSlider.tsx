@@ -92,7 +92,7 @@ export default function HighlightedSlider({
                 )}
               </div>
               <div className="mt-2 text-sm line-clamp-1">{it.title}</div>
-              <div className="font-medium">€ {Math.round(it.price)}</div>
+              <div className="font-medium">{formatPrice(it.price)}</div>
             </Link>
           ))}
         </div>

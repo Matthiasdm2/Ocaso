@@ -53,16 +53,16 @@ export default function AdminPanel() {
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
-      <div className="w-48 bg-white shadow-lg static inset-0">
+      <div className="w-56 bg-white shadow-smooth static inset-0">
         <div className="flex flex-col h-full">
           {/* Sidebar header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <Shield className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 bg-primary rounded-2xl flex items-center justify-center shadow-sm">
+                <Shield className="w-6 h-6 text-black" />
               </div>
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">Admin Panel</h2>
+                <h2 className="text-lg font-bold text-gray-900">Admin Panel</h2>
                 <p className="text-xs text-gray-500">OCASO Beheer</p>
               </div>
             </div>
@@ -80,20 +80,20 @@ export default function AdminPanel() {
                   onClick={() => {
                     setActiveTab(tab.id);
                   }}
-                  className={`w-full flex items-center space-x-3 px-3 py-3 rounded-lg text-left transition-colors duration-200 ${
+                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left transition-all duration-200 ${
                     isActive
-                      ? 'bg-primary text-white shadow-sm'
+                      ? 'bg-primary text-black shadow-sm font-semibold'
                       : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
                   }`}
                 >
-                  <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-gray-500'}`} />
+                  <Icon className={`w-5 h-5 ${isActive ? 'text-black' : 'text-gray-500'}`} />
                   <div className="flex-1">
                     <div className="font-medium">{tab.name}</div>
-                    <div className={`text-xs ${isActive ? 'text-primary-100' : 'text-gray-500'}`}>
+                    <div className={`text-xs ${isActive ? 'text-gray-700' : 'text-gray-500'}`}>
                       {tab.description}
                     </div>
                   </div>
-                  {isActive && <ChevronRight className="w-4 h-4" />}
+                  {isActive && <ChevronRight className="w-4 h-4 text-black" />}
                 </button>
               );
             })}
@@ -103,7 +103,7 @@ export default function AdminPanel() {
           <div className="p-4 border-t border-gray-200">
             <a
               href="/"
-              className="flex items-center space-x-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+              className="flex items-center space-x-2 text-sm text-gray-600 hover:text-gray-900 transition-colors rounded-lg px-3 py-2 hover:bg-gray-50"
             >
               <Home className="w-4 h-4" />
               <span>Terug naar website</span>
@@ -113,11 +113,11 @@ export default function AdminPanel() {
       </div>
 
       {/* Main content */}
-      <div className="pl-4 flex-1">
+      <div className="flex-1">
 
         {/* Page header */}
-        <div className="bg-white border-b border-gray-200">
-          <div className="px-6 py-8">
+        <div className="bg-white border-b border-gray-200 shadow-sm">
+          <div className="px-6 py-6">
             <div className="flex items-center space-x-3">
               {activeTabData && <activeTabData.icon className="w-8 h-8 text-primary" />}
               <div>

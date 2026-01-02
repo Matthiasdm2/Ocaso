@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+import { formatPrice } from "@/lib/formatPrice";
+
 type Category = {
   id: string;
   name: string;
@@ -61,13 +63,17 @@ export default function ListingManagement() {
       if (res.ok) {
         const data = await res.json();
         console.log("Fetched listings data:", data);
-        setListings(data);
+        // API geeft { ok: true, listings: [] } terug, dus pak de listings array
+        const listingsArray = Array.isArray(data.listings) ? data.listings : (Array.isArray(data) ? data : []);
+        setListings(listingsArray);
       } else {
         const errorText = await res.text();
         console.error("Failed to fetch listings:", res.status, errorText);
+        setListings([]); // Zet lege array bij error
       }
     } catch (error) {
       console.error("Error fetching listings:", error);
+      setListings([]); // Zet lege array bij error
     }
     setLoading(false);
   };
@@ -177,7 +183,9 @@ export default function ListingManagement() {
     return labels[state] || state;
   };
 
-  const filteredListings = listings.filter(listing => {
+  // Zorg ervoor dat listings altijd een array is
+  const listingsArray = Array.isArray(listings) ? listings : [];
+  const filteredListings = listingsArray.filter(listing => {
     // Combined search filter (title or ID)
     const searchTerm = (filters.title || filters.id || "").toLowerCase();
     if (searchTerm && 
@@ -260,298 +268,323 @@ export default function ListingManagement() {
     }
   };
 
-  if (loading) return <div>Laden...</div>;
+  if (loading) return (
+    <div className="flex items-center justify-center py-12">
+      <div className="text-gray-500">Laden...</div>
+    </div>
+  );
 
   if (editingListing) {
     return (
-      <div>
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold">Zoekertje Bewerken</h2>
-          <button
-            onClick={cancelEditing}
-            className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
-          >
-            Annuleren
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl">
-          <div>
-            <label className="block text-sm font-medium mb-2">Titel *</label>
-            <input
-              type="text"
-              name="title"
-              value={formData.title}
-              onChange={handleInputChange}
-              required
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">Beschrijving *</label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleInputChange}
-              required
-              rows={4}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">Prijs (€) *</label>
-            <input
-              type="number"
-              name="price"
-              value={formData.price}
-              onChange={handleInputChange}
-              required
-              min="0"
-              step="0.01"
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">Categorie *</label>
-            <select
-              name="category_id"
-              value={formData.category_id}
-              onChange={handleInputChange}
-              required
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+      <div className="space-y-6">
+        <div className="bg-white rounded-2xl shadow-smooth p-6 border border-gray-100">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-gray-900">Zoekertje Bewerken</h2>
+            <button
+              onClick={cancelEditing}
+              className="px-4 py-2.5 bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 text-sm font-medium transition-colors"
             >
-              <option value="">Selecteer categorie</option>
+              Annuleren
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl">
+            <div>
+              <label className="block text-sm font-medium mb-2 text-gray-900">Titel *</label>
+              <input
+                type="text"
+                name="title"
+                value={formData.title}
+                onChange={handleInputChange}
+                required
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-full bg-white text-sm focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2 text-gray-900">Beschrijving *</label>
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
+                required
+                rows={4}
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-2xl bg-white text-sm focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2 text-gray-900">Prijs (€) *</label>
+              <input
+                type="number"
+                name="price"
+                value={formData.price}
+                onChange={handleInputChange}
+                required
+                min="0"
+                step="0.01"
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-full bg-white text-sm focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2 text-gray-900">Categorie *</label>
+              <select
+                name="category_id"
+                value={formData.category_id}
+                onChange={handleInputChange}
+                required
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-full bg-white text-sm focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+              >
+                <option value="">Selecteer categorie</option>
+                {categories.map(category => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2 text-gray-900">Subcategorie</label>
+              <select
+                name="subcategory_id"
+                value={formData.subcategory_id}
+                onChange={handleInputChange}
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-full bg-white text-sm focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+              >
+                <option value="">Selecteer subcategorie (optioneel)</option>
+                {categories
+                  .find(cat => cat.id === formData.category_id)
+                  ?.subcategories.map(sub => (
+                    <option key={sub.id} value={sub.id}>
+                      {sub.name}
+                    </option>
+                  ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2 text-gray-900">Conditie *</label>
+              <select
+                name="state"
+                value={formData.state}
+                onChange={handleInputChange}
+                required
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-full bg-white text-sm focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+              >
+                <option value="new">Nieuw</option>
+                <option value="like_new">Zo goed als nieuw</option>
+                <option value="good">Goed</option>
+                <option value="fair">Redelijk</option>
+                <option value="poor">Matig</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2 text-gray-900">Status *</label>
+              <select
+                name="status"
+                value={formData.status}
+                onChange={handleInputChange}
+                required
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-full bg-white text-sm focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+              >
+                <option value="actief">Actief</option>
+                <option value="inactief">Inactief</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2 text-gray-900">Locatie</label>
+              <input
+                type="text"
+                name="location"
+                value={formData.location}
+                onChange={handleInputChange}
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-full bg-white text-sm focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2 text-gray-900">Nieuwe Afbeeldingen</label>
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={handleFileChange}
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-full bg-white text-sm focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+              />
+              <p className="text-sm text-gray-500 mt-2">
+                Selecteer nieuwe afbeeldingen om toe te voegen (optioneel)
+              </p>
+            </div>
+
+            <div className="pt-4">
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full rounded-full bg-primary text-black py-3 px-6 font-semibold hover:bg-primary/80 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {loading ? "Bezig met bijwerken..." : "Zoekertje Bijwerken"}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header with filters */}
+      <div className="bg-white rounded-2xl shadow-smooth p-6 border border-gray-100">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex items-center gap-4">
+            <h2 className="text-xl font-bold text-gray-900">Advertenties</h2>
+            <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+              {filteredListings.length} van {listings.length}
+            </span>
+          </div>
+          
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            {/* Search bar */}
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Zoek op titel of ID..."
+                value={filters.title || filters.id}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setFilters(prev => ({
+                    ...prev,
+                    title: value,
+                    id: value
+                  }));
+                }}
+                className="w-full sm:w-64 pl-4 pr-10 py-2.5 border border-gray-200 rounded-full bg-white text-sm focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+              />
+              <div className="absolute inset-y-0 right-0 flex items-center pr-4">
+                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+            </div>
+            
+            {/* Quick filters */}
+            <select
+              value={filters.category_id}
+              onChange={(e) => setFilters(prev => ({ ...prev, category_id: e.target.value }))}
+              className="px-4 py-2.5 border border-gray-200 rounded-full bg-white text-sm focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+            >
+              <option value="">Alle categorieën</option>
               {categories.map(category => (
                 <option key={category.id} value={category.id}>
                   {category.name}
                 </option>
               ))}
             </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">Subcategorie</label>
+            
             <select
-              name="subcategory_id"
-              value={formData.subcategory_id}
-              onChange={handleInputChange}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              value={filters.status}
+              onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
+              className="px-4 py-2.5 border border-gray-200 rounded-full bg-white text-sm focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
             >
-              <option value="">Selecteer subcategorie (optioneel)</option>
-              {categories
-                .find(cat => cat.id === formData.category_id)
-                ?.subcategories.map(sub => (
-                  <option key={sub.id} value={sub.id}>
-                    {sub.name}
-                  </option>
-                ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">Conditie *</label>
-            <select
-              name="state"
-              value={formData.state}
-              onChange={handleInputChange}
-              required
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="new">Nieuw</option>
-              <option value="like_new">Zo goed als nieuw</option>
-              <option value="good">Goed</option>
-              <option value="fair">Redelijk</option>
-              <option value="poor">Matig</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">Status *</label>
-            <select
-              name="status"
-              value={formData.status}
-              onChange={handleInputChange}
-              required
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
+              <option value="">Alle statussen</option>
               <option value="actief">Actief</option>
               <option value="inactief">Inactief</option>
             </select>
+            
+            {(filters.title || filters.id || filters.category_id || filters.status || filters.state || filters.minPrice || filters.maxPrice) && (
+              <button
+                onClick={clearFilters}
+                className="px-4 py-2.5 bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 text-sm font-medium transition-colors"
+              >
+                Wissen
+              </button>
+            )}
           </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">Locatie</label>
-            <input
-              type="text"
-              name="location"
-              value={formData.location}
-              onChange={handleInputChange}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2">Nieuwe Afbeeldingen</label>
-            <input
-              type="file"
-              multiple
-              accept="image/*"
-              onChange={handleFileChange}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-            <p className="text-sm text-gray-500 mt-1">
-              Selecteer nieuwe afbeeldingen om toe te voegen (optioneel)
-            </p>
-          </div>
-
-          <div className="pt-4">
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-blue-500 text-white py-3 px-6 rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-            >
-              {loading ? "Bezig met bijwerken..." : "Zoekertje Bijwerken"}
-            </button>
-          </div>
-        </form>
-      </div>
-    );
-  }
-
-  return (
-    <div>
-      {/* Header with filters */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <div className="flex items-center gap-4">
-          <h2 className="text-xl font-semibold">Advertenties</h2>
-          <span className="text-sm text-gray-500">
-            {filteredListings.length} van {listings.length}
-          </span>
-        </div>
-        
-        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-          {/* Search bar */}
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Zoek op titel of ID..."
-              value={filters.title || filters.id}
-              onChange={(e) => {
-                const value = e.target.value;
-                setFilters(prev => ({
-                  ...prev,
-                  title: value,
-                  id: value
-                }));
-              }}
-              className="w-full sm:w-64 pl-3 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-            <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-              <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </div>
-          </div>
-          
-          {/* Quick filters */}
-          <select
-            value={filters.category_id}
-            onChange={(e) => setFilters(prev => ({ ...prev, category_id: e.target.value }))}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            <option value="">Alle categorieën</option>
-            {categories.map(category => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-          
-          <select
-            value={filters.status}
-            onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            <option value="">Alle statussen</option>
-            <option value="actief">Actief</option>
-            <option value="inactief">Inactief</option>
-          </select>
-          
-          {(filters.title || filters.id || filters.category_id || filters.status || filters.state || filters.minPrice || filters.maxPrice) && (
-            <button
-              onClick={clearFilters}
-              className="px-3 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 text-sm"
-            >
-              Wissen
-            </button>
-          )}
         </div>
       </div>
 
-      <table className="w-full border">
-        <thead>
-          <tr>
-            <th className="border p-2">ID</th>
-            <th className="border p-2">Titel</th>
-            <th className="border p-2">Prijs</th>
-            <th className="border p-2">Categorie</th>
-            <th className="border p-2">Conditie</th>
-            <th className="border p-2">Locatie</th>
-            <th className="border p-2">Status</th>
-            <th className="border p-2">Acties</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredListings.length === 0 && listings.length > 0 && (
-            <tr>
-              <td colSpan={8} className="border p-4 text-center text-gray-500">
-                Geen advertenties gevonden met de huidige filters.
-              </td>
-            </tr>
-          )}
-          {filteredListings.length === 0 && listings.length === 0 && !loading && (
-            <tr>
-              <td colSpan={8} className="border p-4 text-center text-gray-500">
-                Geen advertenties gevonden. Controleer of je bent ingelogd als admin.
-              </td>
-            </tr>
-          )}
-          {filteredListings.map(listing => (
-            <tr key={listing.id}>
-              <td className="border p-2">{listing.id}</td>
-              <td className="border p-2">{listing.title}</td>
-              <td className="border p-2">€{listing.price}</td>
-              <td className="border p-2">{getCategoryName(listing.category_id)}</td>
-              <td className="border p-2">{getConditionLabel(listing.state)}</td>
-              <td className="border p-2">{listing.location || '-'}</td>
-              <td className="border p-2">{listing.status}</td>
-              <td className="border p-2">
-                <button
-                  className="bg-blue-500 text-white px-2 py-1 rounded mr-2"
-                  onClick={() => startEditing(listing)}
-                >
-                  Bewerken
-                </button>
-                <button
-                  className="bg-yellow-500 text-white px-2 py-1 rounded mr-2"
-                  onClick={() => toggleStatus(listing.id, listing.status)}
-                >
-                  {listing.status === "actief" ? "Deactiveren" : "Activeren"}
-                </button>
-                <button
-                  className="bg-red-500 text-white px-2 py-1 rounded"
-                  onClick={() => deleteListing(listing.id)}
-                >
-                  Verwijderen
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      {/* Listings table */}
+      <div className="bg-white rounded-2xl shadow-smooth border border-gray-100 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-gray-50 border-b border-gray-200">
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">ID</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Titel</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Prijs</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Categorie</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Conditie</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Locatie</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Status</th>
+                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Acties</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredListings.length === 0 && listings.length > 0 && (
+                <tr>
+                  <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
+                    Geen advertenties gevonden met de huidige filters.
+                  </td>
+                </tr>
+              )}
+              {filteredListings.length === 0 && listings.length === 0 && !loading && (
+                <tr>
+                  <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
+                    Geen advertenties gevonden. Controleer of je bent ingelogd als admin.
+                  </td>
+                </tr>
+              )}
+              {filteredListings.map(listing => (
+                <tr key={listing.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                  <td className="px-4 py-3 text-sm text-gray-600 font-mono">{listing.id.slice(0, 8)}...</td>
+                  <td className="px-4 py-3 text-sm font-medium text-gray-900">{listing.title}</td>
+                  <td className="px-4 py-3 text-sm font-semibold text-gray-900">{formatPrice(listing.price)}</td>
+                  <td className="px-4 py-3 text-sm text-gray-600">{getCategoryName(listing.category_id)}</td>
+                  <td className="px-4 py-3 text-sm text-gray-600">{getConditionLabel(listing.state)}</td>
+                  <td className="px-4 py-3 text-sm text-gray-600">{listing.location || '-'}</td>
+                  <td className="px-4 py-3">
+                    {listing.status === "actief" ? (
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+                        Actief
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                        Inactief
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <button
+                        className="rounded-full bg-primary text-black px-4 py-1.5 text-sm font-semibold hover:bg-primary/80 transition-colors"
+                        onClick={() => startEditing(listing)}
+                      >
+                        Bewerken
+                      </button>
+                      <button
+                        className="rounded-full bg-yellow-500 text-white px-4 py-1.5 text-sm font-semibold hover:bg-yellow-600 transition-colors"
+                        onClick={() => toggleStatus(listing.id, listing.status)}
+                      >
+                        {listing.status === "actief" ? "Deactiveren" : "Activeren"}
+                      </button>
+                      <button
+                        className="rounded-full bg-red-500 text-white px-4 py-1.5 text-sm font-semibold hover:bg-red-600 transition-colors"
+                        onClick={() => deleteListing(listing.id)}
+                      >
+                        Verwijderen
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }

@@ -78,7 +78,7 @@ export default function InfoPageClient() {
           return;
         }
         let ui: Profile = { ...emptyProfile, id: user.id, email: user.email || '' };
-        const { data: r } = await supabase
+        const { data: r, error: profileError } = await supabase
           .from('profiles')
           .select(`
             id, email, full_name, first_name, last_name, phone, avatar_url, bio,
@@ -90,6 +90,30 @@ export default function InfoPageClient() {
           `)
           .eq('id', user.id)
           .maybeSingle();
+        
+        if (profileError) {
+          console.error('[InfoPageClient] Profile fetch error:', profileError.message, profileError.details);
+          // Fallback: probeer alleen essentiële kolommen (zonder phone als die niet bestaat)
+          const { data: fallbackData } = await supabase
+            .from('profiles')
+            .select('id, email, full_name, avatar_url')
+            .eq('id', user.id)
+            .maybeSingle();
+          if (fallbackData) {
+            const rec = fallbackData as Record<string, unknown>;
+            const name = splitName(String(rec.full_name || ''));
+            ui = {
+              ...ui,
+              firstName: name.first,
+              lastName: name.last,
+              phone: String(rec.phone || ''),
+              avatarUrl: String(rec.avatar_url || ''),
+            };
+            setProfile(ui);
+            setLoading(false);
+            return;
+          }
+        }
 
         if (r) {
           const rec = r as Record<string, unknown>;
@@ -233,9 +257,10 @@ export default function InfoPageClient() {
           const upsertRes: unknown = await _supabase.from('profiles').upsert(dbPayload as unknown);
           const upErr = (upsertRes && typeof upsertRes === 'object' && 'error' in upsertRes) ? (upsertRes as { error?: unknown }).error : null;
           if (upErr) throw upErr;
+          // Select columns that exist (phone may not exist in some schemas)
           const { data: fresh } = await _supabase
             .from('profiles')
-            .select('id, full_name, first_name, last_name, email, phone, avatar_url, bio, address, bank, preferences, notifications')
+            .select('id, full_name, first_name, last_name, email, avatar_url, bio, address, bank, preferences, notifications')
             .eq('id', dbPayload.id)
             .maybeSingle();
           if (fresh) {

@@ -12,6 +12,7 @@ import PreviewModal from "@/components/PreviewModal";
 import ShippingFields from "@/components/ShippingFields";
 import { useToast } from "@/components/Toast";
 import Toggle from "@/components/Toggle";
+import { formatPrice } from "@/lib/formatPrice";
 import { detectCategorySmart } from "@/lib/categoryDetection";
 import { createClient } from "@/lib/supabaseClient";
 
@@ -283,7 +284,7 @@ export default function SellPage() {
       // Gebruik alleen Supabase URLs voor image analysis
       const supabaseImageUrls = imageUrls.filter(url => url.startsWith('https://'));
       const detected = await detectCategorySmart(title, supabaseImageUrls);
-      if (detected && detected.confidence > 0.2) { // Alleen toepassen bij redelijke confidence
+      if (detected && detected.confidence > 20) { // Alleen toepassen bij redelijke confidence (20%)
         const categoryId = detected.categoryId.toString(); // Convert to string for CategorySelect
         setCategory(categoryId);
         if (detected.subcategorySlug) {
@@ -721,9 +722,55 @@ export default function SellPage() {
         min_bid: basePayload.min_bid,
         secure_pay: basePayload.secure_pay,
         // Add vehicle details if category is vehicle and data is provided
+        // Transform filter keys to database field names (exact values, not ranges)
         ...(categorySlug && ['auto-motor', 'bedrijfswagens', 'camper-mobilhomes'].includes(categorySlug) && 
             Object.keys(vehicleDetails).length > 0 && 
-            { vehicle_details: vehicleDetails })
+            { 
+              vehicle_details: (() => {
+                const transformed: Record<string, unknown> = {};
+                
+                // Map filter keys to database field names
+                const keyMapping: Record<string, string> = {
+                  'bouwjaar': 'year',
+                  'year': 'year',
+                  'kilometerstand': 'mileage_km',
+                  'mileage_km': 'mileage_km',
+                  'carrosserie': 'body_type',
+                  'body_type': 'body_type',
+                  'staat': 'condition',
+                  'condition': 'condition',
+                  'brandstof': 'fuel_type',
+                  'fuel_type': 'fuel_type',
+                  'vermogen': 'power_hp',
+                  'power_hp': 'power_hp',
+                  'transmissie': 'transmission',
+                  'transmission': 'transmission',
+                };
+                
+                // Transform vehicle details - gebruik exacte waarden
+                for (const [key, value] of Object.entries(vehicleDetails)) {
+                  // Skip empty values
+                  if (!value || value === '') {
+                    continue;
+                  }
+                  
+                  const dbField = keyMapping[key] || key;
+                  
+                  // Convert numeric fields (bouwjaar, kilometerstand, vermogen)
+                  if (dbField === 'year' || dbField === 'mileage_km' || dbField === 'power_hp') {
+                    const numValue = parseInt(value as string);
+                    if (!isNaN(numValue)) {
+                      transformed[dbField] = numValue;
+                    }
+                  } else {
+                    // String fields (brandstof, carrosserie, transmissie, etc.)
+                    transformed[dbField] = value;
+                  }
+                }
+                
+                return transformed;
+              })()
+            })
       };
 
       // Use API route for server-side validation and logging
@@ -759,44 +806,8 @@ export default function SellPage() {
 
       // Redirect naar het nieuwe zoekertje zelf
       if (listingId) {
-        // Fetch category and subcategory data for correct redirect URL
-        let categorySlug = category;
-        let subcategoryName = subcategory;
-
-        try {
-          // Get category slug
-          if (categoryId) {
-            const { data: catData } = await supabase
-              .from("categories")
-              .select("slug")
-              .eq("id", categoryId)
-              .maybeSingle();
-            if (catData?.slug) {
-              categorySlug = catData.slug;
-            }
-          }
-
-          // Get subcategory name
-          if (subcategoryId) {
-            const { data: subData } = await supabase
-              .from("subcategories")
-              .select("name")
-              .eq("id", subcategoryId)
-              .maybeSingle();
-            if (subData?.name) {
-              subcategoryName = subData.name;
-            }
-          }
-        } catch (error) {
-          console.warn("Failed to fetch category/subcategory data for redirect:", error);
-        }
-
-        // Redirect naar categoriepagina met zoekertje-id als anchor
-        const baseUrl = `/categories?cat=${encodeURIComponent(categorySlug)}`;
-        const url = subcategoryName
-          ? `${baseUrl}&sub=${encodeURIComponent(subcategoryName)}#listing-${listingId}`
-          : `${baseUrl}#listing-${listingId}`;
-        router.replace(url);
+        // Direct redirect naar de detailpagina van het zoekertje
+        router.replace(`/listings/${listingId}`);
       } else {
         // fallback: categoriepagina
         let categorySlug = category;
@@ -1054,7 +1065,7 @@ export default function SellPage() {
               <div className="mt-4 space-y-2 text-sm">
                 <div className="flex justify-between text-gray-600">
                   <span>Prijs</span>
-                  <span className="font-medium text-gray-900">{price ? `€ ${price}` : "—"}</span>
+                  <span className="font-medium text-gray-900">{formatPrice(price)}</span>
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>Categorie</span>

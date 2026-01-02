@@ -22,15 +22,18 @@ export async function POST(req: Request) {
   const supabase = supabaseServer();
 
   interface Patch {
-    is_sold?: boolean;
+    sold?: boolean;
     status?: string;
     sold_via_ocaso?: boolean;
     sale_channel?: string | null;
   }
   const patch: Patch = {};
   if (typeof sold === "boolean") {
-    patch.is_sold = sold;
-    patch.status = sold ? "sold" : "active";
+    patch.sold = sold;
+    // Update status based on sold flag, but only if status is not explicitly set
+    if (typeof status !== "string") {
+      patch.status = sold ? mapStatusToDb("sold") : mapStatusToDb("active");
+    }
   }
   if (typeof soldViaOcaso === "boolean") {
     patch.sold_via_ocaso = soldViaOcaso;
@@ -40,6 +43,12 @@ export async function POST(req: Request) {
     const validStatuses = ["active", "paused", "sold", "draft"];
     if (validStatuses.includes(status)) {
       patch.status = mapStatusToDb(status);
+      // If status is set to sold, also set sold flag
+      if (status === "sold" && typeof sold !== "boolean") {
+        patch.sold = true;
+      } else if (status === "active" && typeof sold !== "boolean") {
+        patch.sold = false;
+      }
     }
   }
 

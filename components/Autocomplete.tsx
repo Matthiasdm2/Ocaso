@@ -13,8 +13,11 @@ export function Autocomplete(props: {
   inputClassName?: string;
   minChars?: number;
   disabled?: boolean;
+  id?: string;
+  name?: string;
+  autoComplete?: string;
 }) {
-  const { value, onChange, onPick, fetchOptions, placeholder, className, inputClassName, minChars = 2, disabled } = props;
+  const { value, onChange, onPick, fetchOptions, placeholder, className, inputClassName, minChars = 2, disabled, id, name, autoComplete } = props;
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [options, setOptions] = useState<Option[]>([]);
@@ -73,6 +76,10 @@ export function Autocomplete(props: {
   return (
     <div className={"relative " + (className || "")} ref={boxRef}>
       <input
+        id={id}
+        name={name}
+        type="text"
+        autoComplete={autoComplete}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onFocus={() => { if (options.length) setOpen(true); }}

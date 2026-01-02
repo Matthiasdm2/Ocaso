@@ -8,7 +8,9 @@ import MarketplaceFilters from "@/components/MarketplaceFilters";
 import MarketplaceMapModal from "@/components/MarketplaceMapModal";
 import RatingStars from "@/components/RatingStars";
 import Tooltip from "@/components/Tooltip";
+import { formatPrice } from "@/lib/formatPrice";
 import { supabaseServer } from "@/lib/supabaseServer";
+import { getCategoriesWithSubcategories } from "@/lib/services/category.service";
 import type { Category, Listing as BaseListing, Subcategory } from "@/lib/types";
 
 import CollapsibleContainer from "../../components/CollapsibleContainer";
@@ -153,7 +155,8 @@ export default async function MarketplacePage({ searchParams }: { searchParams?:
   let count: number | null = null;
 
   // Basis query (na normalisatie volstaat kolom filtering)
-  let query = supabase.from("listings").select("*", { count: "exact" }).eq("status", "actief");
+  // Alleen actieve listings tonen, verkochte items uitsluiten
+  let query = supabase.from("listings").select("*", { count: "exact" }).eq("status", "actief").neq("status", "verkocht");
   // Basis query. Later: kan beperkt veldselect worden voor performance.
 
     if (subcategoryFilter) {
@@ -606,127 +609,123 @@ export default async function MarketplacePage({ searchParams }: { searchParams?:
 
               {/* Desktop: Lijst layout */}
               <div className="hidden lg:block">
-                <ul className="space-y-3 md:space-y-4">
+                <ul className="space-y-3">
                   {listingsDisplay.map((item) => (
                     <li key={item.id}>
-                      <article className="card p-4 md:p-5 flex flex-col lg:flex-row gap-3 md:gap-5 transition hover:shadow-lg border border-gray-200 bg-white rounded-2xl">
-                        <div className="flex items-start gap-3 md:gap-5 w-full">
-                          <div className="shrink-0 w-full lg:w-48">
+                      <article className="group relative bg-white border border-gray-200 rounded-lg transition-all duration-200 hover:border-gray-300 hover:shadow-md">
+                        <div className="flex items-start gap-6 p-4">
+                          {/* Afbeelding */}
+                          <div className="shrink-0 w-48 h-48 rounded-lg overflow-hidden bg-gray-50">
                             <ListingImageSlider
                               images={item.images && item.images.length > 0 ? item.images : ["/placeholder.svg"]}
                               title={item.title}
                               link={`/listings/${item.id}`}
                             />
                           </div>
-                          <div className="flex-1 min-w-0 flex flex-col gap-2 md:gap-3">
-                            <div className="flex flex-wrap items-start justify-between gap-2 md:gap-3 mb-1 md:mb-2">
+                          
+                          {/* Content */}
+                          <div className="flex-1 min-w-0 flex flex-col h-48">
+                            {/* Header: Titel en Prijs */}
+                            <div className="flex items-start justify-between gap-4 mb-3">
                               <div className="flex-1 min-w-0">
-                                <a href={`/listings/${item.id}`} className="font-bold text-xl md:text-2xl truncate text-primary hover:underline max-w-full md:max-w-[70%] leading-tight block mb-1">
-                                  {item.title}
+                                <a 
+                                  href={`/listings/${item.id}`} 
+                                  className="group/title block"
+                                >
+                                  <h3 className="text-lg font-semibold text-gray-900 group-hover/title:text-primary transition-colors line-clamp-2 leading-snug mb-2">
+                                    {item.title}
+                                  </h3>
                                 </a>
-                                {/* Views and favorites stats next to title */}
-                                <ListingCardStats id={item.id} initViews={item.views ?? 0} initFavorites={item.favorites_count ?? 0} />
-                              </div>
-                              <div className="flex flex-col items-end gap-1">
-                                <div className="font-bold text-primary text-xl md:text-3xl leading-none">€ {item.price}</div>
-                                {item.allowOffers && (
-                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-sm text-emerald-700 border border-emerald-200">
-                                    Bieden mogelijk
-                                  </span>
-                                )}
-                                {item.allowOffers && typeof item.highestBid === "number" && (
-                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-yellow-50 text-sm text-yellow-800 border border-yellow-200">
-                                    Hoogste bod: € {item.highestBid}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            <div className="text-sm text-gray-700 line-clamp-2 leading-relaxed mb-1 md:mb-2">{item.description}</div>
-                            <div className="flex flex-wrap items-center gap-2 mb-3">
-                              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-gray-50 text-sm text-gray-700 border border-gray-200">
-                                <span className="text-gray-500">📍</span>
-                                {item.location}
-                              </span>
-                              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-blue-50 text-sm text-blue-700 border border-blue-200">
-                                <span className="text-blue-500">🏷️</span>
-                                {item.displayCategoryName}{item.displaySubcategoryName ? ` › ${item.displaySubcategoryName}` : ""}
-                              </span>
-                              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-green-50 text-sm text-green-700 border border-green-200">
-                                <span className="text-green-500">📅</span>
-                                {item.created_at ? new Date(item.created_at).toLocaleDateString("nl-BE") : "Onbekend"}
-                              </span>
-                              {item.listing_number && (
-                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-purple-50 text-sm text-purple-700 border border-purple-200">
-                                  <span className="text-purple-500">#</span>
-                                  {item.listing_number}
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-6">
-                                {/* Seller info with stats below */}
-                                <div className="flex flex-col">
-                                  {/* Seller info */}
-                                  {(() => {
-                                    const sid = (listingsDataRaw || []).find(l => l.id === item.id)?.seller_id as string | undefined;
-                                    const ratingInfo = sid ? sellerRatings[sid] : undefined;
-                                    const profile = sid ? sellerProfiles[sid] : undefined;
-                                    const avatar = profile?.avatar_url;
-                                    const name = profile?.name || (sid ? `Verkoper ${sid.slice(0,6)}` : 'Verkoper');
-                                    return (
-                                      <span className="inline-flex items-center gap-2 mb-1" data-seller={sid || ''} data-has-rating={!!(ratingInfo && ratingInfo.count)}>
-                                        {avatar ? (
-                                          // eslint-disable-next-line @next/next/no-img-element
-                                          <img src={avatar} alt={name} className="w-8 h-8 rounded-full object-cover bg-gray-200 border-2 border-white shadow-sm" />
-                                        ) : (
-                                          <span className="w-8 h-8 rounded-full bg-gray-200 inline-block border-2 border-white shadow-sm" aria-hidden="true" />
-                                        )}
-                                        <div className="flex flex-col">
-                                          <span className="flex items-center gap-2">
-                                            {sid ? (
-                                              <a
-                                                href={`/business/${sid}`}
-                                                className="font-medium text-sm text-gray-900 hover:text-primary hover:underline truncate max-w-[140px]"
-                                                title={name}
-                                              >
-                                                {name}
-                                              </a>
-                                            ) : (
-                                              <span className="font-medium text-sm text-gray-900 truncate max-w-[140px]" title={name}>{name}</span>
-                                            )}
-                                            {profile?.is_business && profile?.vat && (
-                                              <Tooltip content="Geregistreerde onderneming met geldig BTW-nummer">
-                                                <span className="inline-block px-1.5 py-0.5 text-[10px] leading-none rounded bg-blue-50 text-blue-700 border border-blue-200 font-medium cursor-help">Business</span>
-                                              </Tooltip>
-                                            )}
-                                            {profile?.is_verified && (
-                                              <Tooltip content="Geverifieerde gebruiker en ondersteunt betaling via een eigen betaalterminal">
-                                                <span className="inline-block px-1.5 py-0.5 text-[10px] leading-none rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium cursor-help">Vertrouwd</span>
-                                              </Tooltip>
-                                            )}
-                                          </span>
-                                          <span className="inline-flex items-center gap-1 text-sm text-gray-600" aria-label={ratingInfo && ratingInfo.count > 0 ? `Rating ${ratingInfo.rating.toFixed(1)} uit 5` : 'Nog geen reviews'}>
-                                            {ratingInfo && ratingInfo.count > 0 ? (
-                                              <>
-                                                <RatingStars rating={ratingInfo.rating} size={12} />
-                                                <span className="font-medium">{ratingInfo.rating.toFixed(1)}</span>
-                                                <span className="text-gray-400">({ratingInfo.count})</span>
-                                              </>
-                                            ) : (
-                                              <span className="text-gray-400 italic">Geen reviews</span>
-                                            )}
-                                          </span>
-                                        </div>
-                                      </span>
-                                    );
-                                  })()}
+                                <div className="flex items-center gap-4 text-sm text-gray-600">
+                                  {item.location && (
+                                    <span>{item.location}</span>
+                                  )}
+                                  {item.created_at && (
+                                    <span>{new Date(item.created_at).toLocaleDateString("nl-BE", { day: "numeric", month: "short" })}</span>
+                                  )}
+                                  {item.displayCategoryName && (
+                                    <span className="text-gray-500">{item.displayCategoryName}</span>
+                                  )}
                                 </div>
+                              </div>
+                              <div className="text-right shrink-0">
+                                <div className="text-2xl font-bold text-gray-900 mb-1">
+                                  {formatPrice(item.price)}
+                                </div>
+                                {item.allowOffers && typeof item.highestBid === "number" && (
+                                  <div className="text-sm text-gray-600">
+                                    Hoogste bod: <span className="font-semibold text-emerald-600">{formatPrice(item.highestBid)}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            
+                            {/* Beschrijving */}
+                            {item.description && (
+                              <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed mb-3 flex-shrink-0">
+                                {item.description}
+                              </p>
+                            )}
+                            
+                            {/* Footer: Verkoper en CTA - uitgelijnd met onderkant afbeelding */}
+                            <div className="flex items-center justify-between pt-3 mt-auto border-t border-gray-100 -mx-4 px-4">
+                              <div className="flex items-center gap-3">
+                                {/* Seller info */}
+                                {(() => {
+                                  const sid = (listingsDataRaw || []).find(l => l.id === item.id)?.seller_id as string | undefined;
+                                  const ratingInfo = sid ? sellerRatings[sid] : undefined;
+                                  const profile = sid ? sellerProfiles[sid] : undefined;
+                                  const avatar = profile?.avatar_url;
+                                  const name = profile?.name || (sid ? `Verkoper ${sid.slice(0,6)}` : 'Verkoper');
+                                  return (
+                                    <div className="flex items-center gap-2">
+                                      {avatar ? (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img src={avatar} alt={name} className="w-8 h-8 rounded-full object-cover" />
+                                      ) : (
+                                        <span className="w-8 h-8 rounded-full bg-gray-200 inline-block" aria-hidden="true" />
+                                      )}
+                                      <div className="flex flex-col">
+                                        <span className="flex items-center gap-2">
+                                          {sid ? (
+                                            <a
+                                              href={`/business/${sid}`}
+                                              className="text-sm font-medium text-gray-900 hover:text-primary transition-colors"
+                                              title={name}
+                                            >
+                                              {name}
+                                            </a>
+                                          ) : (
+                                            <span className="text-sm font-medium text-gray-900" title={name}>{name}</span>
+                                          )}
+                                          {profile?.is_business && profile?.vat && (
+                                            <Tooltip content="Geregistreerde onderneming">
+                                              <span className="inline-block px-1.5 py-0.5 text-[10px] leading-none rounded bg-blue-50 text-blue-700 font-medium">Business</span>
+                                            </Tooltip>
+                                          )}
+                                          {profile?.is_verified && (
+                                            <Tooltip content="Geverifieerd">
+                                              <span className="inline-block px-1.5 py-0.5 text-[10px] leading-none rounded bg-emerald-50 text-emerald-700 font-medium">✓</span>
+                                            </Tooltip>
+                                          )}
+                                        </span>
+                                        {ratingInfo && ratingInfo.count > 0 ? (
+                                          <span className="inline-flex items-center gap-1 text-xs text-gray-600">
+                                            <RatingStars rating={ratingInfo.rating} size={10} />
+                                            <span>{ratingInfo.rating.toFixed(1)}</span>
+                                            <span className="text-gray-400">({ratingInfo.count})</span>
+                                          </span>
+                                        ) : null}
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
                               </div>
                               <a
                                 href={`/listings/${item.id}`}
-                                className="inline-block rounded-full bg-primary text-white px-6 py-3 text-base font-semibold shadow transition hover:bg-primary/80 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 w-full md:w-auto text-center"
+                                className="inline-flex items-center justify-center rounded-md bg-primary text-white px-5 py-2 text-sm font-medium transition-colors hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                               >
-                                Bekijk
+                                Bekijk details
                               </a>
                             </div>
                           </div>

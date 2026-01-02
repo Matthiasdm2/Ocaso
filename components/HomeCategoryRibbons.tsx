@@ -1,16 +1,15 @@
 "use client";
 
 // External
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
 type Category = {
-  id: number;
+  id: number | string; // Support both UUIDs (string) and legacy integer IDs
   name: string;
   slug: string;
   icon_url: string | null;
-  subcategories: Array<{id: number; name: string; slug: string}>;
+  subcategories: Array<{id: number | string; name: string; slug: string}>;
 };
 
 // Emoji fallback per hoofdcategorie (slug -> emoji) voor als icon_url null is
@@ -42,34 +41,68 @@ const CATEGORY_EMOJI: Record<string, string> = {
 };
 
 function CategoryAvatar({ name, slug, icon_url }: { name: string; slug: string; icon_url: string | null }) {
-  // Gebruik icon_url als deze bestaat, anders fallback naar emoji
-  if (icon_url) {
+  // Uniforme container styling voor alle iconen - consistent voor zowel Tabler icons als emoji's
+  const containerClass = "w-12 h-12 shrink-0 rounded-2xl flex items-center justify-center bg-primary/10 border border-primary/30";
+  
+  // Filter om alle iconen naar primary kleur (#6EE7B7) te converteren
+  // Deze filter converteert zwart naar de primary kleur
+  const iconFilter = "brightness(0) saturate(100%) invert(67%) sepia(11%) saturate(1352%) hue-rotate(106deg) brightness(95%) contrast(89%)";
+  
+  // State voor error handling
+  const [imageError, setImageError] = useState(false);
+  const emoji = CATEGORY_EMOJI[slug] || "📦";
+  
+  // Reset error state als icon_url verandert
+  useEffect(() => {
+    setImageError(false);
+  }, [icon_url]);
+  
+  // Normaliseer icon URL - vervang ALLE varianten van @tabler/icons met tabler-icons
+  const normalizedIconUrl = icon_url 
+    ? icon_url
+        .replace(/@tabler\/icons@latest/g, 'tabler-icons@latest')
+        .replace(/@tabler\/icons\//g, 'tabler-icons@latest/icons/')
+        .replace(/@tabler\/icons/g, 'tabler-icons@latest')
+    : null;
+  
+  // Gebruik icon_url als deze bestaat en er geen error is, anders fallback naar emoji
+  if (normalizedIconUrl && !imageError) {
     return (
       <div
-        className="w-12 h-12 shrink-0 rounded-2xl flex items-center justify-center bg-primary/10 border border-primary/30 overflow-hidden"
+        className={containerClass}
         aria-hidden
         title={name}
       >
-        <Image
-          src={icon_url}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={normalizedIconUrl}
           alt={name}
           width={24}
           height={24}
           className="w-6 h-6"
-          style={{ filter: "hue-rotate(10deg)" }}
+          style={{ 
+            filter: iconFilter,
+            WebkitFilter: iconFilter,
+            display: 'block',
+            objectFit: 'contain',
+          }}
+          onError={() => {
+            console.warn('Failed to load icon:', normalizedIconUrl, 'for category:', name, '- falling back to emoji');
+            setImageError(true);
+          }}
         />
       </div>
     );
   }
   
-  const emoji = CATEGORY_EMOJI[slug] || "📦";
+  // Fallback naar emoji als icon_url null is of als er een error is
   return (
     <div
-      className="w-12 h-12 shrink-0 rounded-2xl flex items-center justify-center bg-primary/10 text-primary shadow-inner border border-primary/30"
+      className={containerClass}
       aria-hidden
       title={name}
     >
-      <span className="leading-none">{emoji}</span>
+      <span className="leading-none text-xl">{emoji}</span>
     </div>
   );
 }
@@ -80,7 +113,15 @@ export default function HomeCategoryRibbons() {
   useEffect(() => {
     async function fetchCategories() {
       try {
-        const res = await fetch("/api/categories");
+        // The API route now includes Cache-Control headers for 5 minute caching
+        // Browser will cache based on those headers automatically
+        const res = await fetch("/api/categories", {
+          // Disable cache to see changes immediately during development
+          cache: "no-store",
+          headers: {
+            'Cache-Control': 'no-cache',
+          },
+        });
         if (res.ok) {
           const data = await res.json() as Category[];
           setCategories(data);
@@ -155,7 +196,7 @@ export default function HomeCategoryRibbons() {
         aria-label="Scrollbare lijst hoofdcategorieën"
       >
         {/* Grid met twee rijen: we interleaven zodat bovenste rij eerste helft is en onderste rij tweede helft */}
-        <ul className="grid grid-rows-2 grid-flow-col auto-cols-max gap-x-3 gap-y-2 py-2">
+        <ul className="grid grid-rows-2 grid-flow-col auto-cols-[200px] gap-x-3 gap-y-2 py-2 items-start">
           {(() => {
             const half = Math.ceil(categories.length / 2);
             const top = categories.slice(0, half);
@@ -171,7 +212,7 @@ export default function HomeCategoryRibbons() {
                 <li
                   // key per category
                   key={c.slug}
-                  className="min-w-[200px]"
+                  className="w-[200px] h-[72px] flex-shrink-0"
                   role="option"
                   aria-selected="false"
                   aria-label={c.name}
@@ -181,10 +222,10 @@ export default function HomeCategoryRibbons() {
                   <Link
                     // Link nu direct naar marketplace met category filter (naam)
                     href={`/marketplace?category=${encodeURIComponent(c.name)}`}
-                    className="group flex items-center gap-3 rounded-2xl border bg-white/70 backdrop-blur-sm px-3 py-2.5 hover:bg-white transition shadow-sm hover:shadow focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    className="group flex items-center gap-3 rounded-2xl border bg-white/70 backdrop-blur-sm px-3 py-2.5 hover:bg-white transition-all shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary/50 h-full w-full"
                   >
                     <CategoryAvatar name={c.name} slug={c.slug} icon_url={c.icon_url} />
-                    <span className="text-sm font-medium leading-tight line-clamp-2 group-hover:underline">
+                    <span className="text-sm font-medium leading-tight line-clamp-2 group-hover:underline flex-1 min-w-0">
                       {c.name}
                     </span>
                   </Link>

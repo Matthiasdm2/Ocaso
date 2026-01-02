@@ -383,6 +383,10 @@ export default function RegisterPage() {
             <div>
               <label className="block text-sm mb-1">Voornaam</label>
               <input
+                id="register-first-name"
+                name="firstName"
+                type="text"
+                autoComplete="given-name"
                 className="w-full rounded-xl border border-gray-200 px-3 py-2"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
@@ -393,6 +397,10 @@ export default function RegisterPage() {
             <div>
               <label className="block text-sm mb-1">Achternaam</label>
               <input
+                id="register-last-name"
+                name="lastName"
+                type="text"
+                autoComplete="family-name"
                 className="w-full rounded-xl border border-gray-200 px-3 py-2"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
@@ -403,7 +411,10 @@ export default function RegisterPage() {
             <div>
               <label className="block text-sm mb-1">E-mail</label>
               <input
+                id="register-email"
+                name="email"
                 type="email"
+                autoComplete="email"
                 className="w-full rounded-xl border border-gray-200 px-3 py-2"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -416,7 +427,10 @@ export default function RegisterPage() {
                 Wachtwoord (min. 8 tekens)
               </label>
               <input
+                id="register-password"
+                name="password"
                 type="password"
+                autoComplete="new-password"
                 className="w-full rounded-xl border border-gray-200 px-3 py-2"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -428,7 +442,10 @@ export default function RegisterPage() {
             <div>
               <label className="block text-sm mb-1">Bevestig wachtwoord</label>
               <input
+                id="register-confirm-password"
+                name="confirmPassword"
                 type="password"
+                autoComplete="new-password"
                 className="w-full rounded-xl border border-gray-200 px-3 py-2"
                 value={confirm}
                 onChange={(e) => setConfirm(e.target.value)}
@@ -447,6 +464,10 @@ export default function RegisterPage() {
             <div>
               <label className="block text-sm mb-1">Telefoon (optioneel)</label>
               <input
+                id="register-phone"
+                name="phone"
+                type="tel"
+                autoComplete="tel"
                 className="w-full rounded-xl border border-gray-200 px-3 py-2"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
@@ -455,6 +476,10 @@ export default function RegisterPage() {
             <div>
               <label className="block text-sm mb-1">Land</label>
               <input
+                id="register-country"
+                name="country"
+                type="text"
+                autoComplete="country"
                 className="w-full rounded-xl border border-gray-200 px-3 py-2"
                 value={country}
                 onChange={(e) => setCountry(e.target.value)}
@@ -465,6 +490,9 @@ export default function RegisterPage() {
             <div className="md:col-span-3">
               <label className="block text-sm mb-1">Straat</label>
               <Autocomplete
+                id="register-street"
+                name="street"
+                autoComplete="address-line1"
                 value={street}
                 onChange={setStreet}
                 fetchOptions={fetchStreetOptions}
@@ -474,6 +502,10 @@ export default function RegisterPage() {
             <div>
               <label className="block text-sm mb-1">Nr.</label>
               <input
+                id="register-number"
+                name="number"
+                type="text"
+                autoComplete="address-line2"
                 className="w-full rounded-xl border border-gray-200 px-3 py-2"
                 value={number}
                 onChange={(e) => setNumber(e.target.value)}
@@ -482,6 +514,9 @@ export default function RegisterPage() {
             <div>
               <label className="block text-sm mb-1">Bus (optioneel)</label>
               <input
+                id="register-bus"
+                name="bus"
+                type="text"
                 className="w-full rounded-xl border border-gray-200 px-3 py-2"
                 value={bus}
                 onChange={(e) => setBus(e.target.value)}
@@ -490,6 +525,9 @@ export default function RegisterPage() {
             <div>
               <label className="block text-sm mb-1">Postcode</label>
               <Autocomplete
+                id="register-postal"
+                name="postal"
+                autoComplete="postal-code"
                 value={postal}
                 onChange={(v) => setPostal(v)}
                 onPick={(opt) => {
@@ -503,6 +541,9 @@ export default function RegisterPage() {
             <div className="md:col-span-2">
               <label className="block text-sm mb-1">Gemeente / Stad</label>
               <Autocomplete
+                id="register-city"
+                name="city"
+                autoComplete="address-level2"
                 value={city}
                 onChange={(v) => setCity(v)}
                 onPick={(opt) => {
@@ -521,6 +562,8 @@ export default function RegisterPage() {
           <h2 className="font-medium">Zakelijke verkoper</h2>
           <label className="flex items-start gap-2 text-sm">
             <input
+              id="register-is-business"
+              name="isBusiness"
               type="checkbox"
               checked={isBusiness}
               onChange={(e) => setIsBusiness(e.target.checked)}
@@ -535,6 +578,10 @@ export default function RegisterPage() {
               <div>
                 <label className="block text-sm mb-1">Bedrijfsnaam</label>
                 <input
+                  id="register-company-name"
+                  name="companyName"
+                  type="text"
+                  autoComplete="organization"
                   className="w-full rounded-xl border border-gray-200 px-3 py-2"
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
@@ -546,6 +593,9 @@ export default function RegisterPage() {
                   BTW-nummer (BE0123456789)
                 </label>
                 <input
+                  id="register-vat"
+                  name="vat"
+                  type="text"
                   className="w-full rounded-xl border border-gray-200 px-3 py-2"
                   value={vat}
                   onChange={(e) => setVat(e.target.value.toUpperCase())}
@@ -562,6 +612,10 @@ export default function RegisterPage() {
                   Website (optioneel)
                 </label>
                 <input
+                  id="register-website"
+                  name="website"
+                  type="url"
+                  autoComplete="url"
                   className="w-full rounded-xl border border-gray-200 px-3 py-2"
                   value={website}
                   onChange={(e) => setWebsite(e.target.value)}
@@ -571,6 +625,9 @@ export default function RegisterPage() {
               <div>
                 <label className="block text-sm mb-1">IBAN (optioneel)</label>
                 <input
+                  id="register-iban"
+                  name="iban"
+                  type="text"
                   className="w-full rounded-xl border border-gray-200 px-3 py-2"
                   value={iban}
                   onChange={(e) => setIban(e.target.value.toUpperCase())}
@@ -591,6 +648,8 @@ export default function RegisterPage() {
           <h2 className="font-medium">Toestemmingen</h2>
           <label className="flex items-start gap-2 text-sm">
             <input
+              id="register-agree-terms"
+              name="agreeTerms"
               type="checkbox"
               checked={agreeTerms}
               onChange={(e) => setAgreeTerms(e.target.checked)}
@@ -610,6 +669,8 @@ export default function RegisterPage() {
           </label>
           <label className="flex items-start gap-2 text-sm">
             <input
+              id="register-marketing-opt-in"
+              name="marketingOptIn"
               type="checkbox"
               checked={marketingOptIn}
               onChange={(e) => setMarketingOptIn(e.target.checked)}

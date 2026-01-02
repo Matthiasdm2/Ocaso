@@ -167,7 +167,7 @@ export async function GET(req: Request) {
             console.error("[/api/businesses] product profiles error:", error);
             resultProfiles = [];
           } else {
-            resultProfiles = data || [];
+            resultProfiles = (data as unknown) as Profile[] || [];
           }
         }
       } else {

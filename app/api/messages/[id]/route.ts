@@ -458,7 +458,7 @@ export async function POST(
   {
     const { data, error } = await supabase
       .from("messages")
-      .insert(basePayload)
+      .insert(basePayload as never)
       .select("id, sender_id, body, created_at, edited_at, deleted_at")
       .single();
     insertError = error as unknown;

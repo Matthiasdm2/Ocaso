@@ -7,11 +7,17 @@ export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
-  const { searchParams, origin, pathname, search } = url;
+  const { searchParams, pathname, search } = url;
   const code = searchParams.get("code");
   const error = searchParams.get("error");
   const errorDescription = searchParams.get("error_description");
   const errorCode = searchParams.get("error_code");
+
+  // Get the correct origin - prefer NEXT_PUBLIC_SITE_URL, fallback to request origin
+  // This ensures Vercel deployments use the correct domain
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || url.origin;
+  const baseUrl = siteUrl.startsWith('http') ? siteUrl : `https://${siteUrl}`;
+  const origin = new URL(baseUrl).origin;
 
   // Log all callback parameters for debugging
   const callbackInfo = {
@@ -19,6 +25,8 @@ export async function GET(req: Request) {
     pathname,
     search,
     origin,
+    siteUrl,
+    requestOrigin: url.origin,
     hasCode: !!code,
     hasError: !!error,
     error,
@@ -48,6 +56,7 @@ export async function GET(req: Request) {
     console.error('[OAuth Callback] Full URL:', req.url);
     console.error('[OAuth Callback] All search params:', Object.fromEntries(searchParams.entries()));
     console.error('[OAuth Callback] Expected redirect URL should be in Supabase Dashboard');
+    console.error('[OAuth Callback] Using origin:', origin);
     
     // Show more helpful error message
     const errorMsg = `Geen OAuth code ontvangen. Controleer of ${origin}/auth/callback exact staat in Supabase Dashboard → Authentication → URL Configuration → Redirect URLs`;

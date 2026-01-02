@@ -41,6 +41,13 @@ export async function POST(
   }
 
   // Insert review
+  interface ReviewRow {
+    id: string;
+    rating: number;
+    comment: string;
+    created_at: string;
+    author?: { display_name?: string | null; avatar_url?: string | null };
+  }
   const { data: inserted, error: insertErr } = await supabase
     .from("reviews")
     .insert({ business_id: businessId, rating, comment, author_id: user.id } as never)
@@ -49,7 +56,9 @@ export async function POST(
     )
     .maybeSingle();
 
-  if (insertErr || !inserted) {
+  const insertedData = inserted as ReviewRow | null;
+
+  if (insertErr || !insertedData) {
     interface PgErr {
       code?: string;
       details?: unknown;
@@ -128,11 +137,15 @@ export async function POST(
     console.warn("[business reviews] kon aggregates niet updaten", e);
   }
 
+  if (!insertedData) {
+    return NextResponse.json({ error: "Failed to create review" }, { status: 500 });
+  }
+
   const response = {
-    id: inserted.id,
-    rating: inserted.rating,
-    comment: inserted.comment,
-    date: inserted.created_at,
+    id: insertedData.id,
+    rating: insertedData.rating,
+    comment: insertedData.comment,
+    date: insertedData.created_at,
     author: (() => {
       const rawAuthor: unknown =
         (inserted as unknown as { author?: unknown }).author;

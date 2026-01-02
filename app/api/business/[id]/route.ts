@@ -147,8 +147,9 @@ export async function GET(
   });
 
   const row = business as Record<string, unknown>;
+  const businessData = business as Record<string, unknown>;
   return NextResponse.json({
-    ...business,
+    ...businessData,
     // Aliassen voor frontend gemak
     name: pickStr(row, "company_name", "shop_name", "full_name") || "Onbekend",
     logoUrl: pickStr(row, "business_logo_url", "avatar_url"),

@@ -46,7 +46,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         .from("listing_views")
         .select("id")
         .eq("listing_id", listingId)
-        .eq("session_id", sessionId)
+        .eq("session_id", sessionId || '')
         .limit(1);
       existing = data;
     }
@@ -59,7 +59,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   if (!existing || (Array.isArray(existing) && existing.length === 0)) {
     // insert a new view record
     try {
-      await supabase.from("listing_views").insert({ listing_id: listingId, user_id: userId, session_id: userId ? null : sessionId });
+      await supabase.from("listing_views").insert({ listing_id: listingId, user_id: userId, session_id: userId ? null : (sessionId || null) });
     } catch (err) {
       // ignore insert errors
     }

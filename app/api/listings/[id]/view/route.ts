@@ -59,7 +59,7 @@ export async function POST(
         const resp = await supabase.from("listing_views").select("id").eq(
           "listing_id",
           listingId,
-        ).eq("session_id", sessionId).limit(1);
+        ).eq("session_id", sessionId || '').limit(1);
         existing = resp.data ?? null;
       }
       // existing presence determined below

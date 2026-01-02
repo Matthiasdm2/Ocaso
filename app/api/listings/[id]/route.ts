@@ -33,14 +33,26 @@ export async function GET(_req: Request, { params }: Ctx) {
   }
 
   // Map database field names to frontend-friendly names
-  const mappedData = {
+  interface ListingData {
+    condition?: string;
+    allowoffers?: boolean | null;
+    shipping_length?: number | null;
+    shipping_width?: number | null;
+    shipping_height?: number | null;
+    dimensions_length?: number | null;
+    dimensions_width?: number | null;
+    dimensions_height?: number | null;
+    [key: string]: unknown;
+  }
+  const dataWithExtras = data as typeof data & ListingData;
+  const mappedData: typeof data & ListingData & { category?: string; categorySlug?: string; subcategory?: string; subcategorySlug?: string } = {
     ...data,
-    condition: data.state || data.condition,
-    allow_offers: data.allow_offers ?? data.allowoffers ?? true,
+    condition: data.state || dataWithExtras.condition || undefined,
+    allow_offers: data.allow_offers ?? dataWithExtras.allowoffers ?? true,
     shipping_via_ocaso: data.allow_shipping ?? false,
-    dimensions_length: data.shipping_length ?? data.dimensions_length,
-    dimensions_width: data.shipping_width ?? data.dimensions_width,
-    dimensions_height: data.shipping_height ?? data.dimensions_height,
+    dimensions_length: dataWithExtras.shipping_length ?? dataWithExtras.dimensions_length,
+    dimensions_width: dataWithExtras.shipping_width ?? dataWithExtras.dimensions_width,
+    dimensions_height: dataWithExtras.shipping_height ?? dataWithExtras.dimensions_height,
   };
 
   // Fetch category and subcategory names if IDs are present
@@ -188,8 +200,8 @@ export async function PUT(req: Request, { params }: Ctx) {
         const vehicleCategorySlugs = ['auto-motor', 'bedrijfswagens', 'camper-mobilhomes', 'motoren-en-scooters'];
         if (category?.slug && vehicleCategorySlugs.includes(category.slug)) {
           // Check if vehicle details already exist
-          const { data: existingVehicleDetails } = await supabase
-            .from("listing_vehicle_details")
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const { data: existingVehicleDetails } = await (supabase.from('listing_vehicle_details' as never) as any)
             .select("id")
             .eq("listing_id", params.id)
             .maybeSingle();
@@ -210,8 +222,8 @@ export async function PUT(req: Request, { params }: Ctx) {
           
           if (existingVehicleDetails) {
             // Update existing vehicle details
-            const { error: vehicleError } = await supabase
-              .from("listing_vehicle_details")
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { error: vehicleError } = await (supabase.from("listing_vehicle_details" as never) as any)
               .update(vehicleData)
               .eq("listing_id", params.id);
             
@@ -220,8 +232,8 @@ export async function PUT(req: Request, { params }: Ctx) {
             }
           } else {
             // Insert new vehicle details
-            const { error: vehicleError } = await supabase
-              .from("listing_vehicle_details")
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { error: vehicleError } = await (supabase.from("listing_vehicle_details" as never) as any)
               .insert(vehicleData);
             
             if (vehicleError) {

@@ -16,14 +16,14 @@ export async function GET(request: Request) {
 
   // Sponsored (optioneel, fallback: leeg)
   type Listing = {
-    id: number;
+    id: string;
     title: string;
     price: number;
     location?: string;
     state?: string;
     main_photo: string | null;
     images: string[];
-    created_at: string;
+    created_at: string | null;
     sponsored: boolean;
   };
 
@@ -40,16 +40,17 @@ export async function GET(request: Request) {
 
   type ImageField = string[] | null | undefined;
   interface RawListing {
-    id: number;
+    id: string;
     title: string;
     price: number;
     location?: string | null;
     state?: string | null;
     images?: ImageField;
     main_photo?: string | null;
-    created_at: string;
+    created_at: string | null;
+    status?: string;
   }
-  sponsored = (sponsoredData as RawListing[] | null | undefined ?? []).map((
+  sponsored = ((sponsoredData as unknown) as RawListing[] | null | undefined ?? []).map((
     l: RawListing,
   ) => ({
     id: l.id,
@@ -59,7 +60,7 @@ export async function GET(request: Request) {
     state: l.state ?? undefined,
     main_photo: (Array.isArray(l.images) && l.images.length ? l.images[0] : null),
     images: Array.isArray(l.images) ? l.images : [],
-    created_at: l.created_at,
+    created_at: l.created_at ?? '',
     sponsored: true,
   }));
 
@@ -85,7 +86,7 @@ export async function GET(request: Request) {
 
   console.log(`[HOME API] Recommended query result: ${data?.length || 0} items`);
 
-  const recommended = (data as RawListing[] | null | undefined ?? []).map((
+  const recommended = ((data as unknown) as RawListing[] | null | undefined ?? []).map((
     l: RawListing,
   ) => ({
     id: l.id,
@@ -95,7 +96,7 @@ export async function GET(request: Request) {
     state: l.state ?? undefined,
     main_photo: (Array.isArray(l.images) && l.images.length ? l.images[0] : null),
     images: Array.isArray(l.images) ? l.images : [],
-    created_at: l.created_at,
+    created_at: l.created_at ?? '',
     sponsored: false,
   }));
 

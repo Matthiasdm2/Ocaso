@@ -23,14 +23,23 @@ export async function GET(
       .eq("business_id", id)
       .maybeSingle();
 
-    if (dashboardStats && !dashboardError) {
+    interface DashboardStatsRow {
+      listings?: number | null;
+      avg_price?: number | null;
+      views?: number | null;
+      bids?: number | null;
+      followers?: number | null;
+    }
+    const statsData = dashboardStats as DashboardStatsRow | null;
+    
+    if (statsData && !dashboardError) {
       // Use pre-calculated stats from dashboard_stats table
       const stats = {
-        totalListings: dashboardStats.listings || 0,
-        avgPrice: dashboardStats.avg_price || 0,
-        views: dashboardStats.views || 0,
-        bids: dashboardStats.bids || 0,
-        followers: dashboardStats.followers || 0,
+        totalListings: statsData.listings || 0,
+        avgPrice: statsData.avg_price || 0,
+        views: statsData.views || 0,
+        bids: statsData.bids || 0,
+        followers: statsData.followers || 0,
         fallback: false,
         ...(debug ? { _debugSource: "dashboard_stats" } : {}),
       };

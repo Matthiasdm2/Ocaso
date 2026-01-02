@@ -87,8 +87,8 @@ export async function GET(request: Request) {
           
           const readMap = new Map<string, string | null>(reads?.map((r: { conversation_id: string; last_read_at: string | null }) => [r.conversation_id, r.last_read_at]) || []);
           total = (unreadMessages || []).filter((m: { conversation_id: string | null; created_at: string | null }) => {
-            const lastRead = readMap.get(m.conversation_id);
-            if (!lastRead) return true;
+            const lastRead = readMap.get(m.conversation_id || '');
+            if (!lastRead || !m.created_at) return true;
             try {
               const msgTime = new Date(m.created_at).getTime();
               const readTime = lastRead ? new Date(lastRead).getTime() : 0;

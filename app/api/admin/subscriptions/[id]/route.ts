@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { parseBusinessPlan, formatBusinessPlan } from "@/lib/subscription-helpers";
+import { parseBusinessPlan } from "@/lib/subscription-helpers";
 
 export const runtime = "nodejs";
 

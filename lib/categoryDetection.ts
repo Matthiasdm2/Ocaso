@@ -1373,7 +1373,6 @@ export function detectCategory(text: string): DetectedCategory | null {
     const contextualHints = detectContextualHints(text);
     
     let bestMatch: DetectedCategory | null = null;
-    let highestConfidence = 0;
     const matches: Array<{ match: DetectedCategory; confidence: number }> = [];
 
     // Zoek naar keyword matches

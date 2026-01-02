@@ -59,7 +59,6 @@ export async function DELETE(
     console.log(`🗑️ Attempting to delete user: ${params.id}`);
     
     let authUserDeleted = false;
-    let authError: Error | null = null;
     
     try {
         // Check if user exists first
@@ -80,7 +79,6 @@ export async function DELETE(
             const { error: deleteError } = await admin.auth.admin.deleteUser(params.id);
             
             if (deleteError) {
-                authError = deleteError as Error;
                 console.error("❌ Failed to delete auth user:", deleteError.message);
                 return NextResponse.json({ 
                     error: `Kon auth gebruiker niet verwijderen: ${deleteError.message}`,

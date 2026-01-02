@@ -6,7 +6,7 @@ export type VehiclePostingFormData = {
   // Add other fields as needed
 };
 
-export async function saveVehicleListing(userId: string, data: VehiclePostingFormData, listingId?: string): Promise<any> {
+export async function saveVehicleListing(userId: string, data: VehiclePostingFormData, listingId?: string): Promise<{ success: boolean }> {
   // Placeholder implementation
   console.log('saveVehicleListing called with:', { userId, data, listingId });
   return { success: true };

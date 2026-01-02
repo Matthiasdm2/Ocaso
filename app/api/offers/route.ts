@@ -25,7 +25,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Niet ingelogd" }, { status: 401 });
     }
 
-    const { error: insertErr } = await supabase.from("offers").insert({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: insertErr } = await (supabase.from("offers" as never) as any).insert({
       listing_id: listingId,
       bidder_id: user.id,
       amount: Number(amount),

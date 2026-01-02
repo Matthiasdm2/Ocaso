@@ -148,7 +148,7 @@ export async function POST(
     date: insertedData.created_at,
     author: (() => {
       const rawAuthor: unknown =
-        (inserted as unknown as { author?: unknown }).author;
+        (insertedData as unknown as { author?: unknown }).author;
       if (Array.isArray(rawAuthor)) {
         const first = rawAuthor[0] as { display_name?: string } | undefined;
         return first?.display_name || null;
@@ -160,7 +160,7 @@ export async function POST(
     })(),
     authorAvatar: (() => {
       const rawAuthor: unknown =
-        (inserted as unknown as { author?: unknown }).author;
+        (insertedData as unknown as { author?: unknown }).author;
       if (Array.isArray(rawAuthor)) {
         const first = rawAuthor[0] as { avatar_url?: string } | undefined;
         return first?.avatar_url || null;
@@ -205,7 +205,7 @@ export async function GET(
     created_at: string;
     author?: unknown;
   }
-  const items = (data as ReviewRow[] | null | undefined || []).map(
+  const items = ((data as unknown) as ReviewRow[] | null | undefined || []).map(
     (r: ReviewRow) => {
       const rawAuthor: unknown = (r as unknown as { author?: unknown }).author;
       let display: string | null = null;

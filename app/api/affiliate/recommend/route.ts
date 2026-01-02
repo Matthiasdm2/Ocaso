@@ -189,6 +189,7 @@ async function logAffiliateEvent(
   try {
     const supabase = supabaseServer();
     // affiliate_events table may not exist in Database types, use type assertion
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase.from('affiliate_events' as never) as any).insert({
       user_id: userId,
       event_type: eventType,

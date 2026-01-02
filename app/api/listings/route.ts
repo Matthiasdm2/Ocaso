@@ -213,8 +213,8 @@ export async function POST(request: Request) {
 
     // Create pending idempotency record
     console.log(`[api/listings] IDEMPOTENCY_CREATE - request_id: ${requestId}`);
-    const { error: idempotencyError } = await supabase
-      .from("listing_create_requests")
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: idempotencyError } = await (supabase.from("listing_create_requests" as never) as any)
       .insert([{
         request_id: requestId,
         user_id: user.id,

@@ -191,8 +191,8 @@ export async function POST(request: Request) {
   if (requestId !== 'unknown') {
     console.log(`[api/listings] IDEMPOTENCY_CHECK - request_id: ${requestId}`);
     
-    const { data: existingRequest } = await supabase
-      .from("listing_create_requests")
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: existingRequest } = await (supabase.from("listing_create_requests" as never) as any)
       .select("*")
       .eq("request_id", requestId)
       .eq("user_id", user.id)

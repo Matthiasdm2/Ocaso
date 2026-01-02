@@ -570,7 +570,7 @@ export async function POST(
             const { data: insLegacyFromNew, error: errLegacyFromNew } =
               await supabase
                 .from("message_attachments")
-                .insert(fallbacks)
+                .insert(fallbacks as never)
                 .select("id,message_id,url,content_type");
             if (errLegacyFromNew) {
               attachmentsError = errLegacyFromNew.message ||

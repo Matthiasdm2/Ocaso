@@ -339,8 +339,8 @@ export async function POST(request: Request) {
     
     // Mark idempotency record as failed
     if (requestId !== 'unknown') {
-      await supabase
-        .from("listing_create_requests")
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase.from("listing_create_requests" as never) as any)
         .update({ 
           status: 'failed', 
           error_message: error.message,
@@ -387,8 +387,8 @@ export async function POST(request: Request) {
       
       // Mark idempotency record as failed
       if (requestId !== 'unknown') {
-        await supabase
-          .from("listing_create_requests")
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (supabase.from("listing_create_requests" as never) as any)
           .update({ 
             status: 'failed', 
             error_message: "Failed to save vehicle details: " + vehicleError.message,
@@ -411,8 +411,8 @@ export async function POST(request: Request) {
 
   // Mark idempotency record as completed
   if (requestId !== 'unknown') {
-    await supabase
-      .from("listing_create_requests")
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase.from("listing_create_requests" as never) as any)
       .update({ 
         status: 'completed', 
         listing_id: listingId,

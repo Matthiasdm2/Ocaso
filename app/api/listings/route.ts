@@ -371,8 +371,8 @@ export async function POST(request: Request) {
       transmission: vehicleDetails.transmission as string | null || null,
     };
 
-    const { error: vehicleError } = await supabase
-      .from("listing_vehicle_details")
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: vehicleError } = await (supabase.from("listing_vehicle_details" as never) as any)
       .insert([vehiclePayload]);
 
     if (vehicleError) {

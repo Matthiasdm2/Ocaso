@@ -70,7 +70,7 @@ export async function GET(request: Request) {
           .contains("participants", [user.id]);
         
         if (conversations && conversations.length > 0) {
-          const conversationIds = conversations.map(c => c.id);
+          const conversationIds = conversations.map((c: { id: string }) => c.id);
           const { data: unreadMessages } = await supabase
             .from("messages")
             .select("id, conversation_id, sender_id, created_at")
@@ -85,10 +85,17 @@ export async function GET(request: Request) {
             .eq("user_id", user.id)
             .in("conversation_id", conversationIds);
           
-          const readMap = new Map(reads?.map(r => [r.conversation_id, r.last_read_at]) || []);
-          total = (unreadMessages || []).filter(m => {
+          const readMap = new Map<string, string | null>(reads?.map((r: { conversation_id: string; last_read_at: string | null }) => [r.conversation_id, r.last_read_at]) || []);
+          total = (unreadMessages || []).filter((m: { conversation_id: string; created_at: string }) => {
             const lastRead = readMap.get(m.conversation_id);
-            return !lastRead || new Date(m.created_at) > new Date(lastRead);
+            if (!lastRead) return true;
+            try {
+              const msgTime = new Date(m.created_at).getTime();
+              const readTime = lastRead ? new Date(lastRead).getTime() : 0;
+              return msgTime > readTime;
+            } catch {
+              return true;
+            }
           }).length;
         }
       } else {

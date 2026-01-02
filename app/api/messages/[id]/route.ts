@@ -557,7 +557,7 @@ export async function POST(
         }));
         const { data: insNew, error: errNew } = await supabase
           .from("message_attachments")
-          .insert(newRows)
+          .insert(newRows as never)
           .select("id,message_id,storage_path,mime_type,size_bytes");
         if (errNew && /column .*storage_path/i.test(errNew.message)) {
           // Table doesn't have new columns; fall back to legacy for these (requires url)
@@ -628,7 +628,7 @@ export async function POST(
         }));
         const { data: insOld, error: errOld } = await supabase
           .from("message_attachments")
-          .insert(legacyRows)
+          .insert(legacyRows as never)
           .select("id,message_id,url,content_type");
         if (
           errOld &&

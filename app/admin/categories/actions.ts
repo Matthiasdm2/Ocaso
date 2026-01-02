@@ -44,7 +44,7 @@ export async function createSubcategory(formData: FormData) {
 export async function toggleCategory(id: number, is_active: boolean) {
   const { error } = await supabaseServer()
     .from("categories")
-    .update({ is_active })
+    .update({ is_active } as never)
     .eq("id", id);
 
   if (error) return { ok: false, error: error.message };
@@ -55,7 +55,7 @@ export async function toggleCategory(id: number, is_active: boolean) {
 export async function toggleSubcategory(id: number, is_active: boolean) {
   const { error } = await supabaseServer()
     .from("subcategories")
-    .update({ is_active })
+    .update({ is_active } as never)
     .eq("id", id);
 
   if (error) return { ok: false, error: error.message };
@@ -66,7 +66,7 @@ export async function toggleSubcategory(id: number, is_active: boolean) {
 export async function reorderCategory(id: number, sort_order: number) {
   const { error } = await supabaseServer()
     .from("categories")
-    .update({ sort_order })
+    .update({ sort_order } as never)
     .eq("id", id);
 
   if (error) return { ok: false, error: error.message };
@@ -77,7 +77,7 @@ export async function reorderCategory(id: number, sort_order: number) {
 export async function reorderSubcategory(id: number, sort_order: number) {
   const { error } = await supabaseServer()
     .from("subcategories")
-    .update({ sort_order })
+    .update({ sort_order } as never)
     .eq("id", id);
 
   if (error) return { ok: false, error: error.message };
@@ -132,7 +132,7 @@ export async function importCategoriesFromJsonAction() {
     if (l2Payload.length) {
       const { error: insertError } = await supabaseServer()
         .from("subcategories")
-        .upsert(l2Payload, { onConflict: "category_id,slug" });
+        .upsert(l2Payload as never, { onConflict: "category_id,slug" });
 
       if (insertError) {
         throw new Error(insertError.message);

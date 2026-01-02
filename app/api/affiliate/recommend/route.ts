@@ -192,7 +192,7 @@ async function logAffiliateEvent(
       event_type: eventType,
       query,
       created_at: new Date().toISOString(),
-    });
+    } as never);
   } catch (error) {
     // Silently fail - don't impact user experience
     if (process.env.NODE_ENV === 'development') {

@@ -43,7 +43,7 @@ export async function POST(
   // Insert review
   const { data: inserted, error: insertErr } = await supabase
     .from("reviews")
-    .insert({ business_id: businessId, rating, comment, author_id: user.id })
+    .insert({ business_id: businessId, rating, comment, author_id: user.id } as never)
     .select(
       "id,rating,comment,created_at,author:profiles!reviews_author_id_fkey(display_name,avatar_url)",
     )
@@ -121,7 +121,7 @@ export async function POST(
         payload.reviews = reviewCount;
       }
       if (Object.keys(payload).length) {
-        await supabase.from("profiles").update(payload).eq("id", businessId);
+        await supabase.from("profiles").update(payload as never).eq("id", businessId);
       }
     }
   } catch (e) {

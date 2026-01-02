@@ -27,7 +27,7 @@ export async function GET(req: Request) {
   }
 
   // Get unique bidder_ids
-  const bidderIds = [...new Set((data ?? []).map((bid) => bid.bidder_id))];
+  const bidderIds = Array.from(new Set((data ?? []).map((bid) => bid.bidder_id)));
 
   // Fetch profiles for these bidder_ids
   const { data: profiles } = await supabase

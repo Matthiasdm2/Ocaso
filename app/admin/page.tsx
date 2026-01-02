@@ -29,7 +29,13 @@ export default async function AdminPage() {
     redirect("/");
   }
 
-  if (!profile?.is_admin) {
+  interface ProfileRow {
+    is_admin?: boolean | null;
+  }
+
+  const profileData = profile as ProfileRow | null;
+
+  if (!profileData?.is_admin) {
     // Instead of redirecting, show an error message
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">

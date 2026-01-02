@@ -139,7 +139,7 @@ type Category = {
   subcategories: Array<{ id: number; name: string; slug: string }>;
 };
 
-  let allCategories: Category[] = (categories as unknown as CategoryWithSubs[] | null)?.map((cat) => ({
+  const allCategories: Category[] = (categories as unknown as CategoryWithSubs[] | null)?.map((cat) => ({
     id: cat.id,
     name: cat.name,
     slug: cat.slug,

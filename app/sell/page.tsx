@@ -12,8 +12,8 @@ import PreviewModal from "@/components/PreviewModal";
 import ShippingFields from "@/components/ShippingFields";
 import { useToast } from "@/components/Toast";
 import Toggle from "@/components/Toggle";
-import { formatPrice } from "@/lib/formatPrice";
 import { detectCategorySmart } from "@/lib/categoryDetection";
+import { formatPrice } from "@/lib/formatPrice";
 import { createClient } from "@/lib/supabaseClient";
 
 import { VehicleDetailsSection } from "./components/VehicleDetailsSection";

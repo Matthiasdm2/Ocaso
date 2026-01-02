@@ -44,18 +44,32 @@ export async function GET(req: Request) {
             return NextResponse.json({ error: "No data returned" }, { status: 400 });
         }
         
+        interface UserRow {
+            id: string;
+            full_name?: string | null;
+            display_name?: string | null;
+            email?: string | null;
+            business_plan?: string | null;
+            account_type?: string | null;
+            is_admin?: boolean | null;
+            is_business?: boolean | null;
+            avatar_url?: string | null;
+            created_at?: string | null;
+            updated_at?: string | null;
+        }
+
         // Debug logging
         if (subscriptions) {
             console.log("Admin users query result:", data.length, "users");
-            const testUser = data.find((u: any) => u.id === "ceff7855-beed-4d1e-9b93-83cfca0ad3e0");
+            const testUser = (data as unknown as UserRow[]).find((u) => u.id === "ceff7855-beed-4d1e-9b93-83cfca0ad3e0");
             if (testUser) {
-                console.log("Test user business_plan:", (testUser as any).business_plan);
+                console.log("Test user business_plan:", testUser.business_plan);
             }
         }
 
         // Als subscriptions mode, voeg subscription_active toe gebaseerd op business_plan
         if (subscriptions && data) {
-            const enrichedData = data.map((user: any) => {
+            const enrichedData = (data as unknown as UserRow[]).map((user) => {
                 const hasBusinessPlan = !!(user.business_plan && String(user.business_plan).trim() !== '');
                 
                 return {

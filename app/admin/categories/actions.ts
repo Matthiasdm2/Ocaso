@@ -17,10 +17,9 @@ export async function createCategory(formData: FormData) {
   const slug = formData.get("slug") as string;
   const sort_order = Number(formData.get("sort_order") || 0);
 
-  const sb = supabaseServer();
-  const { error } = await sb
+  const { error } = await supabaseServer()
     .from("categories")
-    .insert({ name, slug, sort_order, is_active: true });
+    .insert({ name, slug, sort_order, is_active: true } as never);
 
   if (error) return { ok: false, error: error.message };
   revalidatePath("/admin/categories");
@@ -33,10 +32,9 @@ export async function createSubcategory(formData: FormData) {
   const sort_order = Number(formData.get("sort_order") || 0);
   const category_id = Number(formData.get("category_id"));
 
-  const sb = supabaseServer();
-  const { error } = await sb
+  const { error } = await supabaseServer()
     .from("subcategories")
-    .insert({ name, slug, sort_order, is_active: true, category_id });
+    .insert({ name, slug, sort_order, is_active: true, category_id } as never);
 
   if (error) return { ok: false, error: error.message };
   revalidatePath("/admin/categories");
@@ -44,8 +42,7 @@ export async function createSubcategory(formData: FormData) {
 }
 
 export async function toggleCategory(id: number, is_active: boolean) {
-  const sb = supabaseServer();
-  const { error } = await sb
+  const { error } = await supabaseServer()
     .from("categories")
     .update({ is_active })
     .eq("id", id);
@@ -56,8 +53,7 @@ export async function toggleCategory(id: number, is_active: boolean) {
 }
 
 export async function toggleSubcategory(id: number, is_active: boolean) {
-  const sb = supabaseServer();
-  const { error } = await sb
+  const { error } = await supabaseServer()
     .from("subcategories")
     .update({ is_active })
     .eq("id", id);
@@ -68,8 +64,7 @@ export async function toggleSubcategory(id: number, is_active: boolean) {
 }
 
 export async function reorderCategory(id: number, sort_order: number) {
-  const sb = supabaseServer();
-  const { error } = await sb
+  const { error } = await supabaseServer()
     .from("categories")
     .update({ sort_order })
     .eq("id", id);
@@ -80,8 +75,7 @@ export async function reorderCategory(id: number, sort_order: number) {
 }
 
 export async function reorderSubcategory(id: number, sort_order: number) {
-  const sb = supabaseServer();
-  const { error } = await sb
+  const { error } = await supabaseServer()
     .from("subcategories")
     .update({ sort_order })
     .eq("id", id);
@@ -98,10 +92,8 @@ export async function importCategoriesFromJsonAction() {
     const categoriesPath = path.join(process.cwd(), "data", "categories.json");
     const categoriesData = JSON.parse(fs.readFileSync(categoriesPath, "utf-8"));
 
-    const sb = supabaseServer();
-
     // First, get existing categories
-    const { data: existingCats, error: catError } = await sb
+    const { data: existingCats, error: catError } = await supabaseServer()
       .from("categories")
       .select("id, slug");
 
@@ -138,7 +130,7 @@ export async function importCategoriesFromJsonAction() {
 
     // Insert/update L2 subcategories
     if (l2Payload.length) {
-      const { error: insertError } = await sb
+      const { error: insertError } = await supabaseServer()
         .from("subcategories")
         .upsert(l2Payload, { onConflict: "category_id,slug" });
 

@@ -6,8 +6,8 @@ import {
   getStripeWebhookSecret,
   getSupabaseServiceRoleKey,
 } from "@/lib/env";
-import { supabaseServiceRole } from "@/lib/supabaseServiceRole";
 import { formatBusinessPlan } from "@/lib/subscription-helpers";
+import { supabaseServiceRole } from "@/lib/supabaseServiceRole";
 
 export const runtime = "nodejs"; // ensure Node runtime for raw body
 

@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 
-import { supabase } from "@/lib/supabaseClient";
+import { createClient } from "@/lib/supabaseClient";
+
+const supabase = createClient();
 
 import {
     createCategory,

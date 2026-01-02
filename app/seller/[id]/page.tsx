@@ -1,4 +1,3 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -8,7 +7,6 @@ import BusinessReviewsSection from "@/components/BusinessReviewsSection";
 import ListingCard from "@/components/ListingCard";
 import RatingStars from "@/components/RatingStars";
 import SellerSectionNav from "@/components/SellerSectionNav";
-import { formatPrice } from "@/lib/formatPrice";
 import { supabaseServer } from "@/lib/supabaseServer";
 
 export const dynamic = 'force-dynamic';
@@ -52,7 +50,19 @@ interface PublicProfile {
   } | null;
 }
 
-async function fetchProfile(id: string): Promise<{ data: PublicProfile | null; error?: Error; reviews?: Review[]; listings?: any[] }> {
+interface ListingRow {
+  id: string;
+  title?: string | null;
+  price?: number | null;
+  images?: string[] | null;
+  created_at?: string | null;
+  views?: number | null;
+  favorites_count?: number | null;
+  status?: string | null;
+  seller_id?: string | null;
+}
+
+async function fetchProfile(id: string): Promise<{ data: PublicProfile | null; error?: Error; reviews?: Review[]; listings?: ListingRow[] }> {
   const supabase = supabaseServer();
   
   try {
@@ -99,17 +109,17 @@ async function fetchProfile(id: string): Promise<{ data: PublicProfile | null; e
       .order("created_at", { ascending: false })
       .limit(120);
     
-    const listings = (sellerListings || []).map((l: any) => ({
+    const listings = (sellerListings || []).map((l: ListingRow) => ({
       ...l,
       favorites: l.favorites_count != null ? l.favorites_count : 0,
       status: l.status === 'actief' ? 'active' : l.status,
     }));
     
-    const listingIds = listings.map((l: any) => l.id).filter(Boolean);
+    const listingIds = listings.map((l) => l.id).filter(Boolean);
     const listingTitles = new Map(
       listings
-        .filter((l: any) => l.id && l.title)
-        .map((l: any) => [l.id, l.title])
+        .filter((l) => l.id && l.title)
+        .map((l) => [l.id, l.title])
     );
     
     // Haal reviews op met volledige informatie
@@ -127,7 +137,16 @@ async function fetchProfile(id: string): Promise<{ data: PublicProfile | null; e
         .limit(200);
       
       // Listing reviews
-      let listingReviewsData: any[] = [];
+      interface ReviewRow {
+        id: string;
+        rating?: number | null;
+        comment?: string | null;
+        created_at?: string | null;
+        listing_id?: string | null;
+        business_id?: string | null;
+        author_id?: string | null;
+      }
+      let listingReviewsData: ReviewRow[] = [];
       if (listingIds.length > 0) {
         const { data: listingReviews } = await supabase
           .from("reviews")
@@ -135,7 +154,7 @@ async function fetchProfile(id: string): Promise<{ data: PublicProfile | null; e
           .in("listing_id", listingIds)
           .order("created_at", { ascending: false })
           .limit(400);
-        listingReviewsData = listingReviews || [];
+        listingReviewsData = (listingReviews || []) as ReviewRow[];
       }
       
       // Combineer en dedupliceer reviews
@@ -161,7 +180,13 @@ async function fetchProfile(id: string): Promise<{ data: PublicProfile | null; e
           .select("id, full_name, display_name, avatar_url")
           .in("id", authorIds);
         
-        reviewers?.forEach((profile: any) => {
+        interface ReviewerProfile {
+          id: string;
+          full_name?: string | null;
+          display_name?: string | null;
+          avatar_url?: string | null;
+        }
+        (reviewers || []).forEach((profile: ReviewerProfile) => {
           reviewerMap.set(profile.id, {
             full_name: profile.full_name,
             display_name: profile.display_name,
@@ -171,7 +196,7 @@ async function fetchProfile(id: string): Promise<{ data: PublicProfile | null; e
       }
       
       // Map naar Review interface
-      reviews = uniqueReviews.map((r: any): Review => {
+      reviews = uniqueReviews.map((r: ReviewRow): Review => {
         const reviewer = reviewerMap.get(r.author_id) || {};
         const reviewerName = reviewer.display_name || reviewer.full_name || "Anonieme koper";
         const reviewerAvatar = reviewer.avatar_url || null;
@@ -496,7 +521,7 @@ export default async function PublicSellerProfile({ params }: { params: { id: st
             {listings.length > 0 ? (
               <>
                 <ul className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3 md:gap-4">
-                  {listings.slice(0, 20).map((listing: any) => (
+                  {listings.slice(0, 20).map((listing) => (
                     <li key={listing.id}>
                       <ListingCard listing={listing} compact />
                     </li>

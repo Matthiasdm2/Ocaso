@@ -1,25 +1,25 @@
-import React from 'react';
 // eslint-disable-next-line import/no-unresolved
 import {
-  IconCar,
-  IconMotorbike,
-  IconHome,
-  IconBriefcase,
-  IconTool,
-  IconDeviceDesktop,
-  IconDeviceMobile,
-  IconShirt,
-  IconBallBasketball,
   IconBabyCarriage,
-  IconPaw,
-  IconTicket,
-  IconSettings,
-  IconLeaf,
-  IconDeviceTv,
+  IconBallBasketball,
+  IconBriefcase,
+  IconCar,
+  IconDeviceDesktop,
   IconDeviceGamepad,
-  IconSailboat,
+  IconDeviceMobile,
+  IconDeviceTv,
   IconDots,
+  IconHome,
+  IconLeaf,
+  IconMotorbike,
+  IconPaw,
+  IconSailboat,
+  IconSettings,
+  IconShirt,
+  IconTicket,
+  IconTool,
 } from '@tabler/icons-react';
+import React from 'react';
 
 interface CategoryIconProps {
   iconKey: string | null;

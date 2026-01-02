@@ -2,7 +2,9 @@
 import { Eye } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import { supabase } from "../lib/supabaseClient";
+import { createClient } from "../lib/supabaseClient";
+
+const supabase = createClient();
 import FavoriteButton from "./FavoriteButton";
 
 export default function ListingStats({ id, views = 0, favorites = 0 }: { id: string; views?: number; favorites?: number }) {

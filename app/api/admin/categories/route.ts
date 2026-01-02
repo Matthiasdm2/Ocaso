@@ -35,13 +35,28 @@ export async function GET() {
         }
 
         // Transformeer de data naar het formaat dat de frontend verwacht
-        const categories = (data || []).map((cat: any) => ({
+        interface CategoryRow {
+            id: number;
+            name: string;
+            slug: string;
+            sort_order?: number | null;
+            is_active?: boolean | null;
+            subcategories?: Array<{
+                id: number;
+                name: string;
+                slug: string;
+                sort_order?: number | null;
+                is_active?: boolean | null;
+                category_id: number;
+            }>;
+        }
+        const categories = (data || []).map((cat: CategoryRow) => ({
             id: cat.id,
             name: cat.name,
             slug: cat.slug,
             sort_order: cat.sort_order || 0,
             is_active: cat.is_active !== false,
-            subs: (cat.subcategories || []).map((sub: any) => ({
+            subs: (cat.subcategories || []).map((sub) => ({
                 id: sub.id,
                 name: sub.name,
                 slug: sub.slug,

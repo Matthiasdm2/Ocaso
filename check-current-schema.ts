@@ -1,5 +1,5 @@
-import { createClient } from '@/lib/supabaseClient';
 import type { Category, SubCategory, VehicleBrand } from '@/lib/services/category.service';
+import { createClient } from '@/lib/supabaseClient';
 
 async function analyzeCurrentSchema() {
   console.log("=== SUPABASE SCHEMA AUDIT (via app client) ===\n");

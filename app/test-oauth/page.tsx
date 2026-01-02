@@ -1,13 +1,25 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@/lib/supabaseClient";
+
 import { getBaseUrl } from "@/lib/getBaseUrl";
+import { createClient } from "@/lib/supabaseClient";
+
+interface OAuthDetails {
+  provider?: string;
+  user?: unknown;
+  error?: string;
+}
+
+interface OAuthComparison {
+  expected?: string;
+  actual?: string;
+}
 
 export default function TestOAuthPage() {
   const [status, setStatus] = useState<string>("");
-  const [details, setDetails] = useState<any>(null);
-  const [comparison, setComparison] = useState<any>(null);
+  const [details, setDetails] = useState<OAuthDetails | null>(null);
+  const [comparison, setComparison] = useState<OAuthComparison | null>(null);
   const supabase = createClient();
   const siteUrl = getBaseUrl();
 
@@ -271,7 +283,7 @@ export default function TestOAuthPage() {
             </li>
             <li><strong>Check Google OAuth Consent Screen:</strong>
               <ul className="list-disc list-inside ml-4 mt-1">
-                <li>Moet gepubliceerd zijn of in "Testing" mode</li>
+                <li>Moet gepubliceerd zijn of in &quot;Testing&quot; mode</li>
                 <li>Als Testing: voeg jezelf toe als test user</li>
               </ul>
             </li>

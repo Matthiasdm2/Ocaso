@@ -7,9 +7,17 @@ if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_
   console.warn('⚠️ Supabase server environment variables not set. Using placeholder values.');
 }
 
-export const supabaseServer = createSupabaseClient(supabaseUrl, supabaseServiceRoleKey, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false
-  }
-});
+let _serverClient: ReturnType<typeof createSupabaseClient> | null = null;
+
+export function supabaseServer() {
+  if (_serverClient) return _serverClient;
+  
+  _serverClient = createSupabaseClient(supabaseUrl, supabaseServiceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  });
+  
+  return _serverClient;
+}

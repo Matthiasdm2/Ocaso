@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
-import { supabaseAdmin } from "@/lib/supabase/server";
 import { parseBusinessPlan } from "@/lib/subscription-helpers";
+import { supabaseAdmin } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 
@@ -16,20 +16,6 @@ export async function PUT(
         console.log("Updating subscription:", { id: params.id, business_plan });
 
         const admin = supabaseAdmin();
-        
-        // Haal eerst bestaande business_plan op
-        const { data: currentProfile, error: profileError } = await admin
-            .from("profiles")
-            .select("business_plan")
-            .eq("id", params.id)
-            .maybeSingle();
-        
-        if (profileError) {
-            return NextResponse.json({ error: profileError.message }, { status: 400 });
-        }
-        
-        // Gebruik lege object als fallback (business kolom bestaat mogelijk niet)
-        const existingBusiness: Record<string, unknown> = {};
         
         // Parse business_plan naar plan en billing voor business JSONB
         const parsed = parseBusinessPlan(business_plan);
@@ -52,7 +38,6 @@ export async function PUT(
             // Als business_plan wordt verwijderd, zet subscription_active op false
             // Behoud plan en billing_cycle voor historie (zoals webhook zou doen)
             updateData.business = {
-                ...existingBusiness, // Behoud bestaande velden
                 subscription_active: false,
                 subscription_updated_at: new Date().toISOString(),
             };
@@ -60,8 +45,7 @@ export async function PUT(
 
         console.log("Updating subscription data:", { id: params.id, updateData });
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { data: updateResult, error: updateError } = await (admin as any)
+        const { data: updateResult, error: updateError } = await admin
             .from("profiles")
             .update(updateData)
             .eq("id", params.id)

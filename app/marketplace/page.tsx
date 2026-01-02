@@ -10,7 +10,6 @@ import RatingStars from "@/components/RatingStars";
 import Tooltip from "@/components/Tooltip";
 import { formatPrice } from "@/lib/formatPrice";
 import { supabaseServer } from "@/lib/supabaseServer";
-import { getCategoriesWithSubcategories } from "@/lib/services/category.service";
 import type { Category, Listing as BaseListing, Subcategory } from "@/lib/types";
 
 import CollapsibleContainer from "../../components/CollapsibleContainer";
@@ -19,7 +18,6 @@ import ListingCard from "../../components/ListingCard";
 export const dynamic = 'force-dynamic';
 
 const ListingImageSlider = dynamicImport(() => import("@/components/ListingImageSlider"), { ssr: false });
-const ListingCardStats = dynamicImport(() => import("@/components/ListingCardStats"), { ssr: false });
 
 type Listing = BaseListing & {
   category_id?: number;

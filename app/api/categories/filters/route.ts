@@ -62,9 +62,27 @@ export async function GET(request: Request) {
       filters: filters?.map(f => ({ key: f.filter_key || f.filter_key, label: f.filter_label || f.label }))
     });
 
+    interface FilterRow {
+      sort_order?: number | null;
+      display_order?: number | null;
+      filter_key?: string;
+      filter_label?: string;
+      label?: string;
+      filter_options?: unknown;
+      options?: unknown;
+      is_range?: boolean;
+      input_type?: string;
+      filter_type?: string;
+      min_value?: number | null;
+      max_value?: number | null;
+      validation?: { min?: number; max?: number };
+      placeholder?: string | null;
+      id?: number;
+    }
+
     // Sort by sort_order or display_order, whichever exists
     if (filters && filters.length > 0) {
-      filters.sort((a: any, b: any) => {
+      filters.sort((a: FilterRow, b: FilterRow) => {
         const orderA = a.sort_order ?? a.display_order ?? 0;
         const orderB = b.sort_order ?? b.display_order ?? 0;
         return orderA - orderB;
@@ -81,7 +99,7 @@ export async function GET(request: Request) {
 
     // Transform database format to expected frontend format
     // Handle both schema formats: marketplace (filter_label) and sell page (label)
-    const transformedFilters = filters.map((filter, index) => {
+    const transformedFilters = (filters as FilterRow[]).map((filter, index) => {
       // Check which schema format we have
       const hasFilterLabel = 'filter_label' in filter;
       const hasLabel = 'label' in filter;
@@ -94,13 +112,13 @@ export async function GET(request: Request) {
         // Marketplace schema: filter_options is JSONB array
         if (Array.isArray(filter.filter_options)) {
           // Already an array - use directly
-          filterOptions = filter.filter_options.filter((opt: any) => opt !== null && opt !== undefined);
+          filterOptions = filter.filter_options.filter((opt: unknown) => opt !== null && opt !== undefined) as string[];
         } else if (typeof filter.filter_options === 'string') {
           // JSON string - parse it
           try {
             const parsed = JSON.parse(filter.filter_options);
             if (Array.isArray(parsed)) {
-              filterOptions = parsed.filter((opt: any) => opt !== null && opt !== undefined);
+              filterOptions = parsed.filter((opt: unknown) => opt !== null && opt !== undefined) as string[];
             }
           } catch (e) {
             console.warn('[VEHICLE_FILTERS_API] Failed to parse filter_options string:', filter.filter_options, e);
@@ -115,18 +133,19 @@ export async function GET(request: Request) {
         if (Array.isArray(filter.options)) {
           // Extract value or label from option objects
           filterOptions = filter.options
-            .filter((opt: any) => opt !== null && opt !== undefined)
-            .map((opt: any) => {
+            .filter((opt: unknown) => opt !== null && opt !== undefined)
+            .map((opt: unknown) => {
               if (typeof opt === 'string') return opt;
-              return opt.value || opt.label || String(opt);
+              const optObj = opt as { value?: string; label?: string };
+              return optObj.value || optObj.label || String(opt);
             });
         } else if (typeof filter.options === 'string') {
           try {
             const parsed = JSON.parse(filter.options);
             if (Array.isArray(parsed)) {
               filterOptions = parsed
-                .filter((opt: any) => opt !== null && opt !== undefined)
-                .map((opt: any) => typeof opt === 'string' ? opt : (opt.value || opt.label || String(opt)));
+                .filter((opt: unknown) => opt !== null && opt !== undefined)
+                .map((opt: unknown) => typeof opt === 'string' ? opt : ((opt as { value?: string; label?: string }).value || (opt as { value?: string; label?: string }).label || String(opt)));
             }
           } catch (e) {
             console.warn('[VEHICLE_FILTERS_API] Failed to parse options string:', filter.options, e);

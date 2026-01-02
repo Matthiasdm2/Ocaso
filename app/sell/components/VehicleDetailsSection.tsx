@@ -143,8 +143,6 @@ export function VehicleDetailsSection({
         {filters.map((filter) => {
           const filterKey = filter.filter_key;
           const currentValue = vehicleDetails[filterKey] || "";
-          const currentMin = vehicleDetails[`${filterKey}_min`] || "";
-          const currentMax = vehicleDetails[`${filterKey}_max`] || "";
           
           // Debug logging for each filter
           console.log(`[VehicleDetailsSection] Filter: ${filterKey}, Label: ${filter.filter_label}, Value:`, currentValue, 'All vehicleDetails:', vehicleDetails);

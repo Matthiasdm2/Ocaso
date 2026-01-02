@@ -1,11 +1,8 @@
 // components/ListingCard.tsx
-import dynamic from "next/dynamic";
 import Link from "next/link";
 
-import { formatPrice } from "@/lib/formatPrice";
 import RatingStars from "@/components/RatingStars";
-
-const ListingCardStats = dynamic(() => import("@/components/ListingCardStats"), { ssr: false, loading: () => null });
+import { formatPrice } from "@/lib/formatPrice";
 
 type Listing = {
   id: string;

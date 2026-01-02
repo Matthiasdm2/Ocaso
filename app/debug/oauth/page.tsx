@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabaseClient";
+
 import { getBaseUrl } from "@/lib/getBaseUrl";
+import { createClient } from "@/lib/supabaseClient";
 
 export default function OAuthDebugPage() {
   const [info, setInfo] = useState<string[]>([]);
@@ -80,7 +81,7 @@ export default function OAuthDebugPage() {
         <ol className="list-decimal list-inside space-y-1 text-sm">
           <li>Controleer of de redirect URL overeenkomt met wat er in Supabase Dashboard staat</li>
           <li>Ga naar Supabase Dashboard → Authentication → URL Configuration</li>
-          <li>Zorg dat "Redirect URLs" bevat: <code className="bg-gray-200 px-1">{typeof window !== 'undefined' ? window.location.origin : siteUrl}/auth/callback</code></li>
+          <li>Zorg dat &quot;Redirect URLs&quot; bevat: <code className="bg-gray-200 px-1">{typeof window !== 'undefined' ? window.location.origin : siteUrl}/auth/callback</code></li>
           <li>Voor Google: Zorg dat Google Cloud Console → Authorized redirect URIs bevat: <code className="bg-gray-200 px-1">https://dmnowaqinfkhovhyztan.supabase.co/auth/v1/callback</code></li>
           <li>Voor Facebook: Zorg dat Facebook App → Valid OAuth Redirect URIs bevat: <code className="bg-gray-200 px-1">https://dmnowaqinfkhovhyztan.supabase.co/auth/v1/callback</code></li>
         </ol>

@@ -74,7 +74,14 @@ export default function MarketplaceFilters() {
           console.log('[VEHICLE_FILTERS_DEBUG] API Response data:', data);
           if (data.filters && Array.isArray(data.filters)) {
             // Debug: log each filter
-            data.filters.forEach((f: any) => {
+            interface FilterData {
+              filter_key?: string;
+              filter_label?: string;
+              input_type?: string;
+              is_range?: boolean;
+              filter_options?: string[];
+            }
+            data.filters.forEach((f: FilterData) => {
               console.log('[VEHICLE_FILTERS_DEBUG] Filter:', {
                 key: f.filter_key,
                 label: f.filter_label,

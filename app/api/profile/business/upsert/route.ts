@@ -1,9 +1,9 @@
 export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 
+import { isSubscriptionActive } from "@/lib/subscription-helpers";
 import { supabaseServer } from "@/lib/supabaseServer";
 import { supabaseServiceRole } from "@/lib/supabaseServiceRole";
-import { isSubscriptionActive } from "@/lib/subscription-helpers";
 
 export const dynamic = "force-dynamic";
 

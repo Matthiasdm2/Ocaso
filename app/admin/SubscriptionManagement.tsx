@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+
 import ConfirmationModal from "@/components/admin/ConfirmationModal";
 
 type User = {

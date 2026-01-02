@@ -3,8 +3,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
-import type { Listing } from "@/lib/types";
 import { formatPrice } from "@/lib/formatPrice";
+import type { Listing } from "@/lib/types";
 
 export default function HighlightedSlider({
   catName,

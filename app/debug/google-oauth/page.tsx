@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@/lib/supabaseClient";
+
 import { getBaseUrl } from "@/lib/getBaseUrl";
+import { createClient } from "@/lib/supabaseClient";
 
 export default function GoogleOAuthDebugPage() {
   const [logs, setLogs] = useState<string[]>([]);

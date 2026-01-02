@@ -51,10 +51,6 @@ type Bid = {
   bidder_name?: string;
 };
 
-function formatCurrency(v?: number | null, ccy = 'EUR') {
-  if (v == null) return '—';
-  return new Intl.NumberFormat('nl-BE', { style: 'currency', currency: ccy }).format(v);
-}
 function sum(arr: Array<number | null | undefined>) {
   return arr.reduce((acc: number, x) => acc + (x ?? 0), 0);
 }
@@ -1079,15 +1075,6 @@ function StatCard({ label, value }: { label: string; value: number | string }) {
       <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-emerald-700">{label}</div>
       <div className="mt-1 text-2xl font-bold tracking-tight">{value}</div>
       <div className="mt-2 h-1 w-12 rounded-full bg-gradient-to-r from-emerald-600 to-emerald-400" />
-    </div>
-  );
-}
-
-function Metric({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div className="rounded-lg border bg-neutral-50 p-2">
-      <div className="text-[11px] font-semibold uppercase tracking-wide text-neutral-600">{label}</div>
-      <div className="mt-1 text-sm font-medium">{value}</div>
     </div>
   );
 }

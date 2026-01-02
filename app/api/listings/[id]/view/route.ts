@@ -96,13 +96,14 @@ export async function POST(
           // ignore rpc error and fall back
         }
         if (rpcData) {
-          if (typeof rpcData === "number") views = Number(rpcData);
-          else if (Array.isArray(rpcData) && rpcData.length) {
-            const first = rpcData[0];
+          const rpcDataTyped = rpcData as unknown;
+          if (typeof rpcDataTyped === "number") views = Number(rpcDataTyped);
+          else if (Array.isArray(rpcDataTyped) && rpcDataTyped.length) {
+            const first = rpcDataTyped[0];
             if (typeof first === "number") views = first;
-            else views = Number(Object.values(first)[0]) || null;
-          } else if (rpcData && typeof rpcData === "object") {
-            const val = Object.values(rpcData)[0];
+            else views = Number(Object.values(first as Record<string, unknown>)[0]) || null;
+          } else if (rpcDataTyped && typeof rpcDataTyped === "object") {
+            const val = Object.values(rpcDataTyped as Record<string, unknown>)[0];
             views = typeof val === "number" ? val : Number(val) || null;
           }
         }

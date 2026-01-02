@@ -85,7 +85,7 @@ export async function POST(request: Request) {
   try {
     await supabase
       .from('messages')
-      .insert({ conversation_id: conversationId, sender_id: buyerId, body: 'Betaald — label werd aangevraagd.' })
+      .insert({ conversation_id: conversationId, sender_id: buyerId, body: 'Betaald — label werd aangevraagd.' } as never)
       .select('id')
       .single();
   } catch { /* ignore */ }

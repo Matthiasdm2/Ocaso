@@ -17,7 +17,7 @@ export type Category = {
   id: string;
   name: string;
   slug: string;
-  icon_url: string | null;
+  icon_key: string | null;
   is_active: boolean;
   sort_order: number;
   created_at: string;
@@ -58,13 +58,19 @@ export async function getCategoriesWithSubcategories(): Promise<Category[]> {
     return cached.data as Category[];
   }
 
+  // Check if Supabase is configured
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    console.warn('Supabase not configured, returning empty categories');
+    return [];
+  }
+
   try {
     const supabase = createClient();
     
     // Using the view created in migrations for optimized query
     const { data, error } = await supabase
       .from('categories_with_subcategories')
-      .select('*')
+      .select('id,name,slug,icon_key,is_active,sort_order,created_at,subcategories')
       .order('sort_order', { ascending: true });
 
     if (error) {
@@ -76,7 +82,7 @@ export async function getCategoriesWithSubcategories(): Promise<Category[]> {
     id: string | number;
     name: string;
     slug: string;
-    icon_url: string | null;
+    icon_key: string | null;
     is_active: boolean;
     sort_order: number;
     created_at: string;
@@ -86,7 +92,7 @@ export async function getCategoriesWithSubcategories(): Promise<Category[]> {
     id: String(row.id),
     name: String(row.name),
     slug: String(row.slug),
-    icon_url: row.icon_url ? String(row.icon_url) : null,
+    icon_key: row.icon_key ? String(row.icon_key) : null,
     is_active: Boolean(row.is_active),
     sort_order: Number(row.sort_order),
     created_at: String(row.created_at),
@@ -119,12 +125,18 @@ export async function getCategories(): Promise<Omit<Category, 'subcategories'>[]
     return cached.data as Omit<Category, 'subcategories'>[];
   }
 
+  // Check if Supabase is configured
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    console.warn('Supabase not configured, returning empty categories');
+    return [];
+  }
+
   try {
     const supabase = createClient();
     
     const { data, error } = await supabase
       .from('categories')
-      .select('id,name,slug,icon_url,is_active,sort_order,created_at')
+      .select('id,name,slug,icon_key,is_active,sort_order,created_at')
       .eq('is_active', true)
       .order('sort_order', { ascending: true });
 

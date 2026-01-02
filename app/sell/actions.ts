@@ -12,7 +12,7 @@ import {
   saveVehicleListing,
   validateVehiclePosting,
   type VehiclePostingFormData,
-} from '@/lib/vehicle';
+} from '@/lib/vehicle/index';
 
 /**
  * Create or update a vehicle listing
@@ -29,7 +29,7 @@ export async function saveVehicleListingAction(
   validationErrors?: Record<string, string>;
 }> {
   try {
-    const supabase = supabaseServer();
+    const supabase = supabaseServer;
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -42,7 +42,7 @@ export async function saveVehicleListingAction(
     }
 
     // Validate vehicle data
-  const validationErrors = validateVehiclePosting(formData.vehicleType || "", formData);
+  const validationErrors = validateVehiclePosting();
     if (validationErrors) {
       return {
         success: false,
@@ -102,7 +102,7 @@ export async function saveTraditionalListingAction(formData: {
   listingId?: string;
 }> {
   try {
-    const supabase = supabaseServer();
+    const supabase = supabaseServer;
     const {
       data: { user },
     } = await supabase.auth.getUser();

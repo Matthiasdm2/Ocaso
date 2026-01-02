@@ -23,12 +23,14 @@ export async function GET(req: Request) {
         // Haal alle relevante velden op (zonder business kolom als deze niet bestaat)
         const { data, error } = await admin
             .from("profiles")
-            .select("id, email, full_name, business_plan, updated_at")
+            .select("id, email, full_name, business_plan")
             .eq("id", userId)
             .single();
 
-        if (error) {
-            return NextResponse.json({ error: error.message }, { status: 400 });
+        if (error || !data) {
+            return NextResponse.json({ 
+                error: error?.message || "Profile not found" 
+            }, { status: 400 });
         }
 
         return NextResponse.json({
@@ -38,7 +40,6 @@ export async function GET(req: Request) {
                 email: data.email,
                 full_name: data.full_name,
                 business_plan: data.business_plan,
-                updated_at: data.updated_at,
             },
         });
     } catch (error) {

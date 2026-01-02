@@ -17,14 +17,19 @@ export async function PUT(
 
         const admin = supabaseAdmin();
         
-        // Haal eerst bestaande business JSONB op om te mergen
-        const { data: currentProfile } = await admin
+        // Haal eerst bestaande business_plan op
+        const { data: currentProfile, error: profileError } = await admin
             .from("profiles")
-            .select("business")
+            .select("business_plan")
             .eq("id", params.id)
             .maybeSingle();
         
-        const existingBusiness = (currentProfile?.business as Record<string, unknown>) || {};
+        if (profileError) {
+            return NextResponse.json({ error: profileError.message }, { status: 400 });
+        }
+        
+        // Gebruik lege object als fallback (business kolom bestaat mogelijk niet)
+        const existingBusiness: Record<string, unknown> = {};
         
         // Parse business_plan naar plan en billing voor business JSONB
         const parsed = parseBusinessPlan(business_plan);
@@ -68,81 +73,37 @@ export async function PUT(
             return NextResponse.json({ error: updateError.message }, { status: 400 });
         }
 
-        const { data, error: finalError } = { data: updateResult, error: null };
-
-        if (finalError) {
-            console.error("Error updating subscription:", finalError);
-            return NextResponse.json({ error: finalError.message }, { status: 400 });
+        // Check if update was successful
+        if (!updateResult) {
+            return NextResponse.json({ 
+                error: "Failed to update subscription" 
+            }, { status: 400 });
         }
+        
+        const data = updateResult;
 
         console.log("Update successful:", data);
         
         // Verifieer dat de update correct is door de data opnieuw op te halen
-        // Wacht even om zeker te zijn dat de database write compleet is
         await new Promise(resolve => setTimeout(resolve, 100));
         
         const { data: verifyData, error: verifyError } = await admin
             .from("profiles")
-            .select("id, business_plan, business")
+            .select("id, business_plan")
             .eq("id", params.id)
             .single();
         
-        if (verifyError) {
+        if (verifyError || !verifyData) {
             console.error("Error verifying update:", verifyError);
         } else {
             console.log("Verified update:", { 
                 business_plan: verifyData.business_plan,
-                business: verifyData.business,
             });
-            
-            // Verifieer dat business JSONB ook correct is geüpdatet
-            const verifiedBusiness = verifyData.business as Record<string, unknown> | null;
-            const expectedActive = !!business_plan;
-            const actualActive = verifiedBusiness?.subscription_active;
-            
-            if (typeof actualActive === 'boolean' && actualActive !== expectedActive) {
-                console.warn("Business subscription_active mismatch, fixing...");
-                const fixBusiness = {
-                    ...verifiedBusiness,
-                    subscription_active: expectedActive,
-                    subscription_updated_at: new Date().toISOString(),
-                };
-                await (admin as any)
-                    .from("profiles")
-                    .update({ business: fixBusiness })
-                    .eq("id", params.id);
-            }
-            
-            // Als de verificatie null teruggeeft terwijl we een plan verwachten, probeer nog een keer
-            if (verifyData.business_plan !== business_plan && business_plan) {
-                console.warn("Verification failed, retrying update...");
-                const { error: retryError } = await (admin as any)
-                    .from("profiles")
-                    .update(updateData)
-                    .eq("id", params.id);
-                
-                if (retryError) {
-                    console.error("Retry update error:", retryError);
-                } else {
-                    // Verifieer opnieuw na retry
-                    const { data: retryVerifyData } = await admin
-                        .from("profiles")
-                        .select("id, business_plan, business")
-                        .eq("id", params.id)
-                        .single();
-                    
-                    if (retryVerifyData) {
-                        verifyData.business_plan = retryVerifyData.business_plan;
-                        verifyData.business = retryVerifyData.business;
-                    }
-                }
-            }
         }
         
         // Return success met duidelijke data
         const finalBusinessPlan = verifyData?.business_plan || updateResult?.business_plan || business_plan;
-        const finalBusiness = verifyData?.business || {};
-        const finalSubscriptionActive = finalBusiness?.subscription_active ?? !!(finalBusinessPlan && finalBusinessPlan.trim() !== '');
+        const finalSubscriptionActive = !!(finalBusinessPlan && finalBusinessPlan.trim() !== '');
         
         const responseData = {
           success: true,
@@ -150,7 +111,6 @@ export async function PUT(
             id: params.id,
             business_plan: finalBusinessPlan,
             subscription_active: finalSubscriptionActive,
-            business: finalBusiness, // Include business JSONB voor debugging
           },
         };
         

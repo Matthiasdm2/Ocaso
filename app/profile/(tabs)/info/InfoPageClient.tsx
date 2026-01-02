@@ -104,8 +104,8 @@ export default function InfoPageClient() {
             const name = splitName(String(rec.full_name || ''));
             ui = {
               ...ui,
-              firstName: name.first,
-              lastName: name.last,
+              firstName: name.firstName,
+              lastName: name.lastName,
               phone: String(rec.phone || ''),
               avatarUrl: String(rec.avatar_url || ''),
             };

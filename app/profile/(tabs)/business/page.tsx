@@ -340,8 +340,8 @@ export default function BusinessProfilePage() {
             const name = splitName(fallbackData.full_name || '');
             ui = {
               ...ui,
-              firstName: name.first,
-              lastName: name.last,
+              firstName: name.firstName,
+              lastName: name.lastName,
             };
             // Probeer subscription data te laden met fallback
             const subscriptionData = getSubscriptionData(fallbackData.business, fallbackData.business_plan);

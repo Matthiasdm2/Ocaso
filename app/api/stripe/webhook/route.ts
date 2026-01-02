@@ -165,7 +165,7 @@ export async function POST(req: Request) {
             console.error("subscription update (pi.succeeded)", subErr);
           } else {
             console.log(
-              `Subscription activated via payment_intent.succeeded: ${plan} (${billing}) -> ${businessPlan} for user ${userId}`,
+              `Subscription activated via payment_intent.succeeded: ${businessPlan} for user ${userId}`,
             );
           }
         } else {

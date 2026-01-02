@@ -202,7 +202,7 @@ async function fetchProfile(id: string): Promise<{ data: PublicProfile | null; e
       fullName: displayName,
       firstName: firstName || displayName || "",
       lastName: lastName || "",
-      avatarUrl: data.avatar_url || "/placeholder.png",
+      avatarUrl: data.avatar_url || "/placeholder.svg",
       isBusiness: !!data.is_business,
       shopName: data.shop_name || null,
       shopSlug: data.shop_slug || null,

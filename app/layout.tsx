@@ -64,7 +64,6 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: "/favicon.svg", type: "image/svg+xml" },
-      { url: "/placeholder.png", sizes: "512x512" },
     ],
   // apple icons removed
   },

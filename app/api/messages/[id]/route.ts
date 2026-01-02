@@ -711,7 +711,7 @@ export async function PATCH(request: Request) {
   if (msg.deleted_at) {
     return NextResponse.json({ error: "deleted" }, { status: 400 });
   }
-  if (Date.now() - new Date(msg.created_at).getTime() > 5 * 60 * 1000) {
+  if (Date.now() - new Date(msg.created_at || '').getTime() > 5 * 60 * 1000) {
     return NextResponse.json({ error: "window_closed" }, { status: 400 });
   }
   const { error } = await supabase.from("messages").update({

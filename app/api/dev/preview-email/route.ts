@@ -14,7 +14,7 @@ export async function GET() {
     html = html.replaceAll("{{ .ConfirmationURL }}", url).replaceAll(
       "{{ .SiteURL }}",
       site,
-    ).replaceAll("{{year}}", String(new Date().getFullYear()));
+    ).replace(/\{\{year\}\}/g, String(new Date().getFullYear()));
     return new NextResponse(html, {
       status: 200,
       headers: { "Content-Type": "text/html; charset=utf-8" },

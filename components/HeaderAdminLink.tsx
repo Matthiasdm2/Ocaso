@@ -9,9 +9,10 @@ export default function HeaderAdminLink() {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
 
   useEffect(() => {
+    const supabase = createClient();
+    
     const checkAdmin = async () => {
       try {
-        const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
 
         if (!user) {
@@ -19,11 +20,17 @@ export default function HeaderAdminLink() {
           return;
         }
 
-        const { data: profile } = await supabase
+        const { data: profile, error } = await supabase
           .from("profiles")
           .select("is_admin")
           .eq("id", user.id)
           .single();
+
+        if (error) {
+          console.error('Error checking admin status:', error);
+          setIsAdmin(false);
+          return;
+        }
 
         setIsAdmin(!!profile?.is_admin);
       } catch (error) {
@@ -32,7 +39,24 @@ export default function HeaderAdminLink() {
       }
     };
 
+    // Check immediately
     checkAdmin();
+
+    // Listen for auth state changes (login/logout)
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session?.user) {
+        setIsAdmin(false);
+      } else {
+        // Re-check admin status when user logs in
+        checkAdmin();
+      }
+    });
+
+    return () => {
+      subscription?.unsubscribe();
+    };
   }, []);
 
   // Only show if we know the user is admin

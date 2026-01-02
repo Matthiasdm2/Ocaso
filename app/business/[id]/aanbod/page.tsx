@@ -192,11 +192,11 @@ export default async function BusinessFullAanbodPage({ params, searchParams }: {
       const countMap = new Map<number, number>();
 
       // Get all categories that this seller actually uses in their listings
+      // Include both category_id (direct) and category_id from subcategories
       let usedCatQuery = supabase
         .from('listings')
-        .select('category_id', { count: 'exact', head: false })
-        .eq('seller_id', businessId)
-        .not('category_id', 'is', null);
+        .select('category_id, subcategory_id', { count: 'exact', head: false })
+        .eq('seller_id', businessId);
 
       if (qText) usedCatQuery = usedCatQuery.ilike('title', `%${qText}%`);
       if (minPrice != null && !Number.isNaN(minPrice)) usedCatQuery = usedCatQuery.gte('price', minPrice);
@@ -204,10 +204,32 @@ export default async function BusinessFullAanbodPage({ params, searchParams }: {
 
       const usedCatRes = await usedCatQuery;
       if (usedCatRes.data) {
-        type Row = { category_id: number | null };
+        type Row = { category_id: number | null; subcategory_id: number | null };
+        const usedSubcategoryIds = new Set<number>();
+        
+        // Eerst verzamel alle category_id's en subcategory_id's
         for (const r of usedCatRes.data as unknown as Row[]) {
           if (r.category_id != null) {
             countMap.set(r.category_id, (countMap.get(r.category_id) || 0) + 1);
+          }
+          if (r.subcategory_id != null) {
+            usedSubcategoryIds.add(r.subcategory_id);
+          }
+        }
+        
+        // Voor subcategories die worden gebruikt, haal ook de parent category_id op
+        if (usedSubcategoryIds.size > 0) {
+          const { data: subcategories } = await supabase
+            .from('subcategories')
+            .select('id, category_id')
+            .in('id', Array.from(usedSubcategoryIds));
+          
+          if (subcategories) {
+            for (const sub of subcategories) {
+              if (sub.category_id != null) {
+                countMap.set(sub.category_id, (countMap.get(sub.category_id) || 0) + 1);
+              }
+            }
           }
         }
       }

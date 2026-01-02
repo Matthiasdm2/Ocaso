@@ -11,7 +11,7 @@ import ListingCard from "../../components/ListingCard";
 
 type SimpleListing = { id: string; title: string; price: number | string; images?: string[]; created_at?: string };
 
-async function fetchListingsDirect(q?: string, catSlug?: string, subSlug?: string) {
+async function fetchListingsDirect(q?: string, catSlug?: string, subSlug?: string, sellerId?: string) {
   const supabase = supabaseServer();
   let query = supabase
     .from('listings')
@@ -19,6 +19,9 @@ async function fetchListingsDirect(q?: string, catSlug?: string, subSlug?: strin
     .eq('status', 'actief')
     .order('created_at', { ascending: false })
     .limit(24);
+  if (sellerId) {
+    query = query.eq('seller_id', sellerId);
+  }
   if (q) {
     const synonymTerms = getSynonymTerms(q);
     const searchTerms = [q, ...synonymTerms];
@@ -66,12 +69,12 @@ async function fetchBusinessProfiles(q?: string) {
   const orConditions = searchTerms.flatMap(term => [`title.ilike.%${term}%`, `description.ilike.%${term}%`]);
   const { data: listingMatches, error: lErr } = await supabase
     .from('listings')
-    .select('user_id,title,description')
+    .select('seller_id,title,description')
     .or(orConditions.join(','))
     .limit(300);
   if (lErr || !listingMatches) return [];
-  interface ListingMatch { user_id: string | null }
-  const ids = Array.from(new Set((listingMatches as ListingMatch[]).map(r => r.user_id).filter((v): v is string => !!v)));
+  interface ListingMatch { seller_id: string | null }
+  const ids = Array.from(new Set((listingMatches as ListingMatch[]).map(r => r.seller_id).filter((v): v is string => !!v)));
   if (ids.length === 0) return [];
   // Stap 2: haal business profielen op
   const { data: profiles, error: pErr } = await supabase
@@ -87,14 +90,14 @@ async function fetchBusinessProfiles(q?: string) {
 async function fetchBusinessProfilesByListingIds(ids: string[]) {
   if (!ids || ids.length === 0) return [] as Array<{ id: string; full_name: string | null; avatar_url: string | null; is_business: boolean }>;
   const supabase = supabaseServer();
-  // Haal unieke user_ids op voor de gegeven listings
+  // Haal unieke seller_ids op voor de gegeven listings
   const { data: listingRows } = await supabase
     .from('listings')
-    .select('user_id')
+    .select('seller_id')
     .in('id', ids)
     .limit(300);
-  type ListingRow = { user_id: string | null };
-  const sellerIds = Array.from(new Set(((listingRows || []) as ListingRow[]).map(r => r.user_id).filter((v): v is string => !!v)));
+  type ListingRow = { seller_id: string | null };
+  const sellerIds = Array.from(new Set(((listingRows || []) as ListingRow[]).map(r => r.seller_id).filter((v): v is string => !!v)));
   if (sellerIds.length === 0) return [];
   // Haal business profielen op voor deze sellers
   const { data: profiles } = await supabase
@@ -108,14 +111,16 @@ async function fetchBusinessProfilesByListingIds(ids: string[]) {
 
 type BusinessProfile = { id: string; full_name: string | null; avatar_url: string | null; is_business: boolean };
 
-export default async function SearchPage({ searchParams }: { searchParams: { q?: string; ids?: string; category?: string; sub?: string } }) {
+export default async function SearchPage({ searchParams }: { searchParams: { q?: string; ids?: string; category?: string; sub?: string; seller?: string } }) {
   const q = searchParams.q?.trim() || '';
   const idsParam = (searchParams.ids || '').trim();
   const ids = idsParam ? idsParam.split(',').map(s => s.trim()).filter(Boolean) : [];
   const catSlug = searchParams.category?.trim() || '';
   const subSlug = searchParams.sub?.trim() || '';
+  const sellerId = searchParams.seller?.trim() || '';
 
-  const { data: categories } = await supabaseServer()
+  const supabase = supabaseServer();
+  const { data: categories } = await supabase
     .from("categories")
     .select("*, subcategories(*)")
     .order("name");
@@ -134,7 +139,7 @@ type Category = {
   subcategories: Array<{ id: number; name: string; slug: string }>;
 };
 
-  const sidebarCategories: Category[] = (categories as unknown as CategoryWithSubs[] | null)?.map((cat) => ({
+  let allCategories: Category[] = (categories as unknown as CategoryWithSubs[] | null)?.map((cat) => ({
     id: cat.id,
     name: cat.name,
     slug: cat.slug,
@@ -144,6 +149,71 @@ type Category = {
       slug: sub.slug,
     })) || [],
   })) || [];
+
+  // Als er een seller filter is, toon alleen categorieën die door die verkoper worden gebruikt
+  let sidebarCategories: Category[] = allCategories;
+  if (sellerId) {
+    try {
+      // Haal alle category_id's en subcategory_id's op van listings van deze verkoper
+      const { data: sellerListings } = await supabase
+        .from("listings")
+        .select("category_id, subcategory_id")
+        .eq("seller_id", sellerId)
+        .eq("status", "actief");
+
+      if (sellerListings && sellerListings.length > 0) {
+        // Verzamel unieke category_id's en subcategory_id's
+        const usedCategoryIds = new Set<number>();
+        const usedSubcategoryIds = new Set<number>();
+        
+        sellerListings.forEach((listing: { category_id: number | null; subcategory_id: number | null }) => {
+          if (listing.category_id != null) {
+            usedCategoryIds.add(listing.category_id);
+          }
+          if (listing.subcategory_id != null) {
+            usedSubcategoryIds.add(listing.subcategory_id);
+          }
+        });
+
+        // Voor subcategories die worden gebruikt, haal ook de parent category_id op
+        if (usedSubcategoryIds.size > 0) {
+          const { data: subcategories } = await supabase
+            .from("subcategories")
+            .select("id, category_id")
+            .in("id", Array.from(usedSubcategoryIds));
+          
+          if (subcategories) {
+            subcategories.forEach((sub: { id: number; category_id: number }) => {
+              usedCategoryIds.add(sub.category_id);
+            });
+          }
+        }
+
+        // Filter categorieën: alleen die met een gebruikt category_id
+        sidebarCategories = allCategories.filter((cat) => {
+          // Check of de hoofdcategorie wordt gebruikt
+          return usedCategoryIds.has(cat.id);
+        }).map((cat) => {
+          // Filter ook subcategorieën: alleen die worden gebruikt
+          const usedSubs = cat.subcategories.filter(sub => usedSubcategoryIds.has(sub.id));
+          return {
+            ...cat,
+            subcategories: usedSubs,
+          };
+        }).filter(cat => {
+          // Behoud categorie als de hoofdcategorie wordt gebruikt OF als er subcategorieën worden gebruikt
+          return usedCategoryIds.has(cat.id) || cat.subcategories.length > 0;
+        });
+      } else {
+        // Geen listings gevonden voor deze verkoper, toon geen categorieën
+        sidebarCategories = [];
+      }
+    } catch (error) {
+      console.error("Error filtering categories by seller:", error);
+      // Bij fout, toon alle categorieën (fallback)
+      sidebarCategories = allCategories;
+    }
+  }
 
   const t0 = Date.now();
   let listingResult: { items: SimpleListing[] }; let businessProfiles: BusinessProfile[];
@@ -157,7 +227,7 @@ type Category = {
       businessProfiles = results[1] as BusinessProfile[];
     } else {
       const results = await Promise.all([
-        fetchListingsDirect(q, catSlug, subSlug),
+        fetchListingsDirect(q, catSlug, subSlug, sellerId),
         fetchBusinessProfiles(q)
       ]);
       listingResult = results[0] as { items: SimpleListing[] };

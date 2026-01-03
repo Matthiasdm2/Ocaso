@@ -209,7 +209,7 @@ export async function POST(request: Request) {
       // Retry omitting recipient_id in case schema lacks or allows null
       userAttempt = await supabase
         .from("messages")
-        .insert({ ...baseMessage, listing_id: listingId })
+        .insert({ ...baseMessage, listing_id: listingId } as never)
         .select("id, created_at")
         .single();
       msg = userAttempt.data as typeof msg;
@@ -257,7 +257,7 @@ export async function POST(request: Request) {
       if ((missingRecipient || nullRecipient) && (msgErr || !msg)) {
         adminAttempt = await admin
           .from("messages")
-          .insert({ ...baseMessage, listing_id: listingId })
+          .insert({ ...baseMessage, listing_id: listingId } as never)
           .select("id, created_at")
           .single();
         msg = adminAttempt.data as typeof msg;

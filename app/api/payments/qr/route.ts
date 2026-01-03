@@ -196,9 +196,9 @@ export async function POST(request: Request) {
       userAttempt = await supabase
         .from("messages")
         .insert(
-          missingRecipient || nullRecipient
+          (missingRecipient || nullRecipient
             ? baseMessage
-            : { ...baseMessage, recipient_id: recipientId },
+            : { ...baseMessage, recipient_id: recipientId }) as never
         )
         .select("id, created_at")
         .single();

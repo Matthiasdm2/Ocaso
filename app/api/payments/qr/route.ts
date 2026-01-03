@@ -180,7 +180,6 @@ export async function POST(request: Request) {
       listing_id: listingId,
       recipient_id: recipientId,
     } as never)
-    })
     .select("id, created_at")
     .single();
   let { data: msg, error: msgErr } = userAttempt;
